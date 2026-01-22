@@ -53,11 +53,13 @@ Vibe coding is about **flow**. Instead of fighting with syntax and documentation
 **Don't limit yourself to one AI assistant!** Each tool has free usage quotas. Here's the smart approach:
 
 1. **Code with Claude** until you hit the daily limit
-2. **Commit & push to GitHub** (your work is saved!)
+2. **Ask the AI: "Save my work to GitHub"** (done!)
 3. **Switch to ChatGPT or Gemini** and keep coding
 4. **Repeat** as needed—your GitHub repo syncs everything
 
 **Why this works**: Your code lives in GitHub (not in any single AI tool). Every AI can read your repo and continue where the last one left off. Think of GitHub as your project's home base and AI tools as interchangeable helpers.
+
+**You don't need to learn Git or GitHub!** Just tell each AI to save your work. They handle all the technical details.
 
 **Available free tools**: Claude, ChatGPT, Gemini, GitHub Copilot (trial), Replit AI, Google Antigravity IDE, and more!
 

@@ -63,6 +63,8 @@ GitHub (the website) uses Git (the tool).
 
 The AI knows all the Git commands and will handle them for you. Focus on what you want to build, not on technical commands.
 
+**You also don't need to understand branches!** When rotating between AI tools, just work on the main branch (the default). The AI will handle everything. Branches are for advanced workflows—skip them for now.
+
 ### IDE (Integrated Development Environment)
 **What it is**: A special text editor designed for writing code.
 
@@ -319,6 +321,8 @@ Gemini: [Reads your repo]
 ```
 
 **See the pattern?** You never typed a single Git command. You just told each AI what you wanted, and they handled all the GitHub operations.
+
+**Note**: All of this happens on the "main" branch automatically. You don't need to know what branches are or how they work. Just ask the AI to save your code, and everything is handled for you on the default main branch.
 
 ---
 
