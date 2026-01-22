@@ -266,6 +266,151 @@ After your instant start:
 - Ask Claude to create sample/mock data to learn with
 - Or use a demo account with pre-populated data
 
+## 🔄 Hit Your Free Quota Limit? Keep Coding!
+
+**Don't stop when Claude's free tier runs out!** Here's the smart workflow:
+
+### When Claude Says "Daily Limit Reached"
+
+1. **Save your progress to GitHub** (if you haven't already)
+   - Create a GitHub repo: https://github.com/new
+   - Upload your code files
+   - Or use: `git init && git add . && git commit -m "Progress" && git push`
+
+2. **Switch to another free AI tool** - Pick from:
+   - **ChatGPT** (chat.openai.com) - High free tier on GPT-3.5
+   - **Gemini** (gemini.google.com) - Very generous free limits
+   - **Replit AI** (replit.com) - Code in browser + AI help
+   - **Perplexity** - Good for research and code snippets
+
+3. **Give the new AI your context**:
+   ```
+   I'm building a Geotab fleet dashboard. My code is at:
+   [paste your GitHub repo URL]
+
+   I was working on adding a real-time map view. Can you
+   help me continue from where I left off?
+   ```
+
+4. **Keep coding** - The new AI reads your repo and continues seamlessly!
+
+### Example: Claude → ChatGPT Handoff
+
+**Step 1: With Claude (before hitting limit)**
+```
+I'm building a vehicle tracker. Save this code to GitHub for me.
+
+[Claude creates repo and commits your code]
+
+✓ Code saved to: github.com/yourname/vehicle-tracker
+```
+
+**Step 2: Open ChatGPT**
+```
+I'm working on a Geotab vehicle tracker. Code is at:
+github.com/yourname/vehicle-tracker
+
+I need to add a fuel efficiency chart. Can you help?
+```
+
+**Step 3: ChatGPT continues**
+```
+[ChatGPT reads your repo]
+
+I see you have the base dashboard set up. Let me add
+the fuel efficiency chart using Plotly...
+
+[Provides code that builds on your existing work]
+```
+
+### Tool Rotation Strategy
+
+Maximize your free coding time by rotating tools:
+
+| Time of Day | Tool | Why |
+|-------------|------|-----|
+| **Morning** | Claude | Best for complex architecture & planning |
+| **Afternoon** | ChatGPT | Fast iterations, debugging |
+| **Evening** | Gemini | High limits, good for UI work |
+
+**GitHub is your safety net** 🛡️ - It keeps all your work in one place regardless of which AI tool you use.
+
+### Daily Workflow Example
+
+**8 AM**: Start with Claude
+```
+"Build a Geotab fleet dashboard with real-time tracking"
+[Code for 2 hours, hit daily limit]
+git push origin main  # Save progress!
+```
+
+**10 AM**: Switch to ChatGPT
+```
+"My dashboard is at github.com/me/fleet-dash
+Add a route history map view"
+[Code for 2 hours]
+git push origin main  # Save progress!
+```
+
+**2 PM**: Switch to Gemini
+```
+"Continue my project at github.com/me/fleet-dash
+Add fuel efficiency analytics"
+[Code for 2 hours]
+git push origin main  # Save progress!
+```
+
+**Result**: 6 hours of coding across 3 free tools, all synced via GitHub!
+
+### Quick Setup: Git for Beginners
+
+If you're new to Git/GitHub, here's the fastest setup:
+
+**Option 1: Use GitHub Web Interface** (Easiest)
+1. Go to https://github.com/new
+2. Create a new repo
+3. Upload your files through the web UI
+4. Share the URL with your next AI tool
+
+**Option 2: Command Line** (Faster once you learn it)
+```bash
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+
+cd your-project-folder
+git init
+git add .
+git commit -m "Initial commit"
+git remote add origin https://github.com/yourname/repo.git
+git push -u origin main
+```
+
+The AI can help you with these commands! Just ask:
+```
+"Help me save this code to GitHub. I'm a beginner."
+```
+
+### Pro Tips
+
+✅ **DO**: Commit frequently (every 30-60 minutes)
+✅ **DO**: Use descriptive commit messages
+✅ **DO**: Keep your repo organized with folders
+✅ **DO**: Add a README explaining what you're building
+
+❌ **DON'T**: Put passwords in your code (use .env files)
+❌ **DON'T**: Forget to push (local commits aren't backed up!)
+❌ **DON'T**: Wait until you hit quota to start using GitHub
+
+### Why This Strategy Works
+
+**Traditional approach**: Hit quota → Stop coding → Wait 24 hours
+
+**Vibe coding approach**: Hit quota → Switch tools → Keep building
+
+**The secret**: Your code lives in GitHub, not in any single AI tool. Each tool is just a temporary helper. The repo is permanent.
+
+---
+
 ## More Copy-Paste Prompts
 
 Want more prompts for specific use cases? Check out [CLAUDE_PROMPTS.md](./CLAUDE_PROMPTS.md) for:
@@ -274,6 +419,8 @@ Want more prompts for specific use cases? Check out [CLAUDE_PROMPTS.md](./CLAUDE
 - Project building prompts
 - Troubleshooting prompts
 - Advanced use cases
+
+**NEW**: [BEGINNER_GLOSSARY.md](./BEGINNER_GLOSSARY.md#ai-coding-assistants) - Complete comparison of free AI tools with quota limits and rotation strategies
 
 ## Ready?
 

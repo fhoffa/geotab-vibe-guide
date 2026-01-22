@@ -81,31 +81,198 @@ Many of our tutorials run entirely in a browser—no downloads required!
 
 ## AI Coding Assistants
 
+**Pro Tip**: Don't limit yourself to just one tool! Each AI coding assistant offers free usage quotas. When you hit the limit on one, simply switch to another—your GitHub repo acts as the common workspace where all your progress is saved. This strategy lets you keep coding without interruption!
+
+### The Multi-Tool Strategy 🔄
+
+Here's how to maximize your free coding time:
+
+1. **Start with any tool** (pick your favorite below)
+2. **Code until you hit the free quota limit**
+3. **Commit and push your work to GitHub** (your safety net!)
+4. **Switch to a different tool** and continue from where you left off
+5. **Repeat** as needed—your GitHub repo keeps everything in sync
+
+**Why this works**: Your code lives in GitHub, not in any single AI tool. Each tool can read your repo, understand your project, and continue building. Think of GitHub as your project's "home base" and the AI tools as interchangeable helpers.
+
+---
+
 ### Claude
 **What it is**: An AI assistant made by Anthropic that can write code, explain concepts, and help debug.
 
-You can use Claude through:
+**Access options**:
 - **claude.ai** (web chat) - Great for beginners, no setup needed
 - **Claude Code** (command line tool) - Advanced option for experienced developers
 
+**Free quota**:
+- Free tier includes daily message limits that reset every 24 hours
+- Generous context window for understanding large codebases
+
+**Best for**: Complex reasoning, understanding existing code, multi-step tasks
+
 **In this repo**: We provide ready-to-use prompts for Claude to build Geotab applications.
+
+---
 
 ### ChatGPT
 **What it is**: An AI assistant by OpenAI that can write code and answer questions.
 
-Similar to Claude, but made by a different company. Works great for vibe coding too!
+**Access options**:
+- **chat.openai.com** (web chat)
+- **ChatGPT API** (for programmatic access)
+
+**Free quota**:
+- GPT-3.5: Generous free access with higher limits
+- GPT-4: Limited free messages per day (varies by account)
+
+**Best for**: Quick iterations, web searches (with browsing enabled), general programming
+
+---
 
 ### GitHub Copilot
 **What it is**: An AI tool that lives inside your IDE and suggests code as you type.
 
-Like autocomplete for emails, but for code. It's built into VS Code and other editors.
+**Access options**:
+- Built into VS Code, Visual Studio, and other popular editors
+- Works inline as you type
+
+**Free quota**:
+- Free for students, teachers, and open-source maintainers
+- 30-day free trial for everyone else
+
+**Best for**: Real-time code completion, writing boilerplate code, autocomplete on steroids
+
+**Note**: Works best alongside other tools (use ChatGPT/Claude for planning, Copilot for typing)
+
+---
 
 ### Gemini
 **What it is**: Google's AI assistant that can help with coding tasks.
 
-Another AI option that works well for vibe coding projects.
+**Access options**:
+- **gemini.google.com** (web chat)
+- Integrated into Google Workspace tools
 
-**Bottom line**: These are all AI tools that can write code for you. Pick whichever one you have access to!
+**Free quota**:
+- Generous free tier with high message limits
+- Access to latest Gemini models in free tier
+
+**Best for**: Integration with Google services, multimodal tasks (code + images)
+
+---
+
+### Google Antigravity IDE
+**What it is**: An AI-native IDE you install on your computer that helps you build full applications.
+
+**Access options**:
+- Desktop application for Windows, Mac, Linux
+
+**Free quota**:
+- Currently free during beta period
+- Check their website for current offerings
+
+**Best for**: Building complete Streamlit dashboards, Python applications with visual interfaces
+
+**In this repo**: See [ANTIGRAVITY_QUICKSTART.md](ANTIGRAVITY_QUICKSTART.md) for setup instructions
+
+---
+
+### Cursor
+**What it is**: An AI-first code editor (fork of VS Code) with built-in AI pair programming.
+
+**Access options**:
+- Desktop application for Windows, Mac, Linux
+
+**Free quota**:
+- 2 weeks free trial with pro features
+- Limited free tier after trial
+
+**Best for**: Editing existing code, codebase-aware AI assistance, refactoring
+
+---
+
+### Replit AI
+**What it is**: Browser-based coding environment with integrated AI assistant.
+
+**Access options**:
+- **replit.com** - Code entirely in your browser, no installation needed
+
+**Free quota**:
+- Free tier includes basic AI features
+- Runs code in the cloud (no local setup!)
+
+**Best for**: Quick prototypes, learning, no-install coding sessions
+
+---
+
+## Making the Most of Free Quotas
+
+### Daily Rotation Strategy
+
+Here's a sample rotation to maximize free usage:
+
+**Morning**: Start with Claude (complex design and architecture)
+- Plan your app structure
+- Write core logic
+- Commit to GitHub
+
+**Afternoon**: Switch to ChatGPT (rapid iteration)
+- Implement features
+- Debug issues
+- Commit to GitHub
+
+**Evening**: Use Gemini or Replit (finishing touches)
+- Add UI improvements
+- Test edge cases
+- Final commit to GitHub
+
+### GitHub as Your Safety Net 🛡️
+
+**Critical habit**: Commit and push frequently!
+
+```bash
+git add .
+git commit -m "Added vehicle tracking feature"
+git push
+```
+
+This ensures:
+- ✅ Your work is never lost
+- ✅ Any AI tool can pick up where you left off
+- ✅ You can switch tools mid-project seamlessly
+- ✅ You have a history of all your changes
+
+### When Switching Tools
+
+When you hit a quota limit on one tool:
+
+1. **Commit your current work**: `git add . && git commit -m "Progress update"`
+2. **Push to GitHub**: `git push`
+3. **Open a different tool**
+4. **Share your GitHub repo link** with the new AI
+5. **Continue coding**: The new AI reads your repo and picks up where you left off!
+
+**Example prompt for the new tool**:
+```
+I'm building a Geotab fleet dashboard. My code is at [your-github-url].
+I was just working on adding a map view. Can you help me continue?
+```
+
+---
+
+## Quick Comparison Table
+
+| Tool | Best For | Free Quota | Setup Required |
+|------|----------|------------|----------------|
+| **Claude** | Complex reasoning, architecture | Daily limit (resets) | None (web) |
+| **ChatGPT** | Quick iterations, general coding | High (GPT-3.5) / Limited (GPT-4) | None (web) |
+| **Gemini** | Google integration, high limits | Very generous | None (web) |
+| **GitHub Copilot** | Real-time autocomplete | 30-day trial | IDE setup |
+| **Antigravity IDE** | Full dashboards, Streamlit | Beta free access | Install app |
+| **Cursor** | Code editing, refactoring | 2-week trial | Install app |
+| **Replit AI** | No-install, browser-based | Basic free tier | None (web) |
+
+**Bottom line**: These are all AI tools that can write code for you. Use them strategically, rotate when needed, and let GitHub be your central hub!
 
 ---
 
