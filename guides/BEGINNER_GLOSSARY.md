@@ -1,0 +1,380 @@
+# Beginner's Glossary: Your First Steps in Vibe Coding
+
+**Welcome!** If you're new to coding, APIs, or fleet management, this guide is for you. Don't worry if these terms sound unfamiliar—by the end of this glossary, you'll understand everything you need to start building with Geotab.
+
+---
+
+## Table of Contents
+- [What is Vibe Coding?](#what-is-vibe-coding)
+- [Essential Development Tools](#essential-development-tools)
+- [AI Coding Assistants](#ai-coding-assistants)
+- [Programming Basics](#programming-basics)
+- [Geotab Platform Terms](#geotab-platform-terms)
+- [Fleet Management Concepts](#fleet-management-concepts)
+- [Web Development Terms](#web-development-terms)
+
+---
+
+## What is Vibe Coding?
+
+**Vibe Coding** is a modern approach to programming where you use AI as your co-pilot. Instead of memorizing syntax or reading hundreds of pages of documentation, you:
+
+1. **Ask** the AI to connect to data sources and explore
+2. **Vibe** with the results—see what the data looks like
+3. **Iterate** on your ideas ("Make it a dashboard," "Add a map")
+
+Think of it like having a conversation with a coding partner who handles the technical details while you focus on *what* you want to build.
+
+### Key Principles
+- **Flow over Syntax**: Focus on your ideas, not memorizing code
+- **Fail Fast, Learn Faster**: Errors are just feedback—iterate quickly
+- **Start Simple, Scale Smart**: Get something working in 5 minutes, then improve it
+- **AI as Co-Pilot**: The AI writes code, but you guide the direction and understand the results
+
+**Who can do vibe coding?** Anyone! Whether you're a complete beginner or an experienced developer, AI tools help you build faster and learn along the way.
+
+---
+
+## Essential Development Tools
+
+### GitHub
+**What it is**: A website where developers store and share code projects.
+
+Think of GitHub like Google Drive, but specifically designed for code. It:
+- Stores your code online (so you don't lose it)
+- Tracks every change you make (like "track changes" in Word)
+- Lets multiple people work on the same project
+- Shares code with others
+
+**In this repo**: All our tutorials, examples, and guides live on GitHub so you can access them anytime.
+
+### Git
+**What it is**: The underlying tool that tracks changes to your code.
+
+GitHub (the website) uses Git (the tool). You don't need to master Git to start—just know it helps you save and manage different versions of your code.
+
+### IDE (Integrated Development Environment)
+**What it is**: A special text editor designed for writing code.
+
+Like Microsoft Word is for documents, an IDE is for code. Popular IDEs include:
+- **VS Code** (Visual Studio Code) - Free, beginner-friendly
+- **PyCharm** - Great for Python
+- **Google Antigravity IDE** - AI-native IDE you install on your computer
+
+**Why use an IDE?** It color-codes your code, catches typos, and helps you run your programs.
+
+### Terminal / Command Line
+**What it is**: A text-based way to control your computer.
+
+Instead of clicking icons, you type commands. For example:
+- `python app.py` - Runs your Python program
+- `pip install mygeotab` - Installs a Python library
+
+**Don't panic!** AI assistants can write these commands for you. You just copy and paste.
+
+### Browser
+**What it is**: The program you use to access websites (Chrome, Firefox, Safari, Edge).
+
+Many of our tutorials run entirely in a browser—no downloads required!
+
+---
+
+## AI Coding Assistants
+
+### Claude
+**What it is**: An AI assistant made by Anthropic that can write code, explain concepts, and help debug.
+
+You can use Claude through:
+- **claude.ai** (web chat) - Great for beginners, no setup needed
+- **Claude Code** (command line tool) - Advanced option for experienced developers
+
+**In this repo**: We provide ready-to-use prompts for Claude to build Geotab applications.
+
+### ChatGPT
+**What it is**: An AI assistant by OpenAI that can write code and answer questions.
+
+Similar to Claude, but made by a different company. Works great for vibe coding too!
+
+### GitHub Copilot
+**What it is**: An AI tool that lives inside your IDE and suggests code as you type.
+
+Like autocomplete for emails, but for code. It's built into VS Code and other editors.
+
+### Gemini
+**What it is**: Google's AI assistant that can help with coding tasks.
+
+Another AI option that works well for vibe coding projects.
+
+**Bottom line**: These are all AI tools that can write code for you. Pick whichever one you have access to!
+
+---
+
+## Programming Basics
+
+### Python
+**What it is**: A beginner-friendly programming language.
+
+Python is popular because:
+- It reads almost like English
+- It's powerful (used by Google, Netflix, NASA)
+- It has tons of free libraries (pre-written code)
+
+**Example Python code**:
+```python
+print("Hello, World!")  # This prints text to the screen
+```
+
+### JavaScript
+**What it is**: The programming language that runs in web browsers.
+
+Every website uses JavaScript to make things interactive (buttons, animations, maps). You'll use it for web dashboards.
+
+### Library / Package
+**What it is**: Pre-written code you can use in your projects.
+
+Like using a recipe instead of inventing one from scratch. For example:
+- `mygeotab` - Connects to Geotab's API (ready to use!)
+- `streamlit` - Creates web dashboards easily
+
+**How to use**: AI tools can install and use libraries for you automatically.
+
+### API (Application Programming Interface)
+**What it is**: A way for programs to talk to each other.
+
+Think of an API like a menu at a restaurant:
+- The menu lists what you can order (available data)
+- You make a request ("I'll have the vehicle locations")
+- The kitchen prepares it (server processes your request)
+- You receive your order (data comes back)
+
+**Geotab API**: Lets you request vehicle data, trips, fuel usage, and more from Geotab's fleet management system.
+
+### Code
+**What it is**: Instructions written in a programming language that tell computers what to do.
+
+Code is just text! When you "run" code, the computer reads it and follows the instructions.
+
+### Variable
+**What it is**: A container for storing information in your code.
+
+**Example**:
+```python
+vehicle_name = "Truck 47"  # Stores text
+speed = 65                  # Stores a number
+```
+
+Think of variables like labeled boxes where you keep data.
+
+### Function
+**What it is**: A reusable block of code that performs a specific task.
+
+**Example**:
+```python
+def greet(name):
+    print(f"Hello, {name}!")
+
+greet("Alice")  # Outputs: Hello, Alice!
+```
+
+Functions let you avoid repeating code. Write it once, use it many times.
+
+### JSON (JavaScript Object Notation)
+**What it is**: A way to format data so computers can easily read it.
+
+**Example JSON**:
+```json
+{
+  "vehicle": "Truck 47",
+  "speed": 65,
+  "location": "Austin, TX"
+}
+```
+
+APIs send data in JSON format. It's just a structured way to organize information.
+
+---
+
+## Geotab Platform Terms
+
+### Geotab
+**What it is**: A company that provides fleet management and vehicle tracking solutions.
+
+Geotab makes:
+- **Hardware** (devices that plug into vehicles to collect data)
+- **Software** (MyGeotab platform for viewing and managing fleet data)
+- **APIs** (ways for developers to build custom applications using Geotab data)
+
+### MyGeotab
+**What it is**: Geotab's web-based fleet management platform.
+
+This is where fleet managers:
+- Track vehicle locations in real-time
+- View fuel usage, trips, and driver behavior
+- Generate reports and manage their fleet
+
+**For developers**: You can pull data from MyGeotab using the API to build custom apps.
+
+### Database
+**What it is**: In Geotab's context, your organization's collection of fleet data.
+
+When you connect to the Geotab API, you specify which database (which company's fleet) you want to access.
+
+**Example**: `my123.geotab.com` is a database URL.
+
+### Credentials
+**What it is**: Your username, password, and database URL needed to access Geotab data.
+
+Like a key to unlock your data. You'll store these securely in an `.env` file.
+
+### Device
+**What it is**: A vehicle or asset being tracked in Geotab.
+
+Could be a truck, car, trailer, or any equipment with a Geotab tracking device installed.
+
+### Trip
+**What it is**: A recorded journey from start to stop.
+
+Contains data like:
+- Distance traveled
+- Duration
+- Route taken
+- Stops made
+
+### StatusData
+**What it is**: Real-time diagnostic information from vehicles.
+
+Examples:
+- Fuel level
+- Engine RPM
+- Battery voltage
+- Odometer reading
+
+### LogRecord
+**What it is**: GPS breadcrumbs—individual location points recorded during a trip.
+
+When you see a route on a map, it's made up of thousands of LogRecords (latitude/longitude points).
+
+### Zone / Geofence
+**What it is**: A virtual boundary around a real-world location.
+
+**Example**: Draw a zone around your warehouse. Get alerts when vehicles enter or leave.
+
+### Geotab Ace
+**What it is**: Geotab's AI-powered assistant for asking questions about your fleet in plain English.
+
+Instead of writing API calls, you ask: *"Which vehicle drove the most miles last month?"*
+
+Ace understands your question and retrieves the answer using AI.
+
+---
+
+## Fleet Management Concepts
+
+### Fleet
+**What it is**: A group of vehicles managed by an organization.
+
+Could be delivery trucks, sales cars, construction equipment, or any commercial vehicles.
+
+### Telematics
+**What it is**: Technology that combines GPS tracking with vehicle diagnostics.
+
+Telematics devices (like Geotab's GO devices) collect data from vehicles and send it to the cloud for analysis.
+
+### HOS (Hours of Service)
+**What it is**: Regulations limiting how long truck drivers can work without rest.
+
+Important for compliance in the transportation industry. Geotab tracks HOS automatically.
+
+### DVIR (Driver Vehicle Inspection Report)
+**What it is**: A safety checklist drivers complete before/after trips.
+
+Digital DVIRs replace paper forms. Drivers report issues like brake problems or tire damage.
+
+### Idle Time
+**What it is**: When a vehicle's engine is running but it's not moving.
+
+Excessive idling wastes fuel and money. Fleet managers track this to improve efficiency.
+
+### MPG (Miles Per Gallon)
+**What it is**: A measure of fuel efficiency.
+
+Higher MPG = less fuel used = lower costs. Electric vehicles use MPGe (miles per gallon equivalent).
+
+### Carbon Footprint
+**What it is**: The total greenhouse gas emissions produced by a fleet.
+
+Many companies track this for sustainability reporting.
+
+---
+
+## Web Development Terms
+
+### Dashboard
+**What it is**: A visual interface showing key data and metrics.
+
+Like a car's dashboard shows speed and fuel, a web dashboard shows fleet metrics (total miles, fuel costs, vehicle locations).
+
+### Frontend
+**What it is**: The part of an application users see and interact with.
+
+The visual interface—buttons, maps, charts. Usually built with HTML, CSS, and JavaScript.
+
+### Backend
+**What it is**: The behind-the-scenes code that processes data and logic.
+
+The backend talks to APIs, processes data, and sends results to the frontend. Users don't see this part.
+
+### Localhost
+**What it is**: Your own computer acting as a web server.
+
+When testing apps, you run them at `localhost:8501` (or similar). Only you can access it—it's not on the internet yet.
+
+### Deployment
+**What it is**: Making your application available on the internet.
+
+Moving from "only works on my computer" to "anyone can use it." Common platforms:
+- **Streamlit Cloud** (free for Python dashboards)
+- **Heroku**, **Vercel**, **Netlify** (general web apps)
+
+### Framework
+**What it is**: Pre-built code structure that helps you build apps faster.
+
+**Examples**:
+- **Streamlit** (Python) - Build data dashboards quickly
+- **Flask** (Python) - Build general web applications
+- **React** (JavaScript) - Build interactive user interfaces
+
+Think of frameworks like IKEA furniture: the hard work is done, you just assemble the pieces.
+
+---
+
+## Getting Started
+
+Now that you understand the basics, here's where to go next:
+
+1. **Brand new to coding?**
+   - Start with [INSTANT_START_WITH_CLAUDE.md](INSTANT_START_WITH_CLAUDE.md) - Build your first app in 60 seconds using just your browser
+
+2. **Want to build something specific?**
+   - Check [HACKATHON_IDEAS.md](HACKATHON_IDEAS.md) for 20+ project ideas with difficulty ratings
+
+3. **Need help with setup?**
+   - Read [CREDENTIALS.md](CREDENTIALS.md) for Geotab account setup
+
+4. **Want copy-paste prompts for AI?**
+   - Use [CLAUDE_PROMPTS.md](CLAUDE_PROMPTS.md) for ready-to-use prompts
+
+5. **Teaching others?**
+   - See [TUTORIAL_DESIGN.md](TUTORIAL_DESIGN.md) for a full 60-minute curriculum
+
+---
+
+## Still Have Questions?
+
+That's normal! The beauty of vibe coding is you don't need to understand everything before starting. Pick a project idea, open Claude or ChatGPT, and start building. The AI will guide you through the technical details.
+
+**Remember**: Every expert started as a beginner. The difference is they started. You've got this! 🚀
+
+---
+
+**Next Step**: Head to [INSTANT_START_WITH_CLAUDE.md](INSTANT_START_WITH_CLAUDE.md) and build your first Geotab application right now—no installation required!
