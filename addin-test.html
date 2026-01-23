@@ -1,187 +1,54 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Geotab Add-In Test</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            margin: 0;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        }
-        h1 {
-            color: #2c3e50;
-            margin-bottom: 10px;
-        }
-        .status {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin: 20px 0;
-            border-radius: 4px;
-        }
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin: 20px 0;
-        }
-        .info-card {
-            background: #e9ecef;
-            padding: 15px;
-            border-radius: 8px;
-        }
-        .info-label {
-            font-size: 0.85rem;
-            color: #6c757d;
-            margin-bottom: 5px;
-        }
-        .info-value {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #2c3e50;
-        }
-        #debug-log {
-            background: #2c3e50;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: 12px;
-            padding: 15px;
-            border-radius: 8px;
-            max-height: 300px;
-            overflow-y: auto;
-            margin-top: 20px;
-        }
-        .log-entry {
-            margin: 3px 0;
-        }
-        .success { color: #28a745; }
-        .error { color: #dc3545; }
-    </style>
+    <title>API Test</title>
 </head>
 <body>
-    <div class="container">
-        <h1>🎉 GitHub Pages Add-In Test</h1>
-        <p>If you can see this, GitHub Pages hosting is working!</p>
-
-        <div class="status">
-            <strong>Status:</strong> <span id="status">Waiting for initialize()...</span>
-        </div>
-
-        <div class="info-grid">
-            <div class="info-card">
-                <div class="info-label">Username</div>
-                <div class="info-value" id="username">--</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">Database</div>
-                <div class="info-value" id="database">--</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">Vehicle Count</div>
-                <div class="info-value" id="vehicle-count">--</div>
-            </div>
-            <div class="info-card">
-                <div class="info-label">Last Updated</div>
-                <div class="info-value" id="last-update">--</div>
-            </div>
-        </div>
-
-        <div id="debug-log"></div>
-    </div>
+    <h1>GitHub Pages API Test</h1>
+    <pre id="output"></pre>
 
     <script>
-        // Debug logging
-        const debugLog = document.getElementById('debug-log');
-
-        function log(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const entry = document.createElement('div');
-            entry.className = 'log-entry ' + (type === 'success' ? 'success' : type === 'error' ? 'error' : '');
-            entry.textContent = `[${timestamp}] ${message}`;
-            debugLog.appendChild(entry);
-            debugLog.scrollTop = debugLog.scrollHeight;
-            console.log(message);
+        let output = '';
+        function log(msg) {
+            output += msg + '\n';
+            console.log(msg);
+            document.getElementById('output').textContent = output;
         }
 
-        log('📄 Page loaded from GitHub Pages');
-        log('🔍 Waiting for MyGeotab to call initialize()...');
+        log('1. Page loaded');
+        log('2. JavaScript running');
 
-        // LIFECYCLE METHOD 1: initialize
-        function initialize(api, state, callback) {
-            log('✅ initialize() called!', 'success');
-            log('API object: ' + (api ? 'EXISTS' : 'NULL'));
+        // Define initialize as global function
+        window.initialize = function(api, state, callback) {
+            log('3. ✅ initialize() CALLED!');
+            log('4. API: ' + (api ? 'EXISTS' : 'NULL'));
 
-            document.getElementById('status').textContent = 'Initialized!';
-            document.getElementById('status').className = 'success';
+            if (api) {
+                log('5. API type: ' + typeof api);
+                log('6. API.call: ' + (typeof api.call));
+                log('7. API.getSession: ' + (typeof api.getSession));
 
-            if (!api) {
-                log('❌ ERROR: No API object provided', 'error');
-                document.getElementById('status').textContent = 'ERROR: No API';
-                callback();
-                return;
-            }
-
-            // Store API reference
-            window.geotabApi = api;
-
-            // Get session info
-            log('Calling api.getSession()...');
-            try {
-                api.getSession(function(credentials, server) {
-                    log('✅ Got session: ' + credentials.userName, 'success');
-                    document.getElementById('username').textContent = credentials.userName || 'N/A';
-                    document.getElementById('database').textContent = credentials.database || 'N/A';
-                }, function(error) {
-                    log('❌ getSession error: ' + error, 'error');
+                api.getSession(function(cred) {
+                    log('8. ✅ Got user: ' + cred.userName);
+                    log('9. ✅ Database: ' + cred.database);
+                }, function(err) {
+                    log('8. ❌ Session error: ' + err);
                 });
-            } catch (e) {
-                log('❌ Exception in getSession: ' + e.message, 'error');
             }
 
-            // Get vehicle count
-            log('Calling api.call("Get", {typeName: "Device"})...');
-            try {
-                api.call('Get', {
-                    typeName: 'Device'
-                }, function(devices) {
-                    log('✅ Loaded ' + devices.length + ' vehicles', 'success');
-                    document.getElementById('vehicle-count').textContent = devices.length;
-                    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
-                }, function(error) {
-                    log('❌ Error loading vehicles: ' + error, 'error');
-                });
-            } catch (e) {
-                log('❌ Exception loading vehicles: ' + e.message, 'error');
-            }
-
-            // Signal initialization complete
-            log('Calling callback()');
             callback();
-        }
+        };
 
-        // LIFECYCLE METHOD 2: focus
-        function focus(api, state) {
-            log('👁️ focus() called');
-        }
+        window.focus = function(api, state) {
+            log('FOCUS: api=' + (api ? 'YES' : 'NO'));
+        };
 
-        // LIFECYCLE METHOD 3: blur
-        function blur(api, state) {
-            log('😴 blur() called');
-        }
+        window.blur = function(api, state) {
+            log('BLUR');
+        };
 
-        log('Lifecycle methods defined and waiting...');
+        log('Waiting for initialize()...');
     </script>
 </body>
 </html>
