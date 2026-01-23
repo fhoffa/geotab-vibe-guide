@@ -1,0 +1,18 @@
+{
+    "name": "EventListenerTest",
+    "supportEmail": "test@example.com",
+    "version": "1.0",
+    "items": [{
+        "path": "ActivityLink",
+        "menuName": {
+            "en": "Event Test"
+        },
+        "url": "events.html"
+    }],
+    "files": {
+        "events.html": "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Event Test</title></head><body><h1>Listening for Events</h1><div id='log'></div><script>var log=document.getElementById('log');function addLog(msg){console.log(msg);var p=document.createElement('p');p.style.cssText='margin:2px 0;font-size:11px';p.textContent=new Date().toLocaleTimeString()+' - '+msg;log.appendChild(p);}addLog('Page loaded');addLog('Setting up event listeners...');window.addEventListener('message',function(event){addLog('MESSAGE event: '+JSON.stringify(event.data).substring(0,100));},false);document.addEventListener('DOMContentLoaded',function(){addLog('DOMContentLoaded fired');});window.addEventListener('load',function(){addLog('window.load fired');});var eventNames=['focus','blur','addinLoad','addinReady','initialized'];eventNames.forEach(function(name){window.addEventListener(name,function(e){addLog('Event fired: '+name);},false);});addLog('Trying to request API via postMessage...');if(window.parent){try{window.parent.postMessage({type:'getApi'},'*');addLog('Sent postMessage to parent');}catch(e){addLog('postMessage error: '+e.message);}}addLog('Checking for API every second...');var checkCount=0;var interval=setInterval(function(){checkCount++;if(window.parent&&window.parent.api){addLog('FOUND window.parent.api after '+checkCount+' seconds!');clearInterval(interval);var api=window.parent.api;if(api.getSession){api.getSession(function(cred){addLog('SUCCESS! User: '+cred.userName);},function(err){addLog('Error: '+err);});}}else if(checkCount>=10){addLog('Gave up after 10 seconds');clearInterval(interval);}},1000);</script></body></html>",
+        "translations": {
+            "en.json": "{\"name\":\"Event Test\"}"
+        }
+    }
+}
