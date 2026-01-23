@@ -1,5 +1,7 @@
 // External JavaScript file for Add-In
-// Lifecycle methods defined here
+// Lifecycle methods must be GLOBALLY accessible
+
+console.log('addin-test.js v8.0 loaded');
 
 let output = '';
 
@@ -13,16 +15,15 @@ function log(msg) {
     }
 }
 
-log('addin-test.js loaded');
+log('addin-test.js v8.0 loading...');
 
-// LIFECYCLE METHOD 1: initialize
-function initialize(api, state, callback) {
-    log('✅✅✅ initialize() CALLED FROM EXTERNAL JS!');
+// CRITICAL: Make initialize GLOBALLY accessible
+window.initialize = function(api, state, callback) {
+    log('✅✅✅ initialize() CALLED FROM EXTERNAL JS v8.0!');
     log('API: ' + (api ? 'EXISTS' : 'NULL'));
 
     if (api) {
         log('API type: ' + typeof api);
-        log('API.getSession: ' + (typeof api.getSession));
 
         api.getSession(function(cred) {
             log('✅ SUCCESS! User: ' + cred.userName);
@@ -41,16 +42,15 @@ function initialize(api, state, callback) {
     }
 
     callback();
-}
+};
 
-// LIFECYCLE METHOD 2: focus
-function focus(api, state) {
+// Make focus and blur global too
+window.focus = function(api, state) {
     log('FOCUS called, API: ' + (api ? 'YES' : 'NO'));
-}
+};
 
-// LIFECYCLE METHOD 3: blur
-function blur(api, state) {
+window.blur = function(api, state) {
     log('BLUR called');
-}
+};
 
-log('Lifecycle methods registered in external JS');
+log('v8.0 - Lifecycle methods attached to window object');
