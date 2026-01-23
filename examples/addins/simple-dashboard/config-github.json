@@ -1,0 +1,13 @@
+{
+    "name": "Simple Fleet Dashboard",
+    "supportEmail": "your.email@example.com",
+    "version": "1.0",
+    "items": [{
+        "url": "https://yourusername.github.io/my-fleet-addin/",
+        "path": "ActivityLink",
+        "menuName": {
+            "en": "Fleet Dashboard"
+        }
+    }],
+    "files": {}
+}

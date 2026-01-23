@@ -1,0 +1,21 @@
+{
+    "name": "Simple Fleet Dashboard (Embedded)",
+    "supportEmail": "your.email@example.com",
+    "version": "1.0",
+    "items": [{
+        "path": "ActivityLink",
+        "menuName": {
+            "en": "Fleet Dashboard"
+        },
+        "page": "index"
+    }],
+    "files": {
+        "index.html": "REPLACE_WITH_MINIFIED_HTML",
+        "css": {
+            "styles.css": "REPLACE_WITH_CSS_CONTENT"
+        },
+        "js": {
+            "app.js": "REPLACE_WITH_JS_CONTENT"
+        }
+    }
+}

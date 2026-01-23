@@ -6,38 +6,27 @@ This directory contains starter templates and working examples for the tutorial.
 
 ```
 examples/
-├── python/          # Python examples using mygeotab library
-├── nodejs/          # Node.js/JavaScript examples using mg-api-js
-└── web/             # Web dashboard examples (HTML/CSS/JS)
+├── python/               # Python examples using mygeotab library
+├── addins/               # Geotab Add-In examples (custom MyGeotab pages)
+└── instructions_for_ai/  # Prompts and instructions for AI assistants
 ```
 
-## Coming Soon
-
-Each directory will contain:
-- **Starter Templates**: Minimal boilerplate to get started quickly
-- **Complete Examples**: Full working applications from hackathon ideas
-- **README**: Setup instructions and usage guide
-
-## Available Examples (To Be Added)
+## Available Examples
 
 ### Python (`python/`)
-- [ ] Basic authentication script
-- [ ] Vehicle data fetcher
-- [ ] Trip analyzer CLI tool
-- [ ] Streamlit dashboard
-- [ ] Geotab Ace chatbot
+- ✅ Authentication examples
+- ✅ Fetch data from Geotab API
+- ✅ CLI dashboard
+- ✅ Web dashboard with Streamlit
+- ✅ Geotab Ace integration
 
-### Node.js (`nodejs/`)
-- [ ] Express API server with Geotab integration
-- [ ] Vehicle location tracker
-- [ ] Real-time dashboard backend
-- [ ] Slack bot integration
+See [python/](./python/) for detailed examples and tasks.
 
-### Web (`web/`)
-- [ ] Static HTML dashboard with Leaflet map
-- [ ] React fleet management dashboard
-- [ ] Vue.js trip visualizer
-- [ ] Vanilla JS examples (no framework)
+### Add-Ins (`addins/`)
+- ✅ **Simple Dashboard** - Complete Add-In template with vehicle statistics
+- More examples coming soon!
+
+See [addins/](./addins/) for Add-In examples and [guides/GEOTAB_ADDINS.md](../guides/GEOTAB_ADDINS.md) for the full tutorial.
 
 ## Quick Start
 

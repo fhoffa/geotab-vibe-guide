@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fleet Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="dashboard-container">
+        <header>
+            <h1>Fleet Dashboard</h1>
+            <p id="user-info">Loading user information...</p>
+        </header>
+
+        <main>
+            <section class="stats-container">
+                <div class="stat-card">
+                    <h2 id="vehicle-count">--</h2>
+                    <p>Total Vehicles</p>
+                </div>
+                <div class="stat-card">
+                    <h2 id="active-count">--</h2>
+                    <p>Active Today</p>
+                </div>
+                <div class="stat-card">
+                    <h2 id="trip-count">--</h2>
+                    <p>Trips This Week</p>
+                </div>
+            </section>
+
+            <section class="vehicle-list">
+                <h2>Recent Vehicles</h2>
+                <div id="vehicles-container">
+                    <p>Loading vehicles...</p>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>Powered by MyGeotab API | Last updated: <span id="last-update">--</span></p>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

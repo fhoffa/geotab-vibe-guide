@@ -18,6 +18,10 @@ Start here! Copy-paste these "magic spells" into Claude, ChatGPT, or Gemini to b
 **[⚡️ ANTIGRAVITY QUICKSTART (STREAMLIT)](./guides/ANTIGRAVITY_QUICKSTART.md)**
 Ready to get serious? Use **Google Antigravity IDE** to build a full interactive dashboard with maps and charts, running locally on your machine.
 
+### **Part 3: MyGeotab Add-Ins (Advanced)**
+**[🔌 GEOTAB ADD-INS GUIDE](./guides/GEOTAB_ADDINS.md)**
+Want to customize MyGeotab itself? Build custom pages and buttons that live directly inside your fleet management system.
+
 ### 2. **Authentication**
 You will need a Geotab account. **[Create a free demo database here](https://my.geotab.com/registration.html)**.
 
@@ -35,6 +39,7 @@ You will need a Geotab account. **[Create a free demo database here](https://my.
 *   [**`guides/`**](./guides/): Hackathon ideas, tutorials, and deep dives.
     *   [`HACKATHON_IDEAS.md`](./guides/HACKATHON_IDEAS.md)
     *   [`TUTORIAL_DESIGN.md`](./guides/TUTORIAL_DESIGN.md)
+    *   [`GEOTAB_ADDINS.md`](./guides/GEOTAB_ADDINS.md) - Build custom MyGeotab pages and buttons
 *   [**`GEOTAB_OVERVIEW.md`**](./GEOTAB_OVERVIEW.md): Read this if you want to understand *what* Geotab actually does.
 
 ---

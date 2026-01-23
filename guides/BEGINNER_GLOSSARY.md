@@ -499,6 +499,17 @@ Instead of writing API calls, you ask: *"Which vehicle drove the most miles last
 
 Ace understands your question and retrieves the answer using AI.
 
+### Add-Ins
+**What it is**: Custom pages and buttons that extend MyGeotab's functionality.
+
+Add-Ins are like plugins for MyGeotab. You can create:
+- **Page Add-Ins**: Full custom pages that appear in the navigation menu
+- **Button Add-Ins**: Custom buttons that automate tasks or navigate between areas
+
+**Example**: Build a custom dashboard that combines your fleet data with local weather, or add a one-click report generator button.
+
+**For developers**: See [GEOTAB_ADDINS.md](GEOTAB_ADDINS.md) to learn how to build Add-Ins using vibe coding.
+
 ---
 
 ## Fleet Management Concepts
