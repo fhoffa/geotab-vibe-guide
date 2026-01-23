@@ -137,25 +137,55 @@ Create a Geotab Add-In with a Leaflet map showing:
 
 ---
 
-## Key Pattern (Important!)
+## How Add-Ins Get Access to Your Data
 
-The #1 mistake when building Add-Ins is using **immediate function invocation**.
+Understanding how the connection works helps when prompting the AI.
 
-**❌ Wrong:**
+**The Magic: MyGeotab Injects the API**
+
+When your Add-In HTML loads:
+1. MyGeotab loads it in an iframe within the MyGeotab interface
+2. MyGeotab **injects** an `api` object into your code's scope
+3. This `api` object is already authenticated as the current user
+4. Your code calls methods on this object to fetch data
+
+**You don't need to:**
+- Log in (you're already authenticated)
+- Set up API credentials (it's already done)
+- Worry about CORS (the `api` object handles it)
+
+**The Lifecycle:**
+
+Your Add-In registers itself with `geotab.addin["name"]` and returns an object with three methods:
+
 ```javascript
 geotab.addin["my-addin"] = function() {
-    return {...};
-}();  // Don't do this!
+    return {
+        // Called once when Add-In first loads
+        initialize: function(api, state, callback) {
+            // 'api' is injected here - use it to fetch data
+            api.call("Get", {typeName: "Device"}, function(devices) {
+                console.log("Vehicles:", devices);
+            });
+            callback(); // Must call this when done
+        },
+
+        // Called when user navigates to your Add-In
+        focus: function(api, state) {
+            // Refresh data when page becomes visible
+        },
+
+        // Called when user navigates away
+        blur: function(api, state) {
+            // Save state or clean up
+        }
+    };
+};
 ```
 
-**✅ Correct:**
-```javascript
-geotab.addin["my-addin"] = function() {
-    return {...};
-};  // No () at the end
-```
+**Key Point:** MyGeotab calls `initialize()` and passes in the authenticated `api` object. That's how your Add-In gets access to fleet data.
 
-**The AI skill knows this**, but if you're debugging, check for this mistake first.
+When prompting the AI, mention what data you need and it will use the API object correctly.
 
 ---
 
@@ -207,22 +237,23 @@ show vehicle locations as pins on a map with different colors for each group.
 
 ## Debugging
 
-**Add-In doesn't appear?**
+**Add-In doesn't appear in menu?**
 - Check you saved the configuration
 - Hard refresh: `Ctrl+Shift+R`
 
 **"Issue Loading This Page"?**
-- Verify the URL is accessible
+- Verify the URL is accessible in a regular browser tab
 - Check GitHub Pages is enabled (Settings → Pages)
 - Wait 2-3 minutes after pushing changes
 
-**initialize() never called?**
-- Most common: You used `}();` instead of `};`
-- Check browser console (F12) for errors
+**Data not loading?**
+- Open browser console (F12) to see errors
+- Check that `callback()` is called in initialize
+- Verify the user has permission to access that data type
 
-**API calls fail?**
-- Make sure you called `callback()` in initialize
-- Check the error callback for permission issues
+**Still stuck?**
+- Copy-paste the error message to your AI
+- Ask: "This Add-In isn't working, here's the error: [paste error]"
 
 ---
 
@@ -254,14 +285,14 @@ Create a Geotab Add-In that [describe your feature].
 
 Requirements:
 - Host on GitHub Pages
-- Use the MyGeotab API to fetch [specify data types]
+- Use the MyGeotab API to fetch [specify data types like Device, Trip, ExceptionEvent]
 - Display it with [describe UI]
 - Give me the JSON configuration to install it
-
-Make sure to use the correct pattern (no immediate function invocation).
 ```
 
 Then copy-paste the configuration into MyGeotab and you're done!
+
+The AI will create files that use the injected `api` object to fetch your data.
 
 ---
 
