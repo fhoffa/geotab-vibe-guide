@@ -1,0 +1,18 @@
+{
+    "name": "DebugTest",
+    "supportEmail": "test@example.com",
+    "version": "1.0",
+    "items": [{
+        "path": "ActivityLink",
+        "menuName": {
+            "en": "Debug Test"
+        },
+        "url": "debug.html"
+    }],
+    "files": {
+        "debug.html": "<!DOCTYPE html><html><head><meta charset='UTF-8'><title>Debug Test</title></head><body><h1>Debug Test</h1><div id='log'></div><script>var log=document.getElementById('log');function addLog(msg){console.log(msg);log.innerHTML+='<p>'+msg+'</p>';}addLog('1. Page loaded!');addLog('2. JavaScript is running!');window.initialize=function(api,state,callback){addLog('3. initialize() called!');addLog('4. API object: '+(api?'EXISTS':'NULL'));if(api&&api.getSession){addLog('5. api.getSession exists');api.getSession(function(cred){addLog('6. Got credentials: '+JSON.stringify(cred));},function(err){addLog('ERROR: '+JSON.stringify(err));});}else{addLog('5. NO api.getSession method');}callback();};window.focus=function(api,state){addLog('focus() called');};window.blur=function(api,state){addLog('blur() called');};addLog('Waiting for MyGeotab to call initialize()...');</script></body></html>",
+        "translations": {
+            "en.json": "{\"name\":\"Debug Test\"}"
+        }
+    }
+}
