@@ -1,12 +1,12 @@
 {
-    "name": "GitHubPagesTest",
-    "supportEmail": "test@example.com",
-    "version": "1.0",
-    "items": [{
-        "url": "https://fhoffa.github.io/geotab-vibe-guide/addin-test.html",
-        "path": "ActivityLink",
-        "menuName": {
-            "en": "GitHub Test"
-        }
-    }]
+  "name": "API Test",
+  "supportEmail": "test@example.com",
+  "version": "1.0.0",
+  "items": [{
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/addin-test.html",
+    "path": "ActivityLink/",
+    "menuName": {
+      "en": "API Test"
+    }
+  }]
 }
