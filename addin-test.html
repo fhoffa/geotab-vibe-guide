@@ -5,66 +5,11 @@
     <title>API Test</title>
 </head>
 <body>
-    <h1>GitHub Pages API Test v5.0</h1>
-    <p><strong>Version: 2026-01-23 20:00 UTC - Testing geotab.addin pattern</strong></p>
-    <pre id="output"></pre>
+    <h1>GitHub Pages API Test v6.0</h1>
+    <p><strong>Version: 2026-01-23 20:05 UTC - EXTERNAL JS FILE</strong></p>
+    <pre id="output">Loading external JavaScript...</pre>
 
-    <script>
-        let output = '';
-        function log(msg) {
-            output += msg + '\n';
-            console.log(msg);
-            document.getElementById('output').textContent = output;
-        }
-
-        log('VERSION: v5.0 - 2026-01-23 20:00 UTC');
-        log('1. Page loaded');
-        log('2. JavaScript running');
-
-        // Try BOTH patterns
-
-        // Pattern 1: Global functions (documented way)
-        window.initialize = function(api, state, callback) {
-            log('3a. ✅ window.initialize() CALLED!');
-            if (api) {
-                log('4a. API EXISTS via window.initialize');
-                api.getSession(function(cred) {
-                    log('5a. User: ' + cred.userName);
-                });
-            }
-            callback();
-        };
-
-        // Pattern 2: geotab.addin object
-        if (typeof geotab === 'undefined') {
-            window.geotab = {};
-        }
-        if (typeof geotab.addin === 'undefined') {
-            geotab.addin = {};
-        }
-
-        geotab.addin.githubpagestest = function() {
-            return {
-                initialize: function(api, state, callback) {
-                    log('3b. ✅ geotab.addin.githubpagestest.initialize() CALLED!');
-                    if (api) {
-                        log('4b. API EXISTS via geotab.addin');
-                        api.getSession(function(cred) {
-                            log('5b. User: ' + cred.userName);
-                        });
-                    }
-                    callback();
-                },
-                focus: function(api, state) {
-                    log('FOCUS via geotab.addin, api=' + (!!api));
-                },
-                blur: function(api, state) {
-                    log('BLUR via geotab.addin');
-                }
-            };
-        }();
-
-        log('Registered both patterns, waiting...');
-    </script>
+    <!-- Load external JS file with lifecycle methods -->
+    <script src="https://fhoffa.github.io/geotab-vibe-guide/addin-test.js"></script>
 </body>
 </html>
