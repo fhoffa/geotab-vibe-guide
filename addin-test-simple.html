@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Test</title>
+</head>
+<body>
+    <h1>GitHub Pages Test</h1>
+    <div id="status">Checking...</div>
+    <pre id="output"></pre>
+
+    <script>
+        // Use console only - avoid DOM issues
+        let output = '';
+
+        function addOutput(msg) {
+            output += msg + '\n';
+            console.log(msg);
+            try {
+                document.getElementById('output').textContent = output;
+            } catch(e) {
+                // Ignore DOM errors
+            }
+        }
+
+        addOutput('1. Page loaded');
+        addOutput('2. JavaScript running');
+
+        // Try to define initialize
+        window.initialize = function(api, state, callback) {
+            addOutput('3. initialize() CALLED!!!');
+            addOutput('4. API exists: ' + (!!api));
+
+            if (api) {
+                addOutput('5. API type: ' + typeof api);
+                addOutput('6. API.call exists: ' + (!!api.call));
+
+                try {
+                    api.getSession(function(cred) {
+                        addOutput('7. SUCCESS! User: ' + cred.userName);
+                    }, function(err) {
+                        addOutput('7. ERROR: ' + err);
+                    });
+                } catch(e) {
+                    addOutput('7. EXCEPTION: ' + e.message);
+                }
+            }
+
+            callback();
+        };
+
+        window.focus = function(api, state) {
+            addOutput('FOCUS called, API: ' + (!!api));
+        };
+
+        window.blur = function(api, state) {
+            addOutput('BLUR called');
+        };
+
+        addOutput('Waiting for initialize()...');
+
+        // Also try listening for events
+        window.addEventListener('focus', function(e) {
+            addOutput('FOCUS EVENT, detail: ' + JSON.stringify(e.detail));
+        });
+    </script>
+</body>
+</html>
