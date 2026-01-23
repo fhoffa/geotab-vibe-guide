@@ -3,7 +3,7 @@
   "supportEmail": "test@example.com",
   "version": "1.0.0",
   "items": [{
-    "url": "https://fhoffa.github.io/geotab-vibe-guide/simple-test.html",
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/simple-test.html",
     "path": "ActivityLink/",
     "menuName": {
       "en": "Simple Test"

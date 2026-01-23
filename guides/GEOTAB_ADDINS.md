@@ -20,7 +20,7 @@ Copy-paste this into MyGeotab to see a working Add-In:
   "supportEmail": "test@example.com",
   "version": "1.0.0",
   "items": [{
-    "url": "https://fhoffa.github.io/geotab-vibe-guide/simple-test.html",
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/simple-test.html",
     "path": "ActivityLink/",
     "menuName": {
       "en": "Fleet Stats"
@@ -38,10 +38,20 @@ You'll see your username, database, and vehicle count. This proves Add-Ins work!
 
 ## What Are Add-Ins?
 
-Custom pages that appear in MyGeotab's menu. They can:
+Add-Ins extend MyGeotab with custom functionality. There are two types:
+
+**Page Add-Ins** (covered in this guide)
+- Custom pages that appear in MyGeotab's menu
 - Show dashboards combining MyGeotab data with external APIs
 - Display specialized reports for your workflow
 - Create custom tools specific to your business
+
+**Button Add-Ins** (not covered here)
+- Custom buttons that appear on existing MyGeotab pages
+- Quick actions like "Generate Report" or "Export Data"
+- Context-aware based on what page you're viewing
+
+**This guide focuses on Page Add-Ins** - they're more versatile and easier to build.
 
 **Example:** A safety dashboard showing today's speeding events, ranked drivers, and export to CSV.
 
@@ -260,7 +270,8 @@ show vehicle locations as pins on a map with different colors for each group.
 ## Resources
 
 **Working Examples:**
-- `simple-test.html` / `simple-test.js` in this repo (tested ✅)
+- `examples/addins/simple-test.*` - Complete working example (tested ✅)
+- `examples/addins/minimal-test.*` - Even simpler example (tested ✅)
 - [Heat Map Add-In](https://github.com/Geotab/sdk-addin-samples/tree/master/addin-heatmap) (official example)
 - [All SDK Samples](https://github.com/Geotab/sdk-addin-samples) (browse more examples)
 

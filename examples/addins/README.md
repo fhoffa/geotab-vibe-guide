@@ -1,134 +1,50 @@
 # Geotab Add-In Examples
 
-This directory contains example Geotab Add-Ins that demonstrate how to extend MyGeotab with custom pages and functionality.
+Working examples you can use right away.
 
-## What Are Add-Ins?
+## Files
 
-Geotab Add-Ins are custom pages and buttons that integrate directly into the MyGeotab interface. They let you build specialized tools, dashboards, and automations for your fleet.
+### simple-test.*
+Complete working Add-In showing:
+- Username and database
+- Vehicle count
+- Clean UI with status indicators
 
-**Learn more**: [Geotab Add-Ins Guide](../../guides/GEOTAB_ADDINS.md)
+**Files:**
+- `simple-test.html` - Main HTML page
+- `simple-test.js` - JavaScript with API calls
+- `simple-test-config.json` - Configuration to paste into MyGeotab
 
-## Quick Start Files
+**Try it:**
+1. Copy content of `simple-test-config.json`
+2. Go to MyGeotab: Administration → System → System Settings → Add-Ins
+3. Click "New Add-In" → "Configuration" tab
+4. Paste and save
 
-### [hello-world-embedded.json](./hello-world-embedded.json)
-**Start here!** A minimal working Add-In that proves everything works. Just copy-paste into MyGeotab.
+### minimal-test.*
+Even simpler example with just the basics.
 
-Shows:
-- Success message
-- Your username and database from the API
-- Demonstrates the required lifecycle methods
+**Files:**
+- `minimal-test.html` - Minimal HTML
+- `minimal-test.js` - Minimal JavaScript
+- `minimal-test-config.json` - Configuration
 
-**This is guaranteed to work.** If it doesn't, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).
+## How to Use
 
-### [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
-Comprehensive guide for fixing common Add-In issues:
-- "Issue Loading This Page" error
-- Menu items not appearing
-- GitHub Pages problems
-- JavaScript errors
-- Step-by-step debugging
+**Copy and modify:**
+1. Copy one of these examples to your own repo
+2. Modify the HTML/JS to do what you want
+3. Enable GitHub Pages on your repo
+4. Update the config JSON with your GitHub Pages URL
+5. Install in MyGeotab
 
-## Examples
+**Or tell AI:**
+```
+Use the geotab-addins skill.
 
-### [Simple Dashboard](./simple-dashboard/)
-**Difficulty**: Beginner
-
-A complete Add-In that displays:
-- Total vehicle count
-- Active vehicles today
-- Recent trips
-- Vehicle list with click-to-details
-
-**Features**:
-- Full lifecycle implementation (initialize, focus, blur)
-- Auto-refresh every 60 seconds
-- Clean, modern UI
-- GitHub Pages deployment instructions
-- Embedded source code option
-
-**Use this as a template** for your own Add-Ins!
-
-## How to Use These Examples
-
-### Option 1: GitHub Pages (Recommended)
-
-1. Copy an example to your own GitHub repository
-2. Enable GitHub Pages in repository settings
-3. Update the configuration JSON with your GitHub Pages URL
-4. Install in MyGeotab
-
-### Option 2: Embedded Source Code
-
-1. Use Claude or another AI to convert the files to embedded JSON:
-   ```text
-   Convert these Add-In files (index.html, styles.css, app.js)
-   into an embedded Geotab Add-In JSON configuration.
-   ```
-2. Paste the generated JSON into MyGeotab
-
-## Vibe Coding with Add-Ins
-
-Instead of manually editing code, use AI assistants to build and modify Add-Ins:
-
-### Start from an Example
-```text
-I want to modify the simple-dashboard Add-In to show a map
-of vehicle locations. Add Leaflet.js and plot each vehicle.
+Create a Geotab Add-In similar to simple-test but with [your features].
 ```
 
-### Build from Scratch
-```text
-Create a Geotab Add-In that:
-1. Shows a list of drivers
-2. Displays their safety scores
-3. Highlights drivers with recent violations
-4. Includes a "Generate Report" button
+## Learn More
 
-Use the simple-dashboard example as a reference for structure.
-```
-
-### Debug Issues
-```text
-My Add-In is showing this error in the console:
-[paste error]
-
-Here's my code:
-[paste code]
-
-What's wrong and how do I fix it?
-```
-
-## Add-In Ideas to Build
-
-### Beginner
-- **Vehicle Status Board**: Real-time grid of all vehicles with status indicators
-- **Quick Report Generator**: One-click buttons to generate common reports
-- **Fleet Summary**: Daily statistics dashboard
-
-### Intermediate
-- **Route Optimizer**: Display trips on a map with suggestions for efficiency
-- **Maintenance Tracker**: Custom alerts for upcoming maintenance
-- **Zone Manager**: Interactive map to create and edit geofences
-
-### Advanced
-- **Custom Analytics**: Integration with external data sources
-- **Driver Scorecards**: Gamification and leaderboards
-- **Predictive Maintenance**: ML-based alerts using historical data
-
-## Resources
-
-- [Geotab Add-Ins Guide](../../guides/GEOTAB_ADDINS.md) - Complete tutorial
-- [Official Geotab Documentation](https://developers.geotab.com/myGeotab/addIns/developingAddIns/)
-- [MyGeotab API Reference](https://geotab.github.io/sdk/software/api/reference/)
-- [Add-In Generator Tool](https://github.com/Geotab/generator-addin)
-
-## Contributing
-
-Have you built a cool Add-In? Consider sharing it!
-
-1. Add it to this examples directory
-2. Include a clear README
-3. Document what it does and how to install it
-4. Include customization ideas for others
-
-**Remember**: Vibe coding means you don't need to be an expert. Use AI tools to build, modify, and understand these examples. Focus on what you want to create, not on memorizing syntax!
+See [guides/GEOTAB_ADDINS.md](../../guides/GEOTAB_ADDINS.md) for the full guide.
