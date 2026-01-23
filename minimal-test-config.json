@@ -1,0 +1,12 @@
+{
+  "name": "Minimal Test i",
+  "supportEmail": "test@example.com",
+  "version": "1.0.0",
+  "items": [{
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/minimal-test.html",
+    "path": "ActivityLink/",
+    "menuName": {
+      "en": "Minimal Test i"
+    }
+  }]
+}
