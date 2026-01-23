@@ -347,6 +347,42 @@ Make sure to call the callback in initialize!
 
 **Why this matters**: MyGeotab calls these functions automatically. If you don't implement them correctly (especially `initialize`), your Add-In might not work.
 
+### Critical: The Correct Registration Pattern
+
+For **externally-hosted Add-Ins** (GitHub Pages), you must register your Add-In using the `geotab.addin` object pattern:
+
+```javascript
+// ✅ CORRECT - Assign the function itself (no () at the end)
+geotab.addin.myAddin = function() {
+    return {
+        initialize: function(api, state, callback) {
+            // Your initialization code
+            callback();
+        },
+        focus: function(api, state) {
+            // Called when page becomes visible
+        },
+        blur: function(api, state) {
+            // Called when user leaves page
+        }
+    };
+};  // Notice: NO () here!
+```
+
+```javascript
+// ❌ WRONG - Don't use immediate invocation!
+geotab.addin.myAddin = function() {
+    return {...};
+}();  // This () breaks it - MyGeotab won't call initialize()
+```
+
+**Why this matters:**
+- MyGeotab needs to **call your function** to get the Add-In object
+- If you use `()` (immediate invocation), you're assigning the object directly
+- MyGeotab won't recognize it as an Add-In and won't call `initialize()`
+
+**See the full story**: Check out [DEBUGGING_GEOTAB_ADDINS.md](DEBUGGING_GEOTAB_ADDINS.md) for the complete debugging journey that led to this discovery.
+
 ---
 
 ## Next Level: Building Real Add-Ins

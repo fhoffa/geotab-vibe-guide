@@ -421,27 +421,124 @@ Notice:
 4. MyGeotab IS capable of calling `initialize()` (proven by Heat Map)
 5. MyGeotab is NOT calling `initialize()` on our custom Add-Ins
 
-## Open Questions
+## THE SOLUTION! 🎉
 
-1. **What makes the Heat Map special?** Why does it work when our identical code doesn't?
+After extensive testing, **the issue was found**: we were using **immediate function invocation** when we shouldn't have been!
 
-2. **Is there hidden initialization code?** Is there something in vendor.js or elsewhere that's required?
+### The Wrong Pattern (What We Were Doing)
 
-3. **Does MyGeotab validate Add-Ins?** Is there some check that determines whether to call `initialize()`?
+```javascript
+geotab.addin["minimal-test"] = function() {
+    return {
+        initialize: function(api, state, callback) { ... },
+        focus: function(api, state) { ... }
+    };
+}();  // ❌ IMMEDIATE INVOCATION - This is the problem!
+```
 
-4. **Are there undocumented requirements?** The official docs don't mention any special requirements.
+The `()` at the end immediately invokes the function and assigns the **returned object** to `geotab.addin["minimal-test"]`.
 
-5. **Is this a bug in MyGeotab?** Could there be an issue with how MyGeotab discovers and initializes custom Add-Ins?
+### The Correct Pattern
 
-## Next Steps for Future Debugging
+```javascript
+geotab.addin["minimal-test"] = function() {
+    return {
+        initialize: function(api, state, callback) { ... },
+        focus: function(api, state) { ... }
+    };
+};  // ✅ NO INVOCATION - Assign the function itself!
+```
 
-If you encounter this same issue, here are some things to try:
+**Without** the `()` at the end, we assign the **function itself** to `geotab.addin["minimal-test"]`, and MyGeotab calls that function when it's ready.
 
-1. **Start with official examples** - Get an official Geotab Add-In working first
-2. **Incremental modifications** - Modify the official example piece by piece to understand what breaks it
-3. **Compare vendor.js** - Examine the vendor.js file from working Add-Ins for required initialization
-4. **Network analysis** - Use browser dev tools to compare network requests between working and non-working Add-Ins
-5. **Contact Geotab support** - This may be a bug or undocumented requirement that needs official clarification
+### Why This Matters
+
+MyGeotab's Add-In system works like this:
+
+1. Your JavaScript file loads and registers: `geotab.addin.yourname = function() { ... }`
+2. MyGeotab detects the registered function
+3. **MyGeotab calls your function** to get the Add-In object
+4. MyGeotab then calls the `initialize()` method on that object
+
+When we used immediate invocation `()`, we were giving MyGeotab the object directly instead of a function. MyGeotab never called our function (because it wasn't a function anymore!), so it never got to the initialization step.
+
+### What We Learned From Heat Map
+
+Looking closely at the working Heat Map code:
+
+```javascript
+geotab.addin.heatmap = function() {
+    // ... lots of code ...
+    return {
+        initialize: function(e, t, n) { ... },
+        focus: function(e, t) { ... }
+    };
+};  // Notice: NO () at the end!
+```
+
+The Heat Map uses the correct pattern - no immediate invocation!
+
+### The Fix
+
+Simply remove the `()` from the end of your Add-In registration:
+
+**Before:**
+```javascript
+geotab.addin.myAddin = function() { return {...}; }();  // ❌ Wrong
+```
+
+**After:**
+```javascript
+geotab.addin.myAddin = function() { return {...}; };  // ✅ Correct
+```
+
+## Verified Working Example
+
+Here's the corrected minimal-test.js that now works:
+
+```javascript
+"use strict";
+
+geotab.addin["minimal-test"] = function() {
+    console.log("minimal-test loading");
+
+    return {
+        initialize: function(api, state, callback) {
+            console.log("🎉🎉🎉 INITIALIZE CALLED!");
+            document.body.innerHTML = "<h1>SUCCESS!</h1><pre id='output'></pre>";
+
+            var output = document.getElementById("output");
+            output.textContent = "Initialize called!\n";
+
+            if (api) {
+                api.getSession(function(cred) {
+                    output.textContent += "User: " + cred.userName + "\n";
+                    output.textContent += "Database: " + cred.database + "\n";
+                });
+
+                api.call("Get", {typeName: "Device"}, function(devices) {
+                    output.textContent += "Vehicles: " + devices.length + "\n";
+                });
+            }
+
+            callback();
+        },
+
+        focus: function(api, state) {
+            console.log("focus called");
+        }
+    };
+};  // ✅ No () here!
+
+console.log("minimal-test registered");
+```
+
+This now successfully:
+- ✅ Loads and registers the Add-In
+- ✅ Gets `initialize()` called by MyGeotab
+- ✅ Receives the API object
+- ✅ Can call `api.getSession()` and `api.call()`
+- ✅ Displays user info and vehicle count
 
 ## Conclusion
 
@@ -450,12 +547,10 @@ We successfully:
 - Configured HTTPS properly
 - Got official Geotab Add-Ins working
 - Replicated the Heat Map to our own hosting
+- **Identified and fixed the initialization issue**
+- **Created working custom Add-In code!**
 
-We did NOT succeed at:
-- Creating custom Add-In code that MyGeotab will initialize
-- Understanding why our code doesn't work when Heat Map does
-
-This remains an unsolved mystery. The good news is that copying and modifying official Geotab examples DOES work, so that's currently the recommended approach for building custom Add-Ins.
+The key lesson: **Don't use immediate function invocation** when registering Geotab Add-Ins. Let MyGeotab call your function when it's ready.
 
 ## Resources
 
