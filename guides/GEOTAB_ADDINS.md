@@ -354,21 +354,192 @@ You can't run Add-Ins locally (they need MyGeotab's API context), but you can:
 
 ---
 
+## Security Model
+
+Understanding how Add-Ins work within MyGeotab's security model is important for building reliable integrations.
+
+### Why HTTPS is Required
+
+**All Add-In files must be served over HTTPS with valid certificates.**
+
+This is a non-negotiable security requirement because:
+- Add-Ins run in the same browser context as MyGeotab
+- They have access to sensitive fleet data through the API
+- Mixed content (HTTPS page loading HTTP resources) is blocked by browsers
+- It protects against man-in-the-middle attacks
+
+**GitHub Pages provides free HTTPS** - this is why we recommend it for hosting.
+
+### What Add-Ins Can Access
+
+**Add-Ins have full access to:**
+- The MyGeotab API through the `api` object
+- All data your MyGeotab user account can access
+- Current session information (username, database, server)
+- Page state and navigation context
+
+**Add-Ins are limited to:**
+- Data accessible to the currently logged-in user
+- Same API permissions as the user's role
+- Read-only access to most system settings
+
+**Example:** If your user account can't view driver salary information, your Add-In can't access it either.
+
+### How the Security Works
+
+**Sandbox Model:**
+1. Your Add-In HTML loads in an iframe within MyGeotab
+2. MyGeotab injects the `api` object into your Add-In's context
+3. All API calls go through MyGeotab's authentication layer
+4. Your Add-In inherits the current user's permissions
+
+**Why Embedded Add-Ins are Limited:**
+- Embedded code runs in a more restricted context
+- The `api` object may not be fully initialized
+- MyGeotab strips certain code patterns for security
+- **Recommendation:** Use external hosting for anything beyond static HTML
+
+### Cross-Origin Considerations
+
+**Your Add-In's domain is different from MyGeotab's domain:**
+- This is intentional - it isolates your code
+- The `api` object handles cross-origin communication for you
+- You don't need to worry about CORS when using the API
+- External APIs you call from your Add-In may have their own CORS policies
+
+**Example:**
+```javascript
+// ✅ This works - API handles cross-origin
+api.call("Get", {typeName: "Device"}, function(devices) {
+    console.log(devices);
+});
+
+// ✅ This also works if the external API allows it
+fetch("https://api.weather.com/data")
+    .then(response => response.json())
+    .then(data => console.log(data));
+
+// ❌ This might fail due to CORS from the external API
+fetch("https://restricted-api.com/data")  // May be blocked
+```
+
+### Best Practices for Security
+
+**1. Never store credentials in your Add-In code**
+- Use MyGeotab's session - it's already authenticated
+- If you need external API keys, use server-side proxies
+
+**2. Validate all user input**
+- Even though Add-Ins run in your fleet's MyGeotab
+- Always sanitize data before displaying it
+
+**3. Use HTTPS for all external resources**
+- CDN libraries (jQuery, Leaflet, etc.) must use HTTPS
+- Any images or assets must be HTTPS
+
+**4. Don't expose sensitive data in URLs**
+- GitHub Pages URLs are public
+- Anyone can view your HTML/JS source code
+- Never hardcode API keys or passwords
+
+**5. Test with different user roles**
+- Your Add-In might work for admin users but fail for limited users
+- Handle API errors gracefully when permissions are denied
+
+### What This Means for Development
+
+**Your Add-In code is public:**
+- GitHub Pages serves your files publicly
+- Anyone can view the source code
+- Don't include secrets or proprietary logic you want to hide
+
+**For truly private logic:**
+- Host your own HTTPS server with authentication
+- Or use a cloud function that requires API keys
+- The Add-In UI can call your secure backend
+
+**User permissions matter:**
+- An Add-In showing vehicle locations works for users with vehicle access
+- It fails for users restricted to only seeing reports
+- Always handle permission errors gracefully
+
+---
+
+## Learn from Official Examples
+
+The Geotab SDK includes several working Add-In examples you can study and modify.
+
+### Heat Map Example
+
+The **Heat Map Add-In** is an excellent reference - it's a complete, production-quality example:
+
+**View it here:** [Geotab Heat Map Add-In](https://github.com/Geotab/sdk-addin-samples/tree/master/addin-heatmap)
+
+**What it demonstrates:**
+- External hosting with all files in a `dist/` folder
+- Complex API usage (fetching LogRecords, ExceptionEvents)
+- Integration with Leaflet.js mapping library
+- Proper lifecycle method implementation
+- User interface with controls and filters
+- MultiCall API usage for performance
+
+**Try it yourself:**
+1. Go to the repository above
+2. Use the CDN-hosted version:
+```json
+{
+  "name": "Heat Map",
+  "version": "1.0.0",
+  "items": [{
+    "url": "https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-heatmap/dist/heatmap.html",
+    "path": "ActivityLink/",
+    "menuName": {"en": "Heat Map"}
+  }]
+}
+```
+3. Install it in MyGeotab and see how it works
+4. Study the source code to understand the patterns
+
+### More Official Examples
+
+**Browse all examples:** [Geotab SDK Add-In Samples](https://github.com/Geotab/sdk-addin-samples)
+
+The repository includes:
+- **Import Groups** - Shows how to add custom buttons
+- **Proximity** - Demonstrates zone/geofence calculations
+- **Engine Data Profile** - Charts engine diagnostic data
+- **And more...**
+
+**How to use these examples:**
+1. Browse the repository to find one similar to what you want to build
+2. Study the code to understand the patterns
+3. Copy the example and modify it for your needs
+4. Host on your own GitHub Pages
+5. Test and iterate
+
+---
+
 ## Resources
 
 ### Working Examples in This Repository
-- `simple-test.html` / `simple-test.js` - Minimal working Add-In
-- `minimal-test.html` / `minimal-test.js` - Even simpler example
+- `simple-test.html` / `simple-test.js` - Minimal working Add-In (tested)
+- `minimal-test.html` / `minimal-test.js` - Even simpler example (tested)
+
+### Official Examples to Learn From
+- **[Heat Map Add-In](https://github.com/Geotab/sdk-addin-samples/tree/master/addin-heatmap)** - Complete mapping example (recommended starting point)
+- **[All SDK Samples](https://github.com/Geotab/sdk-addin-samples)** - Browse official examples
 
 ### Official Documentation
 - [Geotab Add-In Developer Guide](https://developers.geotab.com/myGeotab/addIns/developingAddIns/)
 - [Geotab API Reference](https://geotab.github.io/sdk/software/api/reference/)
-- [Add-In Samples Repository](https://github.com/Geotab/sdk-addin-samples)
+- [Geotab SDK](https://github.com/Geotab/sdk) - Complete SDK and samples
 
 ### Tools
 - [GitHub Pages](https://pages.github.com/) - Free HTTPS hosting
-- [Geotab SDK](https://github.com/Geotab/sdk) - Complete SDK and samples
+- [Geotab Add-In Generator](https://github.com/Geotab/generator-addin) - Scaffold new projects
 
 ---
 
-**Ready to build your first Add-In? Start with the Simple Test example above and modify it to suit your needs!**
+**Ready to build your first Add-In?**
+
+Start with the Simple Test example above, or copy and modify the official Heat Map example to suit your needs!
