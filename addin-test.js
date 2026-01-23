@@ -1,11 +1,8 @@
-// Geotab Add-In - API Test
-// Must use geotab.addin.[addinname] pattern
+// Geotab Add-In - Testing multiple name patterns
+console.log('addin-test.js v11.0 loading...');
 
-console.log('addin-test.js v10.0 loading...');
-
-// CRITICAL: Name must match the Add-In name in the config
-// Config name: "API Test" -> becomes "apitest" (lowercase, no spaces)
-geotab.addin.apitest = function() {
+// Create the addin object structure
+var addinImpl = function() {
     let output = '';
 
     function log(msg) {
@@ -18,7 +15,7 @@ geotab.addin.apitest = function() {
         }
     }
 
-    log('v10.0 - geotab.addin.apitest loading...');
+    log('v11.0 - Trying multiple name patterns...');
 
     return {
         initialize: function(api, state, callback) {
@@ -55,6 +52,13 @@ geotab.addin.apitest = function() {
             log('BLUR called');
         }
     };
-}();
+};
 
-console.log('geotab.addin.apitest registered!');
+// Register under MULTIPLE possible names
+geotab.addin.apitest = addinImpl();
+geotab.addin['api-test'] = addinImpl();
+geotab.addin.addintest = addinImpl();
+geotab.addin['addin-test'] = addinImpl();
+
+console.log('v11.0 - Registered as: apitest, api-test, addintest, addin-test');
+console.log('Available addins:', Object.keys(geotab.addin));
