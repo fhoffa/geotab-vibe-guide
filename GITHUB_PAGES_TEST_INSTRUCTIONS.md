@@ -1,35 +1,41 @@
 # GitHub Pages Add-In Test Instructions
 
-Follow these steps to test if GitHub Pages hosting actually works for Geotab Add-Ins.
+## For Repo Owner (fhoffa) - First Time Setup
 
-## Step 1: Enable GitHub Pages
+### Step 1: Enable GitHub Pages on YOUR Repo
 
 1. Go to https://github.com/fhoffa/geotab-vibe-guide
 2. Click **Settings** (top right)
 3. Click **Pages** in the left sidebar
 4. Under "Source":
    - Select **Deploy from a branch**
-   - Branch: **main** (or whatever your default branch is)
+   - Branch: **claude/add-geotab-guide-ZOdUk** (or merge to main first)
    - Folder: **/ (root)**
 5. Click **Save**
-6. **Wait 1-2 minutes** for GitHub to deploy
+6. **Wait 2-3 minutes** for GitHub to deploy
 
-GitHub will show you a message like:
+You'll see: `Your site is live at https://fhoffa.github.io/geotab-vibe-guide/`
+
+### Step 2: Verify It Deployed
+
+Open in your browser:
 ```
-Your site is live at https://fhoffa.github.io/geotab-vibe-guide/
+https://fhoffa.github.io/geotab-vibe-guide/addin-test.html
 ```
 
-## Step 2: Verify the Page Works
+You should see a purple gradient page. If 404, wait another minute.
 
-1. Open a new browser tab
-2. Go to: https://fhoffa.github.io/geotab-vibe-guide/addin-test.html
-3. You should see a purple gradient page with "GitHub Pages Add-In Test"
-4. If you see it, GitHub Pages is working! ✅
-5. If you get a 404, wait another minute and try again
+### Step 3: Test in MyGeotab
 
-## Step 3: Install Add-In in MyGeotab
+Use the config in `addin-test-config.json` and follow the reader instructions below.
 
-1. Copy the entire contents of `addin-test-config.json`:
+---
+
+## For Readers - Testing with the Hosted Example
+
+**Quick test using the example hosted on fhoffa's repo** (no setup needed!)
+
+### Step 1: Copy This Configuration
 
 ```json
 {
@@ -46,22 +52,26 @@ Your site is live at https://fhoffa.github.io/geotab-vibe-guide/
 }
 ```
 
-2. Go to MyGeotab → **Administration → System → System Settings → Add-Ins**
-3. Click **"New Add-In"**
-4. Switch to **"Configuration"** tab
-5. Paste the JSON
-6. Click **"Save"**
-7. **Refresh your browser page** (important!)
+### Step 2: Install in MyGeotab
 
-## Step 4: Test the Add-In
+1. Go to MyGeotab → **Administration → System → System Settings → Add-Ins**
+2. Click **"New Add-In"**
+3. Switch to **"Configuration"** tab
+4. Paste the JSON above
+5. Click **"Save"**
+6. **Refresh your browser page** (important!)
+
+### Step 3: Test the Add-In
 
 1. Look for **"GitHub Test"** in the left navigation menu (after Activity)
 2. Click it
-3. You should see the purple page load
+3. You should see a purple gradient page load inside MyGeotab
 
-**Check the debug log at the bottom. You should see:**
+### Step 4: Check the Results
 
-✅ Expected (SUCCESS):
+**Look at the debug log at the bottom of the page.**
+
+**✅ SUCCESS looks like this:**
 ```
 [time] 📄 Page loaded from GitHub Pages
 [time] 🔍 Waiting for MyGeotab to call initialize()...
@@ -70,37 +80,116 @@ Your site is live at https://fhoffa.github.io/geotab-vibe-guide/
 [time] Calling api.getSession()...
 [time] ✅ Got session: your.email@example.com
 [time] Calling api.call("Get", {typeName: "Device"})...
-[time] ✅ Loaded XX vehicles
+[time] ✅ Loaded 25 vehicles
 ```
 
-❌ If you see this (FAILURE):
+**And you should see at the top:**
+- Your MyGeotab username
+- Your database name
+- Your vehicle count
+- Current time
+
+**❌ FAILURE looks like this:**
 ```
 [time] 📄 Page loaded from GitHub Pages
 [time] 🔍 Waiting for MyGeotab to call initialize()...
-(nothing else - initialize never called)
+(nothing else - stuck here forever)
 ```
 
-## Step 5: Report Results
+---
 
-Tell me:
-1. ✅ Did GitHub Pages deploy? (Could you access the page in a regular browser?)
-2. ✅ Did the Add-In appear in MyGeotab menu?
-3. ✅ Did initialize() get called? (Check the debug log)
-4. ✅ Did you see your username and vehicle count?
+## For Readers - Setting Up Your Own GitHub Pages Add-In
 
-**Copy the entire debug log and send it to me!**
+Once you've confirmed the test works, here's how to create your own:
+
+### Step 1: Create a New GitHub Repository
+
+1. Go to https://github.com/new
+2. Name it something like: `geotab-fleet-dashboard`
+3. Make it **Public** (required for free GitHub Pages)
+4. Check **"Add a README file"**
+5. Click **"Create repository"**
+
+### Step 2: Add Your Add-In Files
+
+1. In your new repo, click **"Add file"** → **"Create new file"**
+2. Name it: `index.html`
+3. Copy the contents from: https://raw.githubusercontent.com/fhoffa/geotab-vibe-guide/main/examples/addins/github-pages-example/index.html
+4. Click **"Commit new file"**
+
+Repeat for:
+- `styles.css` (from the github-pages-example folder)
+- `app.js` (from the github-pages-example folder)
+
+### Step 3: Enable GitHub Pages on YOUR Repo
+
+1. In **your** repository, click **Settings**
+2. Click **Pages** in the left sidebar
+3. Under "Source":
+   - Branch: **main**
+   - Folder: **/ (root)**
+4. Click **Save**
+5. **Wait 2-3 minutes**
+
+You'll see: `Your site is live at https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/`
+
+### Step 4: Create Your Add-In Config
+
+```json
+{
+    "name": "MyFleetDashboard",
+    "supportEmail": "your.email@example.com",
+    "version": "1.0",
+    "items": [{
+        "url": "https://YOUR-USERNAME.github.io/YOUR-REPO-NAME/",
+        "path": "ActivityLink",
+        "menuName": {
+            "en": "My Fleet Dashboard"
+        }
+    }]
+}
+```
+
+**Replace:**
+- `YOUR-USERNAME` with your GitHub username
+- `YOUR-REPO-NAME` with your repository name
+
+### Step 5: Install in MyGeotab
+
+Same as before:
+1. Administration → System → System Settings → Add-Ins
+2. New Add-In → Configuration tab
+3. Paste your JSON
+4. Save and refresh
+
+### Step 6: Make Changes
+
+To update your Add-In:
+1. Edit `index.html`, `styles.css`, or `app.js` in GitHub
+2. Commit changes
+3. Wait 1-2 minutes for GitHub Pages to redeploy
+4. Refresh your MyGeotab page
+
+**No need to touch the Add-In config again!** It always loads the latest version from GitHub Pages.
+
+---
 
 ## Troubleshooting
 
 **404 Error on GitHub Pages URL**
-- Wait 2-3 minutes after enabling GitHub Pages
-- Make sure the branch is "main" (or your default branch name)
-- Verify the file `addin-test.html` is in the root of the repo
+- Wait 3-5 minutes after enabling GitHub Pages
+- Verify your repo is **Public**
+- Make sure files are in the root (not in a subfolder)
 
 **Add-In doesn't appear in menu**
 - Did you refresh the browser after saving?
 - Check browser console for errors (F12)
 
-**Page loads but debug log is empty**
-- Open browser console (F12) and look for errors
-- Verify the page is actually loading from GitHub (check URL bar)
+**Page loads but `initialize()` never called**
+- This means GitHub Pages works but MyGeotab isn't calling lifecycle methods
+- Check browser console for JavaScript errors
+- Verify your `initialize()`, `focus()`, and `blur()` functions are defined
+
+**"Mixed Content" or CORS errors**
+- Make sure your GitHub Pages URL uses HTTPS
+- Don't try to load HTTP resources (images, scripts) from your page
