@@ -51,7 +51,7 @@ Add-Ins extend MyGeotab with custom functionality. There are two types:
 - Quick actions like "Generate Report" or "Export Data"
 - Context-aware based on what page you're viewing
 
-**This guide focuses on Page Add-Ins** - they're more versatile and easier to build.
+**This guide focuses on Page Add-Ins** - they're a good starting point for extending MyGeotab.
 
 **Example:** A safety dashboard showing today's speeding events, ranked drivers, and export to CSV.
 

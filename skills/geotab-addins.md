@@ -25,36 +25,6 @@ Geotab Add-Ins are custom pages that integrate directly into the MyGeotab interf
 - Very limited - mainly for static content
 - Avoid for anything beyond simple HTML display
 
-## Critical Pattern: DO NOT Use Immediate Invocation
-
-This is the #1 mistake when building Add-Ins.
-
-### ❌ WRONG Pattern
-```javascript
-geotab.addin["my-addin"] = function() {
-    return {
-        initialize: function(api, state, callback) { /*...*/ },
-        focus: function(api, state) { /*...*/ }
-    };
-}();  // ❌ This () breaks everything!
-```
-
-### ✅ CORRECT Pattern
-```javascript
-geotab.addin["my-addin"] = function() {
-    return {
-        initialize: function(api, state, callback) { /*...*/ },
-        focus: function(api, state) { /*...*/ }
-    };
-};  // ✅ No () - let MyGeotab call the function
-```
-
-### Why This Matters
-- MyGeotab expects a **function** it can call
-- With `()` you assign the **object** directly
-- MyGeotab won't recognize it and won't call `initialize()`
-- This causes silent failure - no errors, just nothing happens
-
 ## Required Structure
 
 ### File Structure
@@ -122,10 +92,13 @@ geotab.addin["your-addin-name"] = function() {
             console.log("Add-In blurred");
         }
     };
-};  // NO () here!
+};  // Note: No () here - assign the function, not its result
+    // MyGeotab will call this function when ready
 
 console.log("Add-In registered");
 ```
+
+**Pattern Note:** Don't use immediate invocation `}();` - MyGeotab expects a function it can call, not the returned object.
 
 ### MyGeotab Configuration
 ```json
@@ -306,11 +279,7 @@ Or in configuration:
 
 ## Common Mistakes to Avoid
 
-### 1. Immediate Function Invocation
-**Problem:** Using `}();` instead of `};`
-**Solution:** Remove the `()` - let MyGeotab call your function
-
-### 2. Forgetting to Call callback()
+### 1. Forgetting to Call callback()
 **Problem:** Add-In hangs during initialization
 **Solution:** Always call `callback()` at the end of `initialize()`
 
@@ -336,7 +305,7 @@ initialize: function(api, state, callback) {
 }
 ```
 
-### 3. Inconsistent Naming
+### 2. Inconsistent Naming
 **Problem:** Add-In name doesn't match between JS and configuration
 **Solution:** Use exact same name in both places
 
@@ -353,7 +322,7 @@ geotab.addin["fleet-dashboard"] = function() { /*...*/ };
 }
 ```
 
-### 4. Not Handling Errors
+### 3. Not Handling Errors
 **Problem:** API calls fail silently
 **Solution:** Always provide error callback
 
@@ -373,6 +342,18 @@ api.call("Get", {typeName: "Device"},
         showErrorMessage("Could not load vehicles. Please try again.");
     }
 );
+```
+
+### 4. Using Immediate Invocation
+**Problem:** Using `}();` instead of `};` when registering the Add-In
+**Solution:** Assign the function itself, not its result
+
+```javascript
+// ❌ Wrong
+geotab.addin["name"] = function() { return {...}; }();
+
+// ✅ Correct
+geotab.addin["name"] = function() { return {...}; };
 ```
 
 ### 5. Using Modern JS Features
