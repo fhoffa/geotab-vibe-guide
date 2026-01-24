@@ -20,17 +20,21 @@ Geotab Add-Ins are custom pages that integrate directly into the MyGeotab interf
 
 ## Two Deployment Types
 
-**External Hosted (Recommended)**
-- Files hosted on GitHub Pages or HTTPS server
-- Full access to MyGeotab JavaScript API
-- Easy to develop and iterate
-- Use this for any Add-In that needs API access
+**External Hosted (Recommended for Development)**
+- Files hosted on any HTTPS server (GitHub Pages, your own server, cloud storage, CDN, etc.)
+- Can serve static files or dynamically generated content
+- Easier to develop, test, and debug
+- Faster iteration (just update files on server)
+- Can use separate HTML, CSS, and JS files
+- Best for active development and frequent updates
 
-**Embedded**
-- Code embedded in JSON configuration
-- No external hosting required
-- Very limited - mainly for static content
-- Avoid for anything beyond simple HTML display
+**Embedded (No Hosting Required)**
+- Code embedded directly in JSON configuration
+- No external hosting needed at all
+- Full access to MyGeotab JavaScript API (same as external)
+- Perfect for simple add-ins, prototypes, and sharing
+- Everything in one JSON file - easy to copy-paste
+- Requires JSON string escaping and everything must be inline
 
 ## Required Structure
 
@@ -107,7 +111,109 @@ console.log("Add-In registered");
 
 **Pattern Note:** Don't use immediate invocation `}();` - MyGeotab expects a function it can call, not the returned object.
 
-### MyGeotab Configuration
+## Embedded Add-Ins (No Hosting Required)
+
+Instead of hosting files externally, you can embed everything directly in the JSON configuration using the `files` property. This eliminates the need for GitHub Pages or HTTPS hosting.
+
+### Structure
+```json
+{
+  "name": "Embedded Add-In",
+  "supportEmail": "you@example.com",
+  "version": "1.0",
+  "items": [{
+    "url": "page.html",
+    "path": "ActivityLink",
+    "menuName": {
+      "en": "My Add-In"
+    }
+  }],
+  "files": {
+    "page.html": "<html><head><title>My Add-In</title><style>body{font-family:Arial;padding:20px;}#app{font-size:2em;}</style></head><body><div id='app'>Loading...</div><script>geotab.addin['myapp']=function(){return{initialize:function(api,state,callback){document.getElementById('app').textContent='Connected!';api.call('Get',{typeName:'Device'},function(devices){document.getElementById('app').textContent='Vehicles: '+devices.length;});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Add-in registered');</script></body></html>"
+  }
+}
+```
+
+**Critical Points:**
+- Use `"url": "page.html"` in items (NOT `"page"`)
+- Remove trailing slash from path: `"ActivityLink"` not `"ActivityLink/"`
+- **All CSS and JavaScript MUST be inlined** in the HTML using `<style>` and `<script>` tags
+- **Cannot use separate file references** like `<script src="app.js">` - they will cause 404 errors
+- Everything must be in a single HTML string
+
+### Complete Working Example
+
+This embedded add-in shows vehicle count using the MyGeotab API:
+
+```json
+{
+  "name": "Embedded Fleet Stats",
+  "supportEmail": "test@example.com",
+  "version": "1.0",
+  "items": [{
+    "url": "fleet-stats.html",
+    "path": "ActivityLink",
+    "menuName": {
+      "en": "Fleet Stats"
+    }
+  }],
+  "files": {
+    "fleet-stats.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Stats</title><style>body{font-family:Arial,sans-serif;padding:20px;background:#f5f5f5;}h1{color:#333;}.info{margin:15px 0;padding:10px;background:#e8f4f8;border-radius:4px;}.stat{font-size:2em;font-weight:bold;color:#2c3e50;margin:10px 0;}.error{color:#d9534f;padding:10px;background:#f8d7da;border-radius:4px;}</style></head><body><h1>Fleet Statistics</h1><div id='status'>Initializing...</div><div id='info'></div><script>geotab.addin['embedded-fleet']=function(){return{initialize:function(api,state,callback){var statusEl=document.getElementById('status');var infoEl=document.getElementById('info');statusEl.textContent='Connected to MyGeotab!';api.getSession(function(session){var html='<div class=\"info\"><strong>User:</strong> '+session.userName+'<br><strong>Database:</strong> '+session.database+'</div>';infoEl.innerHTML=html;api.call('Get',{typeName:'Device'},function(vehicles){html+='<div class=\"info\"><div class=\"stat\">'+vehicles.length+'</div><strong>Total Vehicles</strong></div>';infoEl.innerHTML=html;},function(error){html+='<div class=\"error\">Error: '+error+'</div>';infoEl.innerHTML=html;});});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Embedded fleet stats registered');</script></body></html>"
+  }
+}
+```
+
+### Important Notes for Embedded Add-Ins
+
+**Everything Must Be Inlined:**
+- ❌ **Cannot use** `<script src="app.js">` or `<link rel="stylesheet" href="styles.css">`
+- ✅ **Must use** inline `<script>` and `<style>` tags within the HTML
+- All JavaScript and CSS must be embedded directly in the HTML string
+- External file references will cause 404 errors and MIME type errors
+
+**JSON String Escaping:**
+- Double quotes must be escaped: `\"` instead of `"`
+- Single quotes are safer for HTML attributes: `<div class='card'>` instead of `<div class="card">`
+- Newlines should be removed (use minified code)
+- Backslashes must be escaped: `\\` instead of `\`
+
+**Example escaping:**
+```javascript
+// Original JavaScript
+var message = "Hello \"World\"";
+
+// In JSON string
+"var message=\"Hello \\\"World\\\"\";"
+```
+
+**API Access:**
+- Full MyGeotab API access works exactly like external add-ins
+- Same `api.call()`, `api.getSession()`, etc.
+- All lifecycle methods work identically
+
+**Development Workflow:**
+1. Develop with external hosting first (easier to debug)
+2. When ready, convert to embedded format
+3. Minify JavaScript to reduce size
+4. Escape quotes and special characters
+5. Test in MyGeotab
+
+**When to Use Embedded:**
+- Quick prototypes and demos
+- Simple add-ins that won't change often
+- Easy sharing (just copy-paste JSON)
+- No access to hosting or GitHub
+- Educational examples
+- Self-contained tools
+
+**When to Use External Hosting:**
+- Active development (easier debugging)
+- Frequent updates needed
+- Large add-ins with many files
+- Team collaboration
+- Version control desired
+
+### MyGeotab Configuration (External Hosting)
 ```json
 {
   "name": "Your Add-In Name",

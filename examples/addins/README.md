@@ -4,7 +4,7 @@ Working examples you can use right away.
 
 ## Files
 
-### simple-test.*
+### simple-test.* (External Hosted)
 Complete working Add-In showing:
 - Username and database
 - Vehicle count
@@ -15,13 +15,15 @@ Complete working Add-In showing:
 - `simple-test.js` - JavaScript with API calls
 - `simple-test-config.json` - Configuration to paste into MyGeotab
 
+**Type:** External hosted (requires HTTPS hosting)
+
 **Try it:**
 1. Copy content of `simple-test-config.json`
 2. Go to MyGeotab: Administration → System → System Settings → Add-Ins
 3. Click "New Add-In" → "Configuration" tab
 4. Paste and save
 
-### minimal-test.*
+### minimal-test.* (External Hosted)
 Even simpler example with just the basics.
 
 **Files:**
@@ -29,13 +31,40 @@ Even simpler example with just the basics.
 - `minimal-test.js` - Minimal JavaScript
 - `minimal-test-config.json` - Configuration
 
+**Type:** External hosted (requires HTTPS hosting)
+
+### embedded-* (No Hosting Required!)
+Embedded add-in with everything in the JSON configuration.
+
+**Files:**
+- `embedded-config.json` - Ready to paste (no hosting needed!)
+- `EMBEDDED_README.md` - Complete documentation
+
+**Type:** Embedded (no hosting required)
+
+**Why use this?**
+- ✅ No external hosting setup needed
+- ✅ No waiting for deployment
+- ✅ Just copy-paste JSON and it works
+- ✅ Full MyGeotab API access
+- ✅ Perfect for quick tests and prototypes
+
+**Try it:**
+1. Copy entire contents of `embedded-config.json`
+2. Go to MyGeotab: Administration → System → System Settings → Add-Ins
+3. Click "New Add-In" → "Configuration" tab
+4. Paste and save
+5. Refresh page
+
+See `EMBEDDED_README.md` for details.
+
 ## How to Use
 
-**Copy and modify:**
+**Copy and modify (for external hosted examples):**
 1. Copy one of these examples to your own repo
 2. Modify the HTML/JS to do what you want
-3. Enable GitHub Pages on your repo
-4. Update the config JSON with your GitHub Pages URL
+3. Host the files on any HTTPS server (GitHub Pages, your server, etc.)
+4. Update the config JSON with your file URLs
 5. Install in MyGeotab
 
 **Or tell AI:**
