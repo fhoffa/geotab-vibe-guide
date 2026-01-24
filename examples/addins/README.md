@@ -34,7 +34,7 @@ Even simpler example with just the basics.
 **Type:** External hosted (requires GitHub Pages)
 
 ### embedded-* (No Hosting Required!)
-**NEW:** Embedded add-in with everything in the JSON configuration.
+Embedded add-in with everything in the JSON configuration.
 
 **Files:**
 - `embedded-source.html` - Readable development version
