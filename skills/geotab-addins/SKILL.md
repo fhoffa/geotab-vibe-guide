@@ -252,6 +252,36 @@ If you must use React in embedded add-ins:
 - Use inline styles exclusively, not Tailwind or CSS-in-JS
 - Test extensively in the actual MyGeotab environment
 
+## CORS and Iframe Access for Cloud IDEs
+
+**Important for Vibe Coding Platforms:** When developing external add-ins using cloud-based IDEs like Firebase Studio, Replit, Gitpod, or similar platforms, you may encounter CORS and iframe embedding issues.
+
+**Common Problems:**
+1. **X-Frame-Options errors** - The cloud IDE's preview may block embedding in MyGeotab's iframe
+2. **CORS policy blocks** - API calls from your add-in may be blocked
+3. **Mixed content warnings** - HTTP content in HTTPS MyGeotab context
+
+**Solutions:**
+
+1. **Request iframe embedding permissions** in your cloud IDE settings:
+   - Firebase Studio: Check project settings for iframe/embedding options
+   - Replit: Enable "Allow embedding" in the deployment settings
+   - Look for X-Frame-Options or Content-Security-Policy settings
+
+2. **Use proper HTTPS URLs** - MyGeotab requires HTTPS for external add-ins
+
+3. **For development/testing**, consider:
+   - Using embedded add-ins (no CORS issues since code runs in MyGeotab's context)
+   - Deploying to GitHub Pages or another static host for testing
+   - Using a tunnel service (ngrok, cloudflared) with proper headers
+
+4. **If your cloud IDE blocks iframe embedding**, you may need to:
+   - Deploy the built files to a separate hosting service
+   - Use the embedded add-in approach during development
+   - Configure custom headers if your platform allows it
+
+**Note:** Embedded add-ins avoid these issues entirely since the code runs within MyGeotab's own context - no cross-origin requests needed.
+
 ### MyGeotab Configuration (External Hosting)
 ```json
 {
