@@ -115,6 +115,31 @@ console.log("Add-In registered");
 
 Instead of hosting files externally, you can embed everything directly in the JSON configuration using the `files` property. This eliminates the need for GitHub Pages or HTTPS hosting.
 
+### Critical: CSS Must Be Inline in Embedded Add-Ins
+
+**IMPORTANT:** When creating embedded add-ins, you CANNOT use `<style>` tags in the `<head>`. MyGeotab may strip or ignore these styles. Instead, you MUST use inline styles directly on each element.
+
+**This will NOT work:**
+```html
+<head>
+  <style>
+    .card { background: white; padding: 20px; }
+  </style>
+</head>
+<body>
+  <div class="card">Content</div>
+</body>
+```
+
+**This WILL work:**
+```html
+<body>
+  <div style="background:white;padding:20px;">Content</div>
+</body>
+```
+
+For embedded add-ins, build your HTML strings with inline styles in JavaScript, or use the `style` attribute directly on every element that needs styling.
+
 ### Structure
 ```json
 {
@@ -129,7 +154,7 @@ Instead of hosting files externally, you can embed everything directly in the JS
     }
   }],
   "files": {
-    "page.html": "<html><head><title>My Add-In</title><style>body{font-family:Arial;padding:20px;}#app{font-size:2em;}</style></head><body><div id='app'>Loading...</div><script>geotab.addin['myapp']=function(){return{initialize:function(api,state,callback){document.getElementById('app').textContent='Connected!';api.call('Get',{typeName:'Device'},function(devices){document.getElementById('app').textContent='Vehicles: '+devices.length;});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Add-in registered');</script></body></html>"
+    "page.html": "<html><head><title>My Add-In</title></head><body style='font-family:Arial;padding:20px;'><div id='app' style='font-size:2em;'>Loading...</div><script>geotab.addin['myapp']=function(){return{initialize:function(api,state,callback){document.getElementById('app').textContent='Connected!';api.call('Get',{typeName:'Device'},function(devices){document.getElementById('app').textContent='Vehicles: '+devices.length;});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Add-in registered');</script></body></html>"
   }
 }
 ```
@@ -141,9 +166,9 @@ Instead of hosting files externally, you can embed everything directly in the JS
 - **Cannot use separate file references** like `<script src="app.js">` - they will cause 404 errors
 - Everything must be in a single HTML string
 
-### Complete Working Example
+### Complete Working Example (Inline Styles)
 
-This embedded add-in shows vehicle count using the MyGeotab API:
+This embedded add-in shows vehicle count using the MyGeotab API with inline styles:
 
 ```json
 {
@@ -158,7 +183,7 @@ This embedded add-in shows vehicle count using the MyGeotab API:
     }
   }],
   "files": {
-    "fleet-stats.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Stats</title><style>body{font-family:Arial,sans-serif;padding:20px;background:#f5f5f5;}h1{color:#333;}.info{margin:15px 0;padding:10px;background:#e8f4f8;border-radius:4px;}.stat{font-size:2em;font-weight:bold;color:#2c3e50;margin:10px 0;}.error{color:#d9534f;padding:10px;background:#f8d7da;border-radius:4px;}</style></head><body><h1>Fleet Statistics</h1><div id='status'>Initializing...</div><div id='info'></div><script>geotab.addin['embedded-fleet']=function(){return{initialize:function(api,state,callback){var statusEl=document.getElementById('status');var infoEl=document.getElementById('info');statusEl.textContent='Connected to MyGeotab!';api.getSession(function(session){var html='<div class=\"info\"><strong>User:</strong> '+session.userName+'<br><strong>Database:</strong> '+session.database+'</div>';infoEl.innerHTML=html;api.call('Get',{typeName:'Device'},function(vehicles){html+='<div class=\"info\"><div class=\"stat\">'+vehicles.length+'</div><strong>Total Vehicles</strong></div>';infoEl.innerHTML=html;},function(error){html+='<div class=\"error\">Error: '+error+'</div>';infoEl.innerHTML=html;});});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Embedded fleet stats registered');</script></body></html>"
+    "fleet-stats.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Stats</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;'>Fleet Statistics</h1><div id='status' style='margin:15px 0;'>Initializing...</div><div id='info'></div><script>geotab.addin['embedded-fleet']=function(){return{initialize:function(api,state,callback){var statusEl=document.getElementById('status');var infoEl=document.getElementById('info');statusEl.textContent='Connected to MyGeotab!';api.getSession(function(session){var html='<div style=\"margin:15px 0;padding:10px;background:#e8f4f8;border-radius:4px;\"><strong>User:</strong> '+session.userName+'<br><strong>Database:</strong> '+session.database+'</div>';infoEl.innerHTML=html;api.call('Get',{typeName:'Device'},function(vehicles){html+='<div style=\"margin:15px 0;padding:10px;background:#e8f4f8;border-radius:4px;\"><div style=\"font-size:2em;font-weight:bold;color:#2c3e50;margin:10px 0;\">'+vehicles.length+'</div><strong>Total Vehicles</strong></div>';infoEl.innerHTML=html;},function(error){html+='<div style=\"color:#d9534f;padding:10px;background:#f8d7da;border-radius:4px;\">Error: '+error+'</div>';infoEl.innerHTML=html;});});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Embedded fleet stats registered');</script></body></html>"
   }
 }
 ```
@@ -212,6 +237,20 @@ var message = "Hello \"World\"";
 - Large add-ins with many files
 - Team collaboration
 - Version control desired
+
+## Using React or Modern Frameworks in Embedded Add-Ins
+
+**Warning:** React and modern JavaScript frameworks can have issues in embedded Geotab add-ins due to:
+1. State management not working properly in the MyGeotab iframe context
+2. External library loading failures (CDN blocking)
+3. CSS-in-JS not applying correctly
+
+**Recommendation:** For embedded add-ins, use **vanilla JavaScript** with inline styles for maximum compatibility. Save React/frameworks for externally-hosted add-ins where you have full control.
+
+If you must use React in embedded add-ins:
+- Expect state updates to be unreliable
+- Use inline styles exclusively, not Tailwind or CSS-in-JS
+- Test extensively in the actual MyGeotab environment
 
 ### MyGeotab Configuration (External Hosting)
 ```json
@@ -354,6 +393,19 @@ api.call("Get", {
 - `FuelTransaction` - Fuel fill-ups
 - `StatusData` - Engine diagnostic data
 
+**Note on Driver API:** Some demo databases may have issues with the `Driver` type. If you encounter `InvalidCastException` errors, try using `User` with a filter instead:
+
+```javascript
+// May fail in demo databases
+api.call("Get", {typeName: "Driver"}, ...);
+
+// Alternative that works better
+api.call("Get", {
+    typeName: "User",
+    search: { isDriver: true }
+}, ...);
+```
+
 ### MultiCall for Performance
 ```javascript
 // Make multiple API calls in parallel
@@ -468,6 +520,38 @@ var devices = [];
 api.call("Get", {typeName: "Device"}, function(devices) {
     console.log("Found " + devices.length + " vehicles");
 });
+```
+
+### 5. Variable Name Collisions with 'state' Parameter
+**Problem:** Using `state` as both a function parameter AND a global variable causes confusion
+**Solution:** Rename your global state variable to avoid collision
+
+```javascript
+// ❌ Wrong - 'state' parameter collides with global 'state' variable
+var state = { data: [] };
+
+geotab.addin["name"] = function() {
+    return {
+        initialize: function(api, state, callback) {
+            // Which 'state' are we using? Confusion!
+            state.data = [];  // This modifies the parameter, not your variable!
+            callback();
+        }
+    };
+};
+
+// ✅ Correct - use different names
+var appState = { data: [] };
+
+geotab.addin["name"] = function() {
+    return {
+        initialize: function(api, pageState, callback) {
+            // Clear: appState is your data, pageState is from MyGeotab
+            appState.data = [];
+            callback();
+        }
+    };
+};
 ```
 
 ## Debugging Checklist
