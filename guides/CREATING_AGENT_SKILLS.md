@@ -444,6 +444,7 @@ and help me [task the skill covers].
 - Claude Code (CLI)
 - VS Code Copilot
 - GitHub Copilot
+- Google Antigravity
 - Cursor
 - OpenCode
 - Letta
@@ -491,4 +492,6 @@ This guide is based on the Agent Skills open standard:
 - [skills/spec/agent-skills-spec.md at main · anthropics/skills](https://github.com/anthropics/skills/blob/main/spec/agent-skills-spec.md)
 - [Agent Skills - Simon Willison](https://simonwillison.net/2025/Dec/19/agent-skills/)
 - [Use Agent Skills in VS Code](https://code.visualstudio.com/docs/copilot/customization/agent-skills)
+- [Authoring Google Antigravity Skills](https://codelabs.developers.google.com/getting-started-with-antigravity-skills)
+- [Google Antigravity Skills Documentation](https://antigravity.google/docs/skills)
 - [skills/skills/skill-creator/SKILL.md at main · anthropics/skills](https://github.com/anthropics/skills/blob/main/skills/skill-creator/SKILL.md)
