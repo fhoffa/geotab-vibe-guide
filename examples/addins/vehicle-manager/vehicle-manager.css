@@ -1,0 +1,118 @@
+body {
+    margin: 0;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+.header {
+    color: white;
+    margin-bottom: 30px;
+    text-align: center;
+}
+.header h1 {
+    margin: 0 0 10px 0;
+}
+.grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 40px;
+}
+.card {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    width: 200px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.08);
+    text-align: center;
+}
+.card-title {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #6b7280;
+    margin-bottom: 10px;
+}
+.card-value {
+    font-size: 36px;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0;
+}
+.vehicle-section {
+    background: white;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+.section-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+.vehicle-list {
+    width: 100%;
+    border-collapse: collapse;
+}
+.vehicle-list th, .vehicle-list td {
+    text-align: left;
+    padding: 12px;
+    border-bottom: 1px solid #f3f4f6;
+}
+.vehicle-list th {
+    color: #6b7280;
+    font-weight: 600;
+    font-size: 13px;
+}
+.vehicle-name-input {
+    padding: 8px 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 14px;
+}
+.vehicle-name-input:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+.save-btn {
+    background: #667eea;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+.save-btn:hover {
+    background: #5a67d8;
+}
+.save-btn:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+}
+.loading {
+    color: #9ca3af;
+}
+.error {
+    color: #dc2626;
+}
+.footer {
+    margin-top: 40px;
+    text-align: center;
+    color: rgba(255,255,255,0.8);
+    font-size: 14px;
+}

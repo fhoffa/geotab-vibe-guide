@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Vehicle Manager</title>
+    <link rel="stylesheet" href="vehicle-manager.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Fleet Statistics</h1>
+            <div id="user-info">Connected as: <span id="username">...</span></div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">Total Vehicles</div>
+                <div id="vehicle-count" class="card-value loading">...</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Total Drivers</div>
+                <div id="driver-count" class="card-value loading">...</div>
+            </div>
+        </div>
+
+        <div class="vehicle-section">
+            <div class="section-title">Manage Vehicles</div>
+            <table class="vehicle-list">
+                <thead>
+                    <tr>
+                        <th>Serial Number</th>
+                        <th>Name</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="vehicle-table-body">
+                    <tr><td colspan="3" style="text-align:center;color:#9ca3af;">Loading vehicles...</td></tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="footer">
+            Database: <span id="database-name">...</span>
+        </div>
+    </div>
+
+    <script src="vehicle-manager.js"></script>
+</body>
+</html>
