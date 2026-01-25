@@ -155,7 +155,80 @@ Make it look nicer with a modern card-based layout
 
 ---
 
-## Example Prompts to Try
+## Battle-Tested Prompt (Works with Replit, Cursor, etc.)
+
+This prompt has been tested and successfully generates working Geotab Add-Ins with AI coding tools:
+
+```
+Create a Geotab Add-In web application that displays fleet statistics.
+
+CRITICAL REQUIREMENTS:
+1. Must be a single HTML file with ALL CSS and JavaScript inline (no external files)
+2. Must register with the Geotab API using this exact pattern:
+   geotab.addin["fleet-stats"] = function() { return {...}; };
+3. Must implement all three required lifecycle methods: initialize, focus, and blur
+4. Must call callback() in the initialize method
+5. Use ES5 JavaScript only (no arrow functions, const/let, or template literals)
+6. **CRITICAL FOR DEPLOYMENT**: The hosting platform MUST support CORS (Cross-Origin Resource Sharing) and include the "Access-Control-Allow-Origin: *" header in responses. This is essential for MyGeotab to load the add-in.
+
+FUNCTIONALITY:
+- Display the total number of vehicles in the fleet using the MyGeotab API
+- Display the total number of drivers
+- Show the connected user's name and database name
+- Auto-refresh data when the page gains focus
+
+UI REQUIREMENTS:
+- Modern, clean design with cards for each statistic
+- Purple/blue gradient background
+- White cards with shadow effects
+- Large, bold numbers for statistics
+- Loading states that show "..." while fetching data
+- Error handling that displays "Error" if API calls fail
+
+GEOTAB API INTEGRATION - IMPORTANT PATTERNS:
+- **For Vehicles**: Use api.call("Get", {typeName: "Device"}) - DO NOT use resultsLimit
+- **For Drivers**: Use api.call("Get", {typeName: "User", search: {isDriver: true}}) - NOT typeName: "Driver" (causes errors in demo databases)
+- Use api.getSession() to get user information
+- Store the api reference in a private variable
+- Include error callbacks for all API calls
+- DO NOT use resultsLimit parameter - it limits returned results, not just for counting
+
+DEPLOYMENT NOTES:
+- The file must be served over HTTPS
+- The server must include CORS headers allowing cross-origin requests
+- Recommended platforms: GitHub Pages, Replit, Netlify, Firebase Hosting
+
+OUTPUT REQUIREMENTS:
+After creating the add-in, provide the MyGeotab configuration JSON in this format:
+{
+  "name": "Fleet Statistics",
+  "supportEmail": "you@example.com",
+  "version": "1.0.0",
+  "items": [{
+    "url": "YOUR_DEPLOYED_URL_HERE",
+    "path": "ActivityLink",
+    "menuName": {
+      "en": "Fleet Stats"
+    }
+  }]
+}
+Replace YOUR_DEPLOYED_URL_HERE with the actual deployed URL.
+
+Make sure the HTML includes proper DOCTYPE, meta charset, and the geotab.addin registration happens in an inline <script> tag at the end of the body.
+```
+
+**Why this prompt works:**
+- Explicitly requires single-file output (simpler for AI to generate)
+- Lists all critical patterns AI tools often get wrong
+- Specifies ES5 JavaScript (avoids compatibility issues)
+- Warns about common API pitfalls (Driver type, resultsLimit)
+- Requests the config JSON at the end (complete deliverable)
+
+Customize it by changing the FUNCTIONALITY section to describe your add-in.
+
+---
+
+## More Example Prompts
 
 ### Simple Dashboard (External Hosted)
 ```
@@ -284,21 +357,30 @@ show vehicle locations as pins on a map with different colors for each group.
 
 ---
 
-## Security & Permissions
+## Hosting Requirements
 
-**HTTPS Required:** Add-Ins must be hosted on HTTPS (GitHub Pages provides this free)
+**HTTPS + CORS Required:** Add-Ins must be hosted on HTTPS servers that support CORS (Cross-Origin Resource Sharing). Without proper CORS headers, MyGeotab cannot load your add-in.
+
+**Recommended Hosting Platforms (all support CORS correctly):**
+| Platform | Best For | Setup Time |
+|----------|----------|------------|
+| **Replit** | AI-assisted development, quick prototypes | Instant |
+| **GitHub Pages** | Free hosting, version control | 2-3 minutes |
+| **Netlify** | Static sites, drag-and-drop deploys | Instant |
+| **Firebase Hosting** | Google ecosystem, good performance | 5 minutes |
+| **Vercel** | Modern web apps, serverless | 2 minutes |
 
 **User Permissions:** Add-Ins inherit the logged-in user's permissions
 - If the user can't see driver salaries, the Add-In can't either
 - Test with different user roles
 
-**Code is Public:** GitHub Pages is public - anyone can view your source
+**Code is Public:** Most free hosting (GitHub Pages, etc.) is public
 - Don't hardcode API keys or secrets
 - Use server-side APIs for sensitive operations
 
-**Cross-Origin:** The MyGeotab API handles CORS for you
-- Calls to MyGeotab API work automatically
-- External APIs you call may have their own CORS policies
+**Cross-Origin Notes:**
+- Calls to MyGeotab API work automatically (handled by the injected `api` object)
+- External APIs you call from your add-in may have their own CORS policies
 
 ---
 

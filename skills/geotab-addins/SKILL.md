@@ -21,12 +21,22 @@ Geotab Add-Ins are custom pages that integrate directly into the MyGeotab interf
 ## Two Deployment Types
 
 **External Hosted (Recommended for Development)**
-- Files hosted on any HTTPS server (GitHub Pages, your own server, cloud storage, CDN, etc.)
+- Files hosted on any HTTPS server with CORS support
 - Can serve static files or dynamically generated content
 - Easier to develop, test, and debug
 - Faster iteration (just update files on server)
 - Can use separate HTML, CSS, and JS files
 - Best for active development and frequent updates
+
+**CRITICAL: CORS Requirement**
+The hosting platform MUST support Cross-Origin Resource Sharing (CORS) and include the `Access-Control-Allow-Origin: *` header in responses. Without this, MyGeotab cannot load the add-in.
+
+**Recommended Hosting Platforms (all have proper CORS support):**
+- **GitHub Pages** - Free, easy setup, great for open source
+- **Replit** - Excellent for AI-assisted development and quick prototypes
+- **Netlify** - Fast deploys, good for static sites
+- **Firebase Hosting** - Google's platform, good performance
+- **Vercel** - Great for modern web apps
 
 **Embedded (No Hosting Required)**
 - Code embedded directly in JSON configuration
@@ -38,8 +48,94 @@ Geotab Add-Ins are custom pages that integrate directly into the MyGeotab interf
 
 ## Required Structure
 
-### File Structure
-An external Add-In needs two files:
+### Single-File Pattern (Recommended for AI/Vibe Coding)
+
+When using AI coding tools like Replit, Cursor, or Claude, request a **single HTML file** with all CSS and JavaScript inline. This simplifies deployment and reduces issues:
+
+**single-file-addin.html**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Your Add-In</title>
+    <style>
+        /* All CSS here - inline in the HTML */
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin: 10px 0; }
+        .stat { font-size: 2em; font-weight: bold; color: #2c3e50; }
+        .loading { color: #999; }
+        .error { color: #d9534f; }
+    </style>
+</head>
+<body>
+    <h1>Your Add-In Title</h1>
+    <div class="card">
+        <h2>Statistic Name</h2>
+        <div class="stat" id="stat-value">...</div>
+    </div>
+
+    <script>
+    // All JavaScript inline - ES5 only!
+    geotab.addin["your-addin-name"] = function() {
+        var apiRef = null;
+
+        function updateStats() {
+            if (!apiRef) return;
+
+            // Get session info
+            apiRef.getSession(function(session) {
+                // Update UI with session.userName and session.database
+            });
+
+            // Get all vehicles (no resultsLimit!)
+            apiRef.call("Get", {
+                typeName: "Device"
+            }, function(devices) {
+                document.getElementById("stat-value").textContent = devices.length;
+            }, function(error) {
+                document.getElementById("stat-value").textContent = "Error";
+                document.getElementById("stat-value").className = "stat error";
+            });
+        }
+
+        return {
+            initialize: function(api, state, callback) {
+                apiRef = api;
+                updateStats();
+                callback(); // MUST call this!
+            },
+            focus: function(api, state) {
+                apiRef = api;
+                updateStats(); // Refresh on focus
+            },
+            blur: function(api, state) {
+                // Cleanup if needed
+            }
+        };
+    };
+
+    console.log("Add-In registered");
+    </script>
+</body>
+</html>
+```
+
+**Benefits of Single-File Pattern:**
+- One file to deploy - simpler for AI tools
+- No path issues between HTML and JS
+- Easier to test locally
+- Works with all hosting platforms
+- AI can generate complete working code in one response
+
+**UI Best Practices:**
+- Show `...` while loading data
+- Show `Error` if API calls fail
+- Auto-refresh data in the `focus` method
+- Use clear loading/error CSS classes
+
+### Separate Files Pattern (Alternative)
+An external Add-In can also use two files:
 
 **your-addin.html**
 ```html
@@ -393,17 +489,40 @@ api.call("Get", {
 - `FuelTransaction` - Fuel fill-ups
 - `StatusData` - Engine diagnostic data
 
-**Note on Driver API:** Some demo databases may have issues with the `Driver` type. If you encounter `InvalidCastException` errors, try using `User` with a filter instead:
+**IMPORTANT: Getting Driver Counts**
+Do NOT use `typeName: "Driver"` - it causes errors in many databases including demos. Instead:
 
 ```javascript
-// May fail in demo databases
+// ❌ Wrong - causes InvalidCastException in many databases
 api.call("Get", {typeName: "Driver"}, ...);
 
-// Alternative that works better
+// ✅ Correct - always works
 api.call("Get", {
     typeName: "User",
     search: { isDriver: true }
-}, ...);
+}, function(drivers) {
+    console.log("Total drivers: " + drivers.length);
+});
+```
+
+**IMPORTANT: Don't Use resultsLimit for Counting**
+When counting total entities, do NOT use the `resultsLimit` parameter - it limits the returned results, so you won't get an accurate count:
+
+```javascript
+// ❌ Wrong - only returns up to 100, not the total count
+api.call("Get", {
+    typeName: "Device",
+    resultsLimit: 100
+}, function(devices) {
+    // devices.length will be at most 100!
+});
+
+// ✅ Correct - returns all devices for accurate count
+api.call("Get", {
+    typeName: "Device"
+}, function(devices) {
+    console.log("Total vehicles: " + devices.length);
+});
 ```
 
 ### MultiCall for Performance
