@@ -29,9 +29,43 @@ Other options: Netlify, Vercel, Firebase Hosting (all have CORS support).
 
 **CORS Required:** Hosting must include `Access-Control-Allow-Origin: *` header.
 
-## Recommended Structure (3 Files)
+## Front-End Styling Options
 
-For reliable styling in MyGeotab's iframe, use separate CSS files:
+| Approach | Best For | Notes |
+|----------|----------|-------|
+| **Vanilla JS + External CSS** | Most add-ins, embedded | ES5 only, external CSS for reliable styling |
+| **React + Zenith** | Professional UI matching MyGeotab | See `geotab-zenith-design` skill |
+
+**Note:** Embedded add-ins must use vanilla JS with inline styles. React/Zenith requires external hosting.
+
+## Add-In Structure
+
+Every Add-In must register with MyGeotab and implement three lifecycle methods:
+
+```javascript
+geotab.addin["your-addin-name"] = function() {
+    var apiRef = null;
+
+    return {
+        initialize: function(api, state, callback) {
+            apiRef = api;
+            // Setup code here
+            callback();  // MUST call this!
+        },
+        focus: function(api, state) {
+            apiRef = api;
+            // Refresh data here
+        },
+        blur: function(api, state) {
+            // Cleanup here
+        }
+    };
+};  // Note: No () - assign function, don't invoke it
+```
+
+## Recommended: External CSS Pattern
+
+For reliable styling in MyGeotab's iframe, use separate CSS files (inline `<style>` tags may not render):
 
 **your-addin.html**
 ```html
@@ -55,37 +89,6 @@ body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
 .card { background: white; padding: 20px; border-radius: 8px; }
 ```
 
-**your-addin.js**
-```javascript
-"use strict";
-
-geotab.addin["your-addin-name"] = function() {
-    var apiRef = null;
-
-    function loadData() {
-        if (!apiRef) return;
-        apiRef.call("Get", { typeName: "Device" }, function(devices) {
-            document.getElementById("app").textContent = "Vehicles: " + devices.length;
-        }, function(error) {
-            console.error("Error:", error);
-        });
-    }
-
-    return {
-        initialize: function(api, state, callback) {
-            apiRef = api;
-            loadData();
-            callback();  // MUST call this!
-        },
-        focus: function(api, state) {
-            apiRef = api;
-            loadData();  // Refresh on focus
-        },
-        blur: function(api, state) {}
-    };
-};
-```
-
 **MyGeotab Configuration:**
 ```json
 {
@@ -99,14 +102,6 @@ geotab.addin["your-addin-name"] = function() {
   }]
 }
 ```
-
-## Lifecycle Methods
-
-| Method | When Called | Must Do |
-|--------|-------------|---------|
-| `initialize(api, state, callback)` | Once on first load | Call `callback()` when done! |
-| `focus(api, state)` | User navigates to add-in | Refresh data |
-| `blur(api, state)` | User navigates away | Cleanup/save state |
 
 ## API Operations
 
@@ -191,81 +186,16 @@ api.getSession(function(session) {
 
 ## Critical Mistakes to Avoid
 
-### 1. Forgetting callback()
-```javascript
-// WRONG - Add-In hangs forever
-initialize: function(api, state, callback) {
-    loadData(api);
-    // Missing callback()!
-}
+| Mistake | Problem | Solution |
+|---------|---------|----------|
+| Missing `callback()` | Add-In hangs | Always call `callback()` in initialize |
+| Using `}();` | Wrong pattern | Use `};` - assign function, don't invoke |
+| Modern JS (ES6+) | Browser errors | Use ES5 syntax only |
+| `typeName: "Driver"` | API errors | Use `User` with `isDriver: true` |
+| Inline `<style>` tags | Styles don't render | Use external CSS file |
+| Variable named `state` | Shadows parameter | Use `appState` or similar |
 
-// CORRECT
-initialize: function(api, state, callback) {
-    loadData(api);
-    callback();
-}
-```
-
-### 2. Using typeName: "Driver"
-```javascript
-// WRONG - causes InvalidCastException
-api.call("Get", { typeName: "Driver" }, ...);
-
-// CORRECT
-api.call("Get", { typeName: "User", search: { isDriver: true } }, ...);
-```
-
-### 3. Inline styles in external add-ins
-```html
-<!-- WRONG - styles may not render in MyGeotab iframe -->
-<style>.card { background: white; }</style>
-
-<!-- CORRECT - use external CSS file -->
-<link rel="stylesheet" href="styles.css">
-```
-
-### 4. Immediate invocation
-```javascript
-// WRONG
-geotab.addin["name"] = function() { return {...}; }();
-
-// CORRECT - no () at end
-geotab.addin["name"] = function() { return {...}; };
-```
-
-### 5. Modern JavaScript (ES6+)
-```javascript
-// WRONG - may not work in older browsers
-const x = 1;
-devices.forEach(d => console.log(d));
-
-// CORRECT - use ES5
-var x = 1;
-devices.forEach(function(d) { console.log(d); });
-```
-
-### 6. Variable name collision with 'state'
-```javascript
-// WRONG - 'state' parameter shadows your variable
-var state = { data: [] };
-initialize: function(api, state, callback) {
-    state.data = [];  // Modifies parameter, not your variable!
-}
-
-// CORRECT - use different name
-var appState = { data: [] };
-initialize: function(api, pageState, callback) {
-    appState.data = [];  // Clear which is which
-}
-```
-
-### 7. React/Modern Frameworks
-React and modern frameworks often have issues in MyGeotab's iframe:
-- State management may not work properly
-- CDN libraries may be blocked
-- CSS-in-JS/Tailwind may not apply
-
-**Recommendation:** Use vanilla JavaScript for add-ins. If you must use React, test extensively in actual MyGeotab environment.
+See [references/TROUBLESHOOTING.md](references/TROUBLESHOOTING.md) for complete debugging guide.
 
 ## Embedded Add-Ins (No Hosting)
 
@@ -294,9 +224,11 @@ For quick prototypes without hosting:
 - No external file references
 - Path without trailing slash: `"ActivityLink"` (not `"ActivityLink/"`)
 
+See [references/EMBEDDED.md](references/EMBEDDED.md) for complete embedded add-in guide.
+
 ## Complete Example: Vehicle Manager
 
-A working add-in that lists vehicles and allows renaming them.
+A working add-in with CRUD operations that lists vehicles and allows renaming them.
 
 **Live example:** `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/`
 
@@ -443,17 +375,31 @@ geotab.addin["vehicle-manager"] = function() {
 };
 ```
 
-## Deployment Checklist
+## GitHub Pages Deployment
 
-1. **Push files** to GitHub/Replit
-2. **Enable GitHub Pages** (Settings → Pages → main branch)
-3. **Wait 2-3 minutes** for deployment
-4. **Test URL directly** in browser first
-5. **Add to MyGeotab**: Administration → System Settings → Add-Ins → paste JSON
-6. **Hard refresh** (Ctrl+Shift+R) if add-in doesn't appear
+1. Push files to GitHub repository
+2. Enable GitHub Pages (Settings → Pages → main branch)
+3. Wait 2-3 minutes for deployment
+4. Test URL directly in browser first
+5. Add to MyGeotab: Administration → System Settings → Add-Ins → paste JSON
+6. Hard refresh (Ctrl+Shift+R) if add-in doesn't appear
 
-## References
+**Cache Busting:** Add version query if changes don't appear:
+```json
+"url": "https://username.github.io/repo/addin.html?v=2"
+```
 
-- Official Docs: https://developers.geotab.com/myGeotab/addIns/developingAddIns/
-- API Reference: https://geotab.github.io/sdk/software/api/reference/
-- Sample Add-Ins: https://github.com/Geotab/sdk-addin-samples
+## Additional Resources
+
+**Related Skills:**
+- `geotab-zenith-design` - React component library for professional Geotab UI
+
+**Reference Files:**
+- [Complete Examples](references/EXAMPLES.md) - Full working add-in code
+- [Embedded Add-Ins Guide](references/EMBEDDED.md) - No-hosting deployment
+- [Troubleshooting](references/TROUBLESHOOTING.md) - Common mistakes and debugging
+
+**External Documentation:**
+- [Official Docs](https://developers.geotab.com/myGeotab/addIns/developingAddIns/)
+- [API Reference](https://geotab.github.io/sdk/software/api/reference/)
+- [Sample Add-Ins](https://github.com/Geotab/sdk-addin-samples)
