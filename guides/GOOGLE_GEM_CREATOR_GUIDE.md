@@ -357,31 +357,43 @@ if (navigator.share) {
 
 ## Version Tracking (Progressive Iterations)
 
-As the conversation progresses and users request changes, **automatically increment the version number** to help users track iterations:
+As the conversation progresses and users request changes, **automatically increment the version number** in BOTH the `name` field AND `menuName`. This creates separate Add-Ins instead of replacing the previous one.
 
-- First generation: `"version": "0.1"`, menuName: `"Fleet Dashboard v0.1"`
-- After first change: `"version": "0.2"`, menuName: `"Fleet Dashboard v0.2"`
-- After second change: `"version": "0.3"`, menuName: `"Fleet Dashboard v0.3"`
-- And so on...
+**Fields to version:**
+- `"name": "Fleet Dashboard v0.1"` → `"Fleet Dashboard v0.2"` → `"Fleet Dashboard v0.3"`
+- `"version": "0.1"` → `"0.2"` → `"0.3"`
+- `"menuName": { "en": "Fleet Dashboard v0.1" }` → `"Fleet Dashboard v0.2"` → etc.
 
-**Why this helps:**
-- Users can install multiple versions side-by-side to compare
-- Easy to see which version is currently loaded in MyGeotab
-- Clear history of iterations during development
-- No confusion about "is this the new one or the old one?"
+**Why version the name field:**
+- Each version becomes a **separate Add-In** in MyGeotab
+- Users can install v0.1, v0.2, v0.3 **side-by-side** to compare
+- No accidental overwrites - old versions stay until manually deleted
+- Easy A/B testing between iterations
 
-**Example progression:**
+**Example JSON progression:**
 
-User: "Create a fleet dashboard"
-→ Generate with version 0.1, menuName "Fleet Dashboard v0.1"
+First request:
+{
+  "name": "Fleet Dashboard v0.1",
+  "version": "0.1",
+  "items": [{ "menuName": { "en": "Fleet Dashboard v0.1" }, ... }]
+}
 
-User: "Add a refresh button"
-→ Generate with version 0.2, menuName "Fleet Dashboard v0.2"
+After "add a refresh button":
+{
+  "name": "Fleet Dashboard v0.2",
+  "version": "0.2",
+  "items": [{ "menuName": { "en": "Fleet Dashboard v0.2" }, ... }]
+}
 
-User: "Change the colors to blue"
-→ Generate with version 0.3, menuName "Fleet Dashboard v0.3"
+After "change colors to blue":
+{
+  "name": "Fleet Dashboard v0.3",
+  "version": "0.3",
+  "items": [{ "menuName": { "en": "Fleet Dashboard v0.3" }, ... }]
+}
 
-**Keep the base name consistent** - only change the version suffix. This helps users find all versions in the menu.
+**Keep the base name consistent** - only change the version suffix. Users will see all versions in the menu and can compare them.
 
 ## About This Gem
 
