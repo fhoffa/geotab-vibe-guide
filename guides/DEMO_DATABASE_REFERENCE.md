@@ -4,14 +4,21 @@ Complete reference for the data available in Geotab demo databases. Use this whe
 
 ## What is a Demo Database?
 
-Demo databases are fully functional Geotab environments with simulated fleet data. When you [create a free demo account](https://my.geotab.com/registration.html), you choose:
+Demo databases are fully functional Geotab environments with simulated fleet data. When you [create a free demo account](https://my.geotab.com/registration.html), you configure:
 
-- **Fleet type** (delivery, service, sales, trucking, etc.)
-- **Region** (North America, Europe, APAC, etc.)
+| Option | Choices |
+|--------|---------|
+| **Vocation** | Daytime tour, Hub and spoke, Long distance, Public works |
+| **Location** | Canada, Australia, USA, UK, Italy, Netherlands |
+| **Vehicle Type** | Vans and Trucks, Passenger, Electric Vehicle (EV) |
+| **Fleet Size** | 10, 20, 30, 40, or 50 vehicles |
+| **Expiration** | 1-7 days, 30 days, or 60 days |
 
-The demo simulates realistic vehicle movement, driver behavior, and telematics data for that fleet type and geography.
+> **Tip:** Choose **60 days** expiration for maximum development time.
 
-> **Note:** The sample data below comes from a **Spain delivery fleet** demo database. Your demo database will have different data depending on the fleet type and region you selected. Entity schemas and field names are consistent across all demo databases, but specific values (locations, vehicle counts, diagnostic ranges) will vary.
+The demo simulates realistic vehicle movement, driver behavior, and telematics data for your selected configuration.
+
+> **Note:** The sample data below comes from a **Spain delivery fleet** demo database (50 vehicles, Vans and Trucks). Your demo database will have different data depending on your selections. Entity schemas and field names are consistent across all demo databases, but specific values (locations, vehicle counts, diagnostic ranges) will vary.
 
 ---
 
@@ -19,11 +26,11 @@ The demo simulates realistic vehicle movement, driver behavior, and telematics d
 
 This guide currently documents one demo database profile. Additional profiles are planned:
 
-| Profile | Region | Fleet Type | Status |
-|---------|--------|------------|--------|
-| Spain Delivery | Europe (Spain) | Delivery | Documented below |
-| Las Vegas | North America (Nevada) | TBD | TODO |
-| EV Fleet | TBD | Electric Vehicles | TODO |
+| Profile | Location | Vehicle Type | Vocation | Status |
+|---------|----------|--------------|----------|--------|
+| Spain Delivery | Europe | Vans and Trucks | Delivery | Documented below |
+| USA Long Haul | USA | Vans and Trucks | Long distance | TODO |
+| EV Fleet | USA or UK | Electric Vehicle (EV) | Hub and spoke | TODO |
 
 ---
 
