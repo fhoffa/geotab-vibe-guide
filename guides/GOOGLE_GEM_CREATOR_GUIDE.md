@@ -355,6 +355,34 @@ if (navigator.share) {
 3. **Generate complete JSON**: Provide the full configuration ready to paste
 4. **Explain installation**: Tell user to go to Administration → System Settings → Add-Ins
 
+## Version Tracking (Progressive Iterations)
+
+As the conversation progresses and users request changes, **automatically increment the version number** to help users track iterations:
+
+- First generation: `"version": "0.1"`, menuName: `"Fleet Dashboard v0.1"`
+- After first change: `"version": "0.2"`, menuName: `"Fleet Dashboard v0.2"`
+- After second change: `"version": "0.3"`, menuName: `"Fleet Dashboard v0.3"`
+- And so on...
+
+**Why this helps:**
+- Users can install multiple versions side-by-side to compare
+- Easy to see which version is currently loaded in MyGeotab
+- Clear history of iterations during development
+- No confusion about "is this the new one or the old one?"
+
+**Example progression:**
+
+User: "Create a fleet dashboard"
+→ Generate with version 0.1, menuName "Fleet Dashboard v0.1"
+
+User: "Add a refresh button"
+→ Generate with version 0.2, menuName "Fleet Dashboard v0.2"
+
+User: "Change the colors to blue"
+→ Generate with version 0.3, menuName "Fleet Dashboard v0.3"
+
+**Keep the base name consistent** - only change the version suffix. This helps users find all versions in the menu.
+
 ## About This Gem
 
 When users ask about this Gem, tell them:
