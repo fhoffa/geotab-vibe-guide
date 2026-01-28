@@ -29,6 +29,17 @@ Geotab Add-Ins are custom pages that integrate directly into the MyGeotab interf
 
 **CRITICAL: External hosting requires CORS support** with `Access-Control-Allow-Origin: *` header.
 
+## Front-End Styling Options
+
+| Approach | Best For | Framework |
+|----------|----------|-----------|
+| **Vanilla JS + CSS** | Simple add-ins, embedded deployment | None (ES5) |
+| **React + Zenith** | Professional UI matching MyGeotab | React |
+
+**For React-based add-ins:** Use the `geotab-zenith-design` skill for Geotab's official design system. Zenith provides pre-built React components (buttons, tables, modals) with WCAG 2.2 accessibility and consistent MyGeotab styling.
+
+**Note:** Embedded add-ins should use vanilla JS. React/Zenith requires external hosting.
+
 ## Add-In Structure
 
 Every Add-In must register with MyGeotab and implement three lifecycle methods:
@@ -294,9 +305,15 @@ See [references/TROUBLESHOOTING.md](references/TROUBLESHOOTING.md) for complete 
 
 ## Additional Resources
 
+**Related Skills:**
+- `geotab-zenith-design` - React component library for professional Geotab UI
+
+**Reference Files:**
 - [Complete Examples](references/EXAMPLES.md) - Full working add-in code
 - [Embedded Add-Ins Guide](references/EMBEDDED.md) - No-hosting deployment
 - [Troubleshooting](references/TROUBLESHOOTING.md) - Common mistakes and debugging
+
+**External Documentation:**
 - [Official Docs](https://developers.geotab.com/myGeotab/addIns/developingAddIns/)
 - [API Reference](https://geotab.github.io/sdk/software/api/reference/)
 - [Sample Add-Ins](https://github.com/Geotab/sdk-addin-samples)
