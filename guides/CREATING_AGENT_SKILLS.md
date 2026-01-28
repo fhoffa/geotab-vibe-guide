@@ -1,5 +1,35 @@
 # Creating Agent Skills - Hackathon Guide
 
+## Documentation Philosophy: Guides vs. Skills
+
+**This repository separates content into two types:**
+
+| **Guides** (`guides/`) | **Skills** (`skills/`) |
+|------------------------|------------------------|
+| Conversational and prompt-focused | Technical code and patterns |
+| Teach humans how to describe what they want | Teach AI how to implement it correctly |
+| Full of example prompts to copy-paste | Full of working code examples |
+| Explain concepts and "why" | Define patterns and "how" |
+| User-facing documentation | AI-facing reference material |
+
+**When writing guides:**
+- Focus on prompts users can give to AI
+- Explain what's possible and when to use it
+- Keep code minimal - reference skills for details
+- Be conversational, not technical
+
+**When writing skills:**
+- Include complete, working code patterns
+- Document technical gotchas and edge cases
+- Make examples copy-pasteable
+- Be precise and implementation-focused
+
+**Example:** The Add-In navigation pattern...
+- **Guide says:** "Tell your AI: Make the vehicle names clickable so they navigate to the vehicle's page."
+- **Skill contains:** The actual JavaScript code pattern with `window.parent.location.hash`
+
+---
+
 ## What Are Agent Skills?
 
 Agent Skills is an **open standard** for packaging specialized knowledge and workflows that AI assistants can use across platforms. Think of skills as reusable AI plugins that work with Claude, GitHub Copilot, VS Code, Cursor, and other AI tools.

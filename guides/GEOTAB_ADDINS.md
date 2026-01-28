@@ -331,83 +331,29 @@ When prompting the AI, mention what data you need and it will use the API object
 
 ## Making Things Clickable (Navigate to MyGeotab Pages)
 
-Your Add-In runs in an iframe within MyGeotab. You can make vehicle names, driver names, or any data clickable to navigate the parent window to the relevant MyGeotab page.
+Your Add-In can make vehicle names, driver names, or any entity clickable to navigate to other MyGeotab pages. When users click, they go to the vehicle's detail page, trip history, live map, etc.
 
-**The Pattern:** Use `window.parent.location.hash` to navigate without hardcoding URLs.
-
-### Common Navigation Destinations
-
-| Destination | Hash Format | Example |
-|-------------|-------------|---------|
-| Vehicle page | `#device,id:{id}` | `#device,id:b3230` |
-| Trip history | `#tripsHistory,devices:!({id})` | `#tripsHistory,devices:!(b12)` |
-| Exceptions | `#exceptions2,assetsFilter:!({id})` | `#exceptions2,assetsFilter:!(b3306)` |
-| Live map | `#map,liveVehicleIds:!({id})` | `#map,liveVehicleIds:!(b3230)` |
-| Zone | `#zones,zoneId:{id}` | `#zones,zoneId:b1234` |
-
-### Example: Clickable Vehicle Names
-
-```javascript
-// Create a clickable link to the vehicle's detail page
-function createVehicleLink(device) {
-    var link = document.createElement("a");
-    link.textContent = device.name;
-    link.href = "#";
-    link.style.cssText = "color:#2563eb;cursor:pointer;text-decoration:none;";
-    link.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = "device,id:" + device.id;
-    };
-    return link;
-}
-
-// Use it when building your table
-devices.forEach(function(device) {
-    var row = document.createElement("tr");
-    var nameCell = document.createElement("td");
-    nameCell.appendChild(createVehicleLink(device));
-    row.appendChild(nameCell);
-    tableBody.appendChild(row);
-});
-```
-
-### Add Action Links (Trips, Exceptions, Map)
-
-```javascript
-// Add multiple action links to each row
-var actionsCell = document.createElement("td");
-
-var tripsLink = document.createElement("a");
-tripsLink.textContent = "Trips";
-tripsLink.href = "#";
-tripsLink.onclick = function(e) {
-    e.preventDefault();
-    window.parent.location.hash = "tripsHistory,devices:!(" + device.id + ")";
-};
-actionsCell.appendChild(tripsLink);
-
-actionsCell.appendChild(document.createTextNode(" | "));
-
-var mapLink = document.createElement("a");
-mapLink.textContent = "Map";
-mapLink.href = "#";
-mapLink.onclick = function(e) {
-    e.preventDefault();
-    window.parent.location.hash = "map,liveVehicleIds:!(" + device.id + ")";
-};
-actionsCell.appendChild(mapLink);
-```
-
-**Key Points:**
-- Use `device.id` (the internal ID like "b3230"), not `device.name`
-- Array syntax uses `!()`: `devices:!(b12)` or `devices:!(b12,b13,b14)` for multiple
-- Always call `e.preventDefault()` to avoid page jumps
+**Where it works:** Vehicle pages, trip history, exceptions, live map, zones, and more.
 
 **Tell your AI:**
+
 ```
-Make the vehicle names clickable so they navigate to each vehicle's detail page in MyGeotab.
-Add "View Trips" and "View on Map" links next to each vehicle.
+Make the vehicle names clickable so clicking takes the user to that vehicle's detail page in MyGeotab.
 ```
+
+```
+Add "View Trips" and "View on Map" action links next to each vehicle in the table.
+```
+
+```
+When showing exception events, make the vehicle name a link that opens the vehicle's page.
+```
+
+```
+Create a fleet overview where I can click any vehicle to see its trip history.
+```
+
+The skill file (`geotab-addins`) has the technical patterns. Just describe what you want to be clickable and where it should navigate.
 
 ---
 

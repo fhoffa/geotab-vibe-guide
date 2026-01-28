@@ -4,6 +4,14 @@
 >
 > **Need more details?** See [API_REFERENCE_FOR_AI.md](./guides/API_REFERENCE_FOR_AI.md) for setup instructions, troubleshooting, and common mistakes.
 
+## Documentation Structure
+
+| `guides/` | `skills/` |
+|-----------|-----------|
+| Prompts & concepts (for humans) | Code patterns (for AI implementation) |
+
+**Guides = conversational, prompt-focused.** **Skills = technical, code-focused.**
+
 ## Connection Pattern (Required)
 
 ```python
