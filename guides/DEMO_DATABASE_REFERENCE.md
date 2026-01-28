@@ -11,7 +11,23 @@ Demo databases are fully functional Geotab environments with simulated fleet dat
 
 The demo simulates realistic vehicle movement, driver behavior, and telematics data for that fleet type and geography.
 
-## Data Volume (Typical 7-Day Window)
+> **Note:** The sample data below comes from a **Spain delivery fleet** demo database. Your demo database will have different data depending on the fleet type and region you selected. Entity schemas and field names are consistent across all demo databases, but specific values (locations, vehicle counts, diagnostic ranges) will vary.
+
+---
+
+## Sample Data Profiles
+
+This guide currently documents one demo database profile. Additional profiles are planned:
+
+| Profile | Region | Fleet Type | Status |
+|---------|--------|------------|--------|
+| Spain Delivery | Europe (Spain) | Delivery | Documented below |
+| Las Vegas | North America (Nevada) | TBD | TODO |
+| EV Fleet | TBD | Electric Vehicles | TODO |
+
+---
+
+## Data Volume: Spain Delivery Fleet (7-Day Window)
 
 | Entity | Typical Count | Notes |
 |--------|---------------|-------|
@@ -555,8 +571,8 @@ System audit log entry.
 |-------|------|-------------|---------|
 | `id` | string | Unique identifier | `"a-V_OIne280OFXIKLhNG7Fg"` |
 | `name` | string | Audit event type | `"UserLogin"` |
-| `userName` | string | User who triggered | `"felipe.hoffa@gmail.com"` |
-| `comment` | string | Additional info | `"felipe.hoffa@gmail.com"` |
+| `userName` | string | User who triggered | `"user@example.com"` |
+| `comment` | string | Additional info | `"user@example.com"` |
 | `dateTime` | datetime | Event timestamp | `"2026-01-28T06:38:22.893Z"` |
 
 **Sample Record:**
@@ -565,8 +581,8 @@ System audit log entry.
 {
   "id": "a-V_OIne280OFXIKLhNG7Fg",
   "name": "UserLogin",
-  "userName": "felipe.hoffa@gmail.com",
-  "comment": "felipe.hoffa@gmail.com",
+  "userName": "user@example.com",
+  "comment": "user@example.com",
   "dateTime": "2026-01-28T06:38:22.893Z",
   "version": "00000000000001c6"
 }
