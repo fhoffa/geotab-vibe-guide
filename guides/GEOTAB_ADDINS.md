@@ -488,7 +488,7 @@ Zenith is Geotab's official React component library. Your Add-In will look exact
 **Learning Path:**
 1. Build with vanilla JS/CSS (this guide)
 2. Test it works in MyGeotab
-3. If you need the polished look, ask AI: "Transform this to use React + Zenith"
+3. If you need the polished look, follow [Transforming Vanilla to Zenith](VANILLA_TO_ZENITH.md)
 
 **Try both versions:**
 - Vanilla: `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/vehicle-manager.html`
