@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
   Button,
-  TextField,
+  TextInput,
   Table,
   Alert,
-  Spinner
+  Waiting
 } from '@geotab/zenith';
 import '@geotab/zenith/dist/index.css';
 
@@ -96,7 +96,7 @@ function VehicleManager({ api }) {
       render: (_, row) => {
         if (editingId === row.id) {
           return (
-            <TextField
+            <TextInput
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               placeholder="Enter vehicle name"
@@ -259,7 +259,7 @@ function VehicleManager({ api }) {
             alignItems: 'center',
             padding: '48px'
           }}>
-            <Spinner size="large" />
+            <Waiting size="large" />
             <p style={{
               marginTop: '16px',
               color: 'var(--zenith-neutral-500, #605E5C)'
