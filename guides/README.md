@@ -36,7 +36,8 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 ### Google Gems for Add-Ins
 
-- **[GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md)** - Use the Geotab Add-In Architect Gem to generate Add-Ins without coding.
+- **[Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO)** - Try it now! Generate MyGeotab Add-Ins with AI.
+- **[GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md)** - How to use the Geotab Add-In Architect Gem.
 - **[GOOGLE_GEM_CREATOR_GUIDE.md](./GOOGLE_GEM_CREATOR_GUIDE.md)** - Create your own Google Gem that generates Geotab Add-Ins.
 
 ### Advanced Topics

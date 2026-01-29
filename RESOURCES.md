@@ -14,6 +14,7 @@ Complete reference guide for participants and instructors.
 
 ### AI & Development
 - **Gemini**: https://deepmind.google/technologies/gemini/ (Multimodal AI)
+- **Geotab Add-In Architect Gem**: https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO (Generate MyGeotab Add-Ins with AI)
 - **Google Antigravity**: https://antigravity.google/docs/get-started (AI-assisted development IDE)
 - **Firebase Studio**: https://firebase.google.com/studio (AI-first browser-based IDE, formerly Project IDX)
 
