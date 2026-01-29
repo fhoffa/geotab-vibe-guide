@@ -18,7 +18,7 @@ The Geotab Add-In Architect generates **ready-to-paste JSON configurations** tha
 
 ### Step 1: Open the Gem
 
-Go to [Geotab Add-In Architect Gem](#) *(link to public Gem when available)*
+Go to [Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO)
 
 Or search for "Geotab Add-In Architect" in Google Gemini's Gem store.
 
