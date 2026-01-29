@@ -4,22 +4,6 @@ Complete reference guide for participants and instructors.
 
 ---
 
-## ☁️ Google Cloud & AI Tools
-
-### Google Cloud Platform (GCP)
-- **BigQuery**: https://cloud.google.com/bigquery (Data Warehouse)
-- **Vertex AI**: https://cloud.google.com/vertex-ai (Machine Learning)
-- **Firebase**: https://firebase.google.com/ (App Development)
-- **Google Maps Platform**: https://developers.google.com/maps
-
-### AI & Development
-- **Gemini**: https://deepmind.google/technologies/gemini/ (Multimodal AI)
-- **Geotab Add-In Architect Gem**: https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO (Generate MyGeotab Add-Ins with AI)
-- **Google Antigravity**: https://antigravity.google/docs/get-started (AI-assisted development IDE)
-- **Firebase Studio**: https://firebase.google.com/studio (AI-first browser-based IDE, formerly Project IDX)
-
-
-
 ## 🌐 Geotab Official Resources
 
 ### Getting Started
@@ -89,6 +73,22 @@ Complete reference guide for participants and instructors.
 ### Cody by Sourcegraph
 - **Homepage**: https://sourcegraph.com/cody
 - **Documentation**: https://docs.sourcegraph.com/cody
+
+---
+
+## ☁️ Google Cloud & AI Tools
+
+### Google Cloud Platform (GCP)
+- **BigQuery**: https://cloud.google.com/bigquery (Data Warehouse)
+- **Vertex AI**: https://cloud.google.com/vertex-ai (Machine Learning)
+- **Firebase**: https://firebase.google.com/ (App Development)
+- **Google Maps Platform**: https://developers.google.com/maps
+
+### AI & Development
+- **Gemini**: https://deepmind.google/technologies/gemini/ (Multimodal AI)
+- **Geotab Add-In Architect Gem**: https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO (Generate MyGeotab Add-Ins with AI)
+- **Google Antigravity**: https://antigravity.google/docs/get-started (AI-assisted development IDE)
+- **Firebase Studio**: https://firebase.google.com/studio (AI-first browser-based IDE, formerly Project IDX)
 
 ---
 
