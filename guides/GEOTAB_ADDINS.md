@@ -329,6 +329,99 @@ When prompting the AI, mention what data you need and it will use the API object
 
 ---
 
+## Making Things Clickable (Navigate to MyGeotab Pages)
+
+Your Add-In can make vehicle names, driver names, or any entity clickable to navigate to other MyGeotab pages. When users click, they go to the vehicle's detail page, trip history, live map, etc.
+
+**Where it works:** Vehicle pages, trip history, exceptions, live map, zones, and more.
+
+**Tell your AI:**
+
+```
+Make the vehicle names clickable so clicking takes the user to that vehicle's detail page in MyGeotab.
+```
+
+```
+Add "View Trips" and "View on Map" action links next to each vehicle in the table.
+```
+
+```
+When showing exception events, make the vehicle name a link that opens the vehicle's page.
+```
+
+```
+Create a fleet overview where I can click any vehicle to see its trip history.
+```
+
+The skill file (`geotab-addins`) has the technical patterns. Just describe what you want to be clickable and where it should navigate.
+
+---
+
+## Creative Integrations (Surprising Things Add-Ins Can Do)
+
+Add-Ins aren't just for displaying data. They can integrate with email, calendars, maps, and more using browser-native features.
+
+**Email with pre-filled content:**
+```
+Add a "Report Issue" button next to each vehicle that opens an email
+with the vehicle name and serial number pre-filled.
+```
+
+**Google Calendar events:**
+```
+Add a "Schedule Maintenance" link that opens Google Calendar
+with a new event pre-filled with the vehicle details.
+```
+
+**Google Maps:**
+```
+Show vehicle locations and add "Open in Google Maps" links
+that open each vehicle's position in a new tab.
+```
+
+**Call or text drivers:**
+```
+Make driver phone numbers clickable to call them.
+Add a "Text Driver" button with a pre-written message about their vehicle.
+```
+
+**WhatsApp integration:**
+```
+Add a WhatsApp button that opens a chat with the driver
+and pre-fills a message about their vehicle status.
+```
+
+**Copy to clipboard:**
+```
+Add a "Copy Details" button that copies all vehicle info
+so I can paste it into other apps.
+```
+
+**Export to CSV:**
+```
+Add an "Export CSV" button that downloads all the data
+as a spreadsheet file.
+```
+
+**Print reports:**
+```
+Add a "Print" button that opens the print dialog for the current page.
+```
+
+**Text-to-speech:**
+```
+Add a "Read Aloud" button that speaks the fleet statistics
+using text-to-speech. Useful for hands-free use.
+```
+
+**Mobile sharing:**
+```
+On mobile devices, add a "Share" button that uses the phone's
+native share menu to send fleet info via any app.
+```
+
+---
+
 ## Try the Official Heat Map
 
 Want to see a production-quality example? Try Geotab's Heat Map:

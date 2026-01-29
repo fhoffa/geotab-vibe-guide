@@ -8,6 +8,7 @@ Quick navigation to the right resource for your needs.
 |-----------|----------|-----|
 | Complete beginner | [BEGINNER_GLOSSARY.md](./guides/BEGINNER_GLOSSARY.md) | Explains GitHub, Python, APIs, vibe coding, and all terms used in these guides |
 | Using Claude on web | [INSTANT_START_WITH_CLAUDE.md](./guides/INSTANT_START_WITH_CLAUDE.md) | Zero to working code in 60 seconds |
+| Using Google Gemini | [GOOGLE_GEM_USER_GUIDE.md](./guides/GOOGLE_GEM_USER_GUIDE.md) | Generate Add-Ins via the Geotab Add-In Architect Gem |
 | Want ready-made prompts | [CLAUDE_PROMPTS.md](./guides/CLAUDE_PROMPTS.md) | 10+ copy-paste prompts for instant productivity |
 | First time here | [INSTANT_START_WITH_CLAUDE.md](./guides/INSTANT_START_WITH_CLAUDE.md) | The fastest path - start here! |
 | **Building a MyGeotab Add-In** | [GEOTAB_ADDINS.md](./guides/GEOTAB_ADDINS.md) | **Custom pages inside MyGeotab** |
@@ -41,6 +42,9 @@ Are you a human or AI tool?
 │  ├─ Using Claude on the web?
 │  │  └─> INSTANT_START.md (60 seconds to working code!)
 │  │
+│  ├─ Using Google Gemini?
+│  │  └─> GOOGLE_GEM_USER_GUIDE.md (generate Add-Ins with the Gem!)
+│  │
 │  ├─ Just getting started?
 │  │  └─> INSTANT_START.md (fastest) or QUICKSTART.md (local setup)
 │  │
@@ -52,8 +56,11 @@ Are you a human or AI tool?
 │      ├─ Standalone Python app? (dashboards, reports, data analysis)
 │      │  └─> INSTANT_START_WITH_CLAUDE.md → HACKATHON_IDEAS.md → CLAUDE_PROMPTS.md
 │      │
-│      └─ Custom page IN MyGeotab? (extend the interface)
-│         └─> GEOTAB_ADDINS.md → TRANSFORM_ADDIN_ZENITH.md (for styling)
+│      ├─ Custom page IN MyGeotab? (extend the interface)
+│      │  └─> GEOTAB_ADDINS.md → TRANSFORM_ADDIN_ZENITH.md (for styling)
+│      │
+│      └─ Quick Add-In without coding? (Google Gemini users)
+│         └─> GOOGLE_GEM_USER_GUIDE.md
 │
 └─ AI TOOL
    │

@@ -8,6 +8,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 |----------------|------------|
 | **New to coding/APIs** | [BEGINNER_GLOSSARY.md](./BEGINNER_GLOSSARY.md) |
 | **Want to build NOW (Claude users)** | [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md) |
+| **Using Google Gemini** | [GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) |
 | **Using other AI tools** | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) |
 | **At a hackathon** | [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md) |
 | **Teaching a workshop** | [MINUTE_BY_MINUTE.md](./MINUTE_BY_MINUTE.md) |
@@ -33,6 +34,11 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 - **[GEOTAB_ADDINS.md](./GEOTAB_ADDINS.md)** - Build custom pages that run inside MyGeotab.
 - **[TRANSFORM_ADDIN_ZENITH.md](./TRANSFORM_ADDIN_ZENITH.md)** - Should you transform to Zenith? Advantages, drawbacks, and how-to.
+
+### Google Gems for Add-Ins
+
+- **[GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md)** - Use the Geotab Add-In Architect Gem to generate Add-Ins without coding.
+- **[GOOGLE_GEM_CREATOR_GUIDE.md](./GOOGLE_GEM_CREATOR_GUIDE.md)** - Create your own Google Gem that generates Geotab Add-Ins.
 
 ### Advanced Topics
 
