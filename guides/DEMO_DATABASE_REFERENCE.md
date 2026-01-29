@@ -2,6 +2,16 @@
 
 Complete reference for the data available in Geotab demo databases. Use this when building and testing applications against demo accounts.
 
+**Contents:**
+- [What is a Demo Database?](#what-is-a-demo-database)
+- [Sample Data Profiles](#sample-data-profiles)
+- [Data Volume](#data-volume-spain-delivery-fleet-7-day-window)
+- [Entity Schemas](#entity-schemas) (Device, Trip, LogRecord, StatusData, DeviceStatusInfo, ExceptionEvent, Rule, FaultData, User, Group, DriverChange, Audit, Diagnostic)
+- [Fetching Demo Data](#fetching-demo-data)
+- [Resources](#resources)
+
+---
+
 ## What is a Demo Database?
 
 Demo databases are fully functional Geotab environments with simulated fleet data. When you [create a free demo account](https://my.geotab.com/registration.html), you configure:
@@ -18,17 +28,17 @@ Demo databases are fully functional Geotab environments with simulated fleet dat
 
 The demo simulates realistic vehicle movement, driver behavior, and telematics data for your selected configuration.
 
-> **Note:** The sample data below comes from a **Spain delivery fleet** demo database (50 vehicles, Vans and Trucks). Your demo database will have different data depending on your selections. Entity schemas and field names are consistent across all demo databases, but specific values (locations, vehicle counts, diagnostic ranges) will vary.
+> **Note:** The sample data below comes from a **European delivery fleet** demo database (50 vehicles, Vans and Trucks, simulating routes in Spain). This was created through a partner/internal demo system with additional location options. Your public demo database will have different data depending on your selections. **Entity schemas and field names are consistent across all demo databases**, but specific values (locations, vehicle counts, diagnostic ranges, rule IDs) will vary.
 
 ---
 
 ## Sample Data Profiles
 
-This guide currently documents one demo database profile. Additional profiles are planned:
+This guide currently documents one demo database profile. Additional profiles planned:
 
 | Profile | Location | Vehicle Type | Vocation | Status |
 |---------|----------|--------------|----------|--------|
-| Spain Delivery | Europe | Vans and Trucks | Delivery | Documented below |
+| European Delivery | Europe (Spain routes) | Vans and Trucks | Daytime tour | Documented below |
 | USA Long Haul | USA | Vans and Trucks | Long distance | TODO |
 | EV Fleet | USA or UK | Electric Vehicle (EV) | Hub and spoke | TODO |
 
@@ -379,11 +389,10 @@ Rule definitions that trigger exception events.
 | `condition` | object | Rule logic tree | See below |
 | `state` | string | Active/Inactive | `"ExceptionRuleStateActiveId"` |
 
-**Available Rules in Demo Databases:**
+**Common Stock Rules (consistent across databases):**
 
 | Rule ID | Name |
 |---------|------|
-| `aVvwIBkjCTk-5tv6s384rUw` | Max Speed |
 | `RuleSeatbeltId` | Seat belt |
 | `RuleHarshCorneringId` | Harsh Cornering |
 | `RulePostedSpeedingId` | Speeding |
@@ -391,10 +400,11 @@ Rule definitions that trigger exception events.
 | `RuleJackrabbitStartsId` | Hard Acceleration |
 | `RuleEnhancedMinorCollisionId` | Minor Collision |
 | `RuleAccidentId` | Possible Collision (Legacy) |
-| `a6ewYX-gcLUyL01olqgUQBw` | Engine Fault Exception |
 | `RuleHarshBrakingId` | Harsh Braking |
 | `RuleEngineLightOnId` | Engine Light On |
 | `RuleApplicationExceptionId` | Application Exception |
+
+> **Note:** Rules with IDs starting with `Rule...Id` are stock rules available in all databases. Custom rules (like `aVvwIBkjCTk-5tv6s384rUw` for "Max Speed") have generated IDs unique to each database. Query `Rule` entities to discover available rules in your database.
 
 ---
 
