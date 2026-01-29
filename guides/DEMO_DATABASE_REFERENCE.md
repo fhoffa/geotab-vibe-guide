@@ -5,7 +5,7 @@ Complete reference for the data available in Geotab demo databases. Use this whe
 **Contents:**
 - [What is a Demo Database?](#what-is-a-demo-database)
 - [Sample Data Profiles](#sample-data-profiles)
-- [Data Volume](#data-volume-spain-delivery-fleet-7-day-window)
+- [Data Volume](#data-volume-european-long-distance-fleet-7-day-window)
 - [Entity Schemas](#entity-schemas) (Device, Trip, LogRecord, StatusData, DeviceStatusInfo, ExceptionEvent, Rule, FaultData, User, Group, DriverChange, Audit, Diagnostic)
 - [Fetching Demo Data](#fetching-demo-data)
 - [Resources](#resources)
@@ -38,13 +38,13 @@ This guide currently documents one demo database profile. Additional profiles pl
 
 | Profile | Data Center | Vehicle Type | Vocation | Simulated Routes | Status |
 |---------|-------------|--------------|----------|------------------|--------|
-| European Delivery | Italy/Netherlands | Vans and Trucks | Daytime tour | Spain | Documented below |
-| USA Long Haul | USA | Vans and Trucks | Long distance | USA | TODO |
+| European Long Distance | Italy/Netherlands | Vans and Trucks | Long distance | Spain | Documented below |
+| USA Daytime | USA | Vans and Trucks | Daytime tour | USA | TODO |
 | EV Fleet | USA or UK | Electric Vehicle (EV) | Hub and spoke | TBD | TODO |
 
 ---
 
-## Data Volume: Spain Delivery Fleet (7-Day Window)
+## Data Volume: European Long Distance Fleet (7-Day Window)
 
 | Entity | Typical Count | Notes |
 |--------|---------------|-------|
