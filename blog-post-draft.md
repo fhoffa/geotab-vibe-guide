@@ -39,35 +39,36 @@ Then came January 23rd.
 
 I wanted to add a chapter on building Geotab Add-Ins—custom pages that live inside MyGeotab. Seemed straightforward. Geotab has examples. There's documentation. How hard could it be?
 
-At 2:55am, Claude pushed the first commit: *"Add comprehensive Geotab Add-Ins guide and example."*
+At 2:48am, Claude pushed the first commit: *"Add comprehensive Geotab Add-Ins guide and example."*
 
-By 3:03am, we knew something was wrong: *"Fix Add-In guide with working examples and troubleshooting."*
+By 2:55am, we knew something was wrong: *"Fix Add-In guide with working examples and troubleshooting."*
 
 By 3:10am, we were deep in the weeds: *"Add debug test Add-In to diagnose lifecycle issues."*
 
-What followed was six hours of increasingly desperate commits:
+What followed was a frantic 50 minutes of increasingly desperate commits:
 
 ```
-03:12 - Add geotab.addin object pattern test
-03:14 - Add parent window test for Add-In API access
-03:21 - Add comprehensive test to find MyGeotab API object
-03:54 - Add translations file - might be required for Add-In initialization
-04:00 - Move lifecycle methods to external JS file
-04:09 - Match Heat Map config structure exactly
-04:19 - Use geotab.addin.apitest pattern - matches Heat Map structure!
-07:02 - Add minimal test mimicking Heat Map structure exactly
-08:48 - Use EXACT Heat Map pattern - minified, direct assignment, no variables
+3:12am - Add geotab.addin object pattern test
+3:14am - Add parent window test for Add-In API access
+3:21am - Add comprehensive test to find MyGeotab API object
+3:23am - Add event listener test for Add-In initialization
+3:27am - Add complete working GitHub Pages Add-In example
+3:31am - Document critical findings about embedded Add-Ins limitations
+3:35am - Add GitHub Pages test files to verify external hosting works
+3:38am - Update test instructions for both repo owner and readers
 ```
 
 We tried everything. We added translation files (maybe it needed localization?). We matched the Heat Map example's structure exactly (it worked, so why didn't ours?). We tried different naming patterns. We added cache-busting parameters to defeat aggressive caching.
 
 Nothing. Worked.
 
-The code was identical to working examples. But when I loaded it in MyGeotab, the `initialize()` function never ran. The Add-In just sat there, blank.
+By 9:11am, I was exhausted. Claude committed a comprehensive debugging guide documenting every dead end we'd tried. I gave up and posted a desperate plea in our internal forums: *"Has anyone gotten a custom Add-In to actually work?"*
+
+Then I went to bed.
 
 ## Two Characters
 
-Then I noticed something.
+Twelve hours later, a teammate replied. He'd looked at our code and spotted it immediately.
 
 The working Heat Map example had this:
 ```javascript
@@ -83,9 +84,9 @@ See it? Those two parentheses at the end: `()`
 
 We were using immediate function invocation. The function ran immediately and assigned its *return value* to `geotab.addin.myAddin`. But MyGeotab expected to *call* that function itself to get the Add-In object. We'd already called it. MyGeotab found an object instead of a function, shrugged, and did nothing.
 
-Thirty commits. Six hours. Two parentheses.
+Thirty commits. Twelve hours. Two parentheses. And a teammate with fresh eyes.
 
-The fix took seconds. The commit message was triumphant:
+At 9:31pm, the fix took seconds. The commit message was triumphant:
 
 ```
 BREAKTHROUGH: The issue was using immediate function invocation ()!
@@ -110,7 +111,7 @@ We didn't just fix the bug and move on. We created a comprehensive troubleshooti
 
 Anyone using Claude or ChatGPT to build Geotab Add-Ins now gets to skip that six-hour detour.
 
-## The Curriculum Grew
+## The Kit Kept Growing
 
 After the Add-In crisis, things accelerated. We'd battle-tested our approach. We knew the pattern worked.
 
@@ -147,6 +148,30 @@ I was the **editor**—reading the output, asking for clearer explanations, push
 I was the **user advocate**—remembering that the people reading this would be beginners who might never have seen a terminal before.
 
 Claude Code did the heavy lifting. But the steering? That was me.
+
+## Best Practices (Learned the Hard Way)
+
+Looking back at the git history, some patterns clearly worked. Others... we're still figuring out.
+
+**What worked:**
+
+**1. Session URLs in every commit.** Every commit message ends with a Claude Code session link. Six months from now, when someone asks "why did we do it this way?", we can literally replay the conversation. This isn't just documentation—it's institutional memory.
+
+**2. Small, focused PRs.** Eighteen PRs in eight days. Each one did one thing. Easy to review, easy to revert, easy to understand. The alternative—one massive PR with 133 commits—would have been impossible to reason about.
+
+**3. Document the dead ends, not just the solutions.** That debugging guide listing every failed approach? It's more valuable than the fix. The fix is one line. The guide saves someone else from spending twelve hours on the same wild goose chase.
+
+**4. Separate docs for humans vs AIs.** We discovered that humans and AI assistants need different documentation. Humans want stories and context. AIs want structured facts. The "Agent Skills" format emerged from this—technical reference docs optimized for AI consumption, alongside conversational guides for humans.
+
+**5. Ask for help earlier.** The teammate who spotted `()` in five seconds had been available the whole time. Twelve hours of solo debugging could have been one Slack message.
+
+**What we should still adopt:**
+
+**Automated testing before committing.** Thirty commits trying variations would have been ten if we'd had a test harness that could load Add-Ins programmatically. We were testing by manually refreshing MyGeotab—slow and error-prone.
+
+**Clearer "this is ready for review" vs "this is exploratory" commits.** The debugging session mixed experimental code with documentation updates. A `[WIP]` or `[EXPERIMENT]` prefix would help future readers understand which commits were serious attempts vs. shots in the dark.
+
+**More aggressive cleanup before merging.** Some PRs include commits like "Remove debugging files" and "Clean up PR." That cleanup should happen before the PR, not as commits within it. Rebase and squash.
 
 ## Why This Matters
 
