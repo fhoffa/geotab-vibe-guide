@@ -1,12 +1,17 @@
 # I Didn't Write a Single Line of Code. I Built This Anyway.
 
-It's 3am and I'm staring at my screen, watching Claude Code churn through yet another attempt to fix a bug that's been haunting us for hours. Nothing works.
+I spent a week building a [hackathon starter kit](https://github.com/fhoffa/geotab-vibe-guide) with Claude Code. 133 commits, 70 files, 11,000+ lines—and I never wrote a single line of code myself.
 
-A week later, I'd have 133 commits, 70 files, and 11,000+ lines of guides and working examples. I never wrote a single line of code myself.
+Here's what I learned:
 
-This is the story of building the [Geotab Vibe Coding Guide](https://github.com/fhoffa/geotab-vibe-guide)—and how the project completely inverted itself by the end.
+- **The workflow that actually works**: prompt → branch → ship → repeat. Eighteen PRs in eight days, each one traceable back to the conversation that created it.
+- **Where AI falls short**: Some bugs only reveal themselves in the real environment. AI can try a hundred approaches, but you still need human testing and fresh eyes.
+- **How to ask for help effectively**: When I got stuck, Claude's debugging summary became the perfect handoff document. My teammate jumped in without asking "what have you tried?"
+- **The surprise pivot**: We started building a developer toolkit. We ended up realizing the easiest path was no code at all.
 
-## What We Built (And Why It Matters)
+If you're thinking about using AI to build something substantial—not just one-off scripts, but a real project with commits and PRs and collaboration—this is what I wish I'd known.
+
+## The Goal
 
 I work with developers who want to build fleet management apps using the Geotab API. Most hit the same walls: confusing docs, authentication headaches, code that *should* work but doesn't.
 
