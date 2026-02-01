@@ -39,58 +39,50 @@ Then came January 23rd.
 
 I wanted to add a chapter on building Geotab Add-Ins—custom pages that live inside MyGeotab. Seemed straightforward. Geotab has examples. There's documentation. How hard could it be?
 
-At 2:48am, Claude pushed the first commit: *"Add comprehensive Geotab Add-Ins guide and example."*
+The first commit looked promising: *"Add comprehensive Geotab Add-Ins guide and example."*
 
-By 2:55am, we knew something was wrong: *"Fix Add-In guide with working examples and troubleshooting."*
-
-By 3:10am, we were deep in the weeds: *"Add debug test Add-In to diagnose lifecycle issues."*
-
-What followed was a frantic 50 minutes of increasingly desperate commits:
+Minutes later, we knew something was wrong. Then came the avalanche:
 
 ```
-3:12am - Add geotab.addin object pattern test
-3:14am - Add parent window test for Add-In API access
-3:21am - Add comprehensive test to find MyGeotab API object
-3:23am - Add event listener test for Add-In initialization
-3:27am - Add complete working GitHub Pages Add-In example
-3:31am - Document critical findings about embedded Add-Ins limitations
-3:35am - Add GitHub Pages test files to verify external hosting works
-3:38am - Update test instructions for both repo owner and readers
+Add debug test Add-In to diagnose lifecycle issues
+Add geotab.addin object pattern test
+Add parent window test for Add-In API access
+Add comprehensive test to find MyGeotab API object
+Add event listener test for Add-In initialization
+Document critical findings about embedded Add-Ins limitations
 ```
 
-We tried everything. We added translation files (maybe it needed localization?). We matched the Heat Map example's structure exactly (it worked, so why didn't ours?). We tried different naming patterns. We added cache-busting parameters to defeat aggressive caching.
+We tried everything. Translation files (maybe it needed localization?). Matching the Heat Map example's structure exactly (it worked, so why didn't ours?). Different naming patterns. Cache-busting parameters. Thirty commits of increasingly desperate experiments.
 
-Nothing. Worked.
+Nothing worked. The code looked identical to working examples, but when I loaded it in MyGeotab, the `initialize()` function never ran.
 
-By 9:11am, I was exhausted. But before giving up, I asked Claude for one more thing: *"Summarize everything we've tried and what happened."*
+Exhausted, I asked Claude for one more thing: *"Summarize everything we've tried."*
 
-Claude committed a comprehensive debugging guide documenting every dead end—what we'd tested, what we'd ruled out, what still didn't make sense. It was written for me, a record of our session so I wouldn't forget where we'd left off.
-
-I posted it to our internal forums with a desperate plea: *"Has anyone gotten a custom Add-In to actually work? Here's everything we've tried."*
+Claude wrote a comprehensive debugging guide—every dead end documented, every hypothesis tested, every failure explained. I posted it to our internal forums: *"Has anyone gotten a custom Add-In to actually work? Here's everything we've tried."*
 
 Then I went to bed.
 
 ## Two Characters
 
-Twelve hours later, a teammate replied. He didn't need me to explain anything—the debugging summary had all the context. He read through our attempts, looked at our code, and spotted it immediately.
+A teammate replied. He didn't need me to explain anything—the debugging summary had all the context. He looked at our code and spotted it immediately.
 
-The working Heat Map example had this:
+The working example:
 ```javascript
 geotab.addin.heatMap = function() { ... }
 ```
 
-Our code had this:
+Our code:
 ```javascript
 geotab.addin.myAddin = function() { ... }()
 ```
 
-See it? Those two parentheses at the end: `()`
+Those two parentheses: `()`
 
-We were using immediate function invocation. The function ran immediately and assigned its *return value* to `geotab.addin.myAddin`. But MyGeotab expected to *call* that function itself to get the Add-In object. We'd already called it. MyGeotab found an object instead of a function, shrugged, and did nothing.
+We were using immediate function invocation. The function ran immediately and assigned its *return value*. But MyGeotab expected to *call* that function itself. We'd already called it. MyGeotab found an object instead of a function, shrugged, and did nothing.
 
-Thirty commits. Twelve hours. Two parentheses. And a teammate with fresh eyes.
+Thirty commits. Two parentheses. A teammate with fresh eyes.
 
-At 9:31pm, the fix took seconds. The commit message was triumphant:
+The commit message was triumphant:
 
 ```
 BREAKTHROUGH: The issue was using immediate function invocation ()!
@@ -117,15 +109,47 @@ Anyone using Claude or ChatGPT to build Geotab Add-Ins now gets to skip that six
 
 ## The Kit Kept Growing
 
-After the Add-In crisis, things accelerated. We'd battle-tested our approach. We knew the pattern worked.
+After the Add-In crisis, things accelerated. Each PR told its own story.
 
-Over the next few days, we added:
+**PR #9-10: The Zenith Saga**
 
-**A complete design system integration.** Geotab has this beautiful component library called Zenith. Claude built a full React example using it, complete with webpack configuration and deployment instructions. When the Zenith Table component turned out to be buggy, we documented the workaround (use plain HTML tables styled with Zenith CSS).
+Geotab has a beautiful component library called Zenith—React components that match MyGeotab's look and feel. Claude built a full Vehicle Manager example using it, complete with webpack configuration.
 
-**"Agent Skills"—a new documentation format.** We realized that AI assistants need different documentation than humans. Humans want narrative explanations. AIs want structured facts they can reference. So we created two parallel tracks: conversational guides for humans, technical skills documents for AIs.
+Then we actually tried to use it.
 
-**A Google Gem for no-code Add-In creation.** The ultimate democratization: describe what you want in plain English, get a working Add-In configuration you can paste directly into MyGeotab. No coding required. No hosting required. Just conversation.
+The Zenith Table component didn't render properly. The Alert component needed a FeedbackProvider wrapper that wasn't documented. We burned through a dozen commits figuring out workarounds:
+
+```
+Fix Zenith Vehicle Manager - use HTML table instead of Zenith Table
+Add FeedbackProvider wrapper for Zenith Alert component
+Add Zenith trade-offs and gotchas documentation
+```
+
+The solution? Use plain HTML tables styled with Zenith CSS classes. Sometimes the "official" components aren't the answer. We documented every gotcha so the next person doesn't have to discover them.
+
+**PR #5: Agent Skills**
+
+We realized AI assistants need different documentation than humans. Humans want stories and context. AIs want structured facts they can reference quickly.
+
+So we created two parallel tracks: conversational guides for humans ("here's how to think about Add-Ins"), and technical skill documents for AIs ("here are the exact patterns, constraints, and code snippets"). The skill format became a template we reused across topics.
+
+**PR #13-18: The Google Gem Evolution**
+
+Then came the pivot. We'd built all this documentation for developers using Claude and ChatGPT. But what about people who don't want to code at all?
+
+I created a Google Gem—a custom Gemini persona loaded with everything we'd learned. You describe the Add-In you want in plain English. It generates the JSON configuration. You paste it into MyGeotab. Done.
+
+No coding. No hosting. No terminal. Just conversation.
+
+The commits show the evolution:
+```
+Add Google Gem guides for Geotab Add-In generation
+Add public Gem URL to documentation
+Make Google Gem the primary starting point for new users
+Redirect beginners to Google Gem guide instead of Claude
+```
+
+By the end, we'd inverted the whole project. We started building a developer toolkit. We ended up realizing the easiest path was no code at all.
 
 ## The Numbers (For Those Who Like Numbers)
 
