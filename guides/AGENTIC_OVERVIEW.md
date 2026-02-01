@@ -379,6 +379,115 @@ def check_weather_and_update_zones():
 
 ---
 
+## Voice Agents
+
+Voice interfaces add a natural interaction layer to fleet management. See [Advanced Integrations](./ADVANCED_INTEGRATIONS.md) for detailed voice implementation patterns.
+
+### Voice Agent Types
+
+| Type | Use Case | Example |
+|------|----------|---------|
+| **Query Agents** | Answer questions | "Where is truck 42?" → spoken response |
+| **Command Agents** | Take actions via voice | "Mark delivery complete" → updates Geotab |
+| **Proactive Agents** | Call/alert humans | System calls dispatcher about critical fault |
+| **Phone Agents** | Handle inbound calls | Customer calls to check delivery ETA |
+
+### Voice for Fleet Managers
+
+Hands-free fleet queries while in the field:
+```
+"Hey Fleet, where are my drivers?"
+"Which vehicles need maintenance this week?"
+"Alert me if anyone speeds over 80"
+```
+
+### Voice for Drivers
+
+Safe, hands-free interaction:
+```
+"What's my next stop?"
+"Mark this delivery complete"
+"Report a vehicle issue"
+```
+
+### Phone-Based Voice Agents
+
+AI agents that make or receive actual phone calls:
+
+**Outbound (Agent calls humans):**
+```
+Critical fault detected →
+  Agent calls dispatcher: "Vehicle 2417 has a critical engine fault
+  at mile marker 145 on I-35. Driver has been notified. Should I
+  dispatch roadside assistance?"
+```
+
+**Inbound (Humans call agent):**
+```
+Customer calls delivery line →
+  Agent answers: "Hi, I can help you track your delivery.
+  What's your order number?"
+  Customer: "12345"
+  Agent: "Your delivery is 15 minutes away. The driver is
+  John in a white van. Anything else I can help with?"
+```
+
+### Voice Agent Tools
+
+| Tool | Type | Best For |
+|------|------|----------|
+| **Vapi** | Phone AI | Building phone agents quickly |
+| **Bland.ai** | Phone AI | Enterprise phone automation |
+| **Twilio + AI** | Phone infrastructure | Custom phone solutions |
+| **Retell AI** | Phone AI | Conversational phone agents |
+| **OpenAI Whisper** | Speech-to-text | Transcription |
+| **ElevenLabs** | Text-to-speech | Natural-sounding voices |
+| **Deepgram** | Speech-to-text | Real-time transcription |
+
+### Example: Proactive Alert Call Agent
+
+```python
+# critical_fault_caller.py
+from vapi import Vapi
+from geotab_api import GeotabAPI
+
+def check_faults_and_call():
+    # 1. Monitor for critical faults
+    faults = geotab.get("FaultData", search={
+        "fromDate": fifteen_minutes_ago,
+        "severity": "Critical"
+    })
+
+    for fault in faults:
+        # 2. Check if we already called about this fault
+        if already_notified(fault["id"]):
+            continue
+
+        # 3. Make phone call to dispatcher
+        vapi.calls.create(
+            phone_number=DISPATCHER_PHONE,
+            assistant_id=FLEET_ALERT_ASSISTANT,
+            context={
+                "vehicle": fault["device"]["name"],
+                "fault_code": fault["code"],
+                "description": fault["description"],
+                "location": get_vehicle_location(fault["device"]["id"]),
+                "driver": get_driver_name(fault["device"]["id"])
+            }
+        )
+
+        # 4. Mark as notified
+        mark_notified(fault["id"])
+```
+
+**The assistant handles the conversation:**
+- Explains the situation to the dispatcher
+- Answers follow-up questions about vehicle/driver
+- Can dispatch roadside assistance if requested
+- Logs the call outcome
+
+---
+
 ## Tool Deep Dives
 
 ### n8n (Recommended for Beginners)
