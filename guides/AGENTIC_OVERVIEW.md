@@ -165,16 +165,18 @@ Do you need AI reasoning (not just rules)?
 
 ### Framework Comparison
 
-| Approach | Complexity | Best For | Learning Curve |
-|----------|------------|----------|----------------|
-| **Cron + Python** | Simple | Basic polling, single alerts | Low |
-| **n8n** | Visual | Multi-step workflows, integrations | Low |
-| **Make/Zapier** | Visual | Simple automations, non-developers | Very Low |
-| **Temporal.io** | Code | Mission-critical, long-running | Medium |
-| **LangGraph** | Code | AI reasoning, complex logic | Medium |
-| **Google ADK** | Code | AI agents, Google Cloud | Medium |
-| **CrewAI** | Code | Multi-agent collaboration | Medium |
-| **AutoGen** | Code | Enterprise, Azure integration | High |
+| Approach | Complexity | Best For | Learning Curve | Pricing |
+|----------|------------|----------|----------------|---------|
+| **Zapier** | Visual | Simplest automations, beginners | Very Low | Free tier, then $20+/mo |
+| **Make** | Visual | Complex visual workflows | Low | Free tier, then $9+/mo |
+| **n8n** | Visual | Self-hosted, data privacy | Low | Free (self-host) or cloud |
+| **Workato** | Visual | Enterprise, compliance | Medium | Enterprise pricing |
+| **Cron + Python** | Code | Full control, free | Low | Free |
+| **Temporal.io** | Code | Mission-critical, durable | Medium | Free (self-host) |
+| **LangGraph** | Code | AI reasoning, complex logic | Medium | Free |
+| **Google ADK** | Code | AI agents, Google Cloud | Medium | Pay per use |
+| **CrewAI** | Code | Multi-agent collaboration | Medium | Free |
+| **AutoGen** | Code | Enterprise, Azure integration | High | Pay per use |
 
 ---
 
@@ -227,6 +229,156 @@ Do you need AI reasoning (not just rules)?
 
 ---
 
+## Data Flow Directions
+
+Most examples focus on **Geotab → External** (monitoring fleet, alerting elsewhere). But agents can work in multiple directions:
+
+### Direction 1: Geotab → External (Outbound)
+**Monitor fleet data, act on external systems.**
+
+```
+Geotab speeding event → Slack alert
+Geotab fault code → ServiceNow ticket
+Geotab trip completion → Customer notification
+```
+
+This is the most common pattern—and what the [n8n Quickstart](./AGENTIC_QUICKSTART_N8N.md) teaches.
+
+---
+
+### Direction 2: External → Geotab (Inbound)
+**Monitor external sources, act on your fleet.**
+
+```
+Weather forecast → Create hazard zones in Geotab
+Traffic news → Update routes for drivers
+Customer order → Assign vehicle to delivery
+Price change → Update fuel stop recommendations
+```
+
+**This is powerful but underutilized.** Your agents can proactively prepare your fleet for external events.
+
+---
+
+### Direction 3: Bidirectional
+**Full integration loop between systems.**
+
+```
+Customer places order in Shopify
+  → Agent assigns nearest vehicle in Geotab
+  → Geotab tracks delivery progress
+  → Agent updates customer with ETA
+  → Delivery completes in Geotab
+  → Agent marks order delivered in Shopify
+```
+
+---
+
+## External Event Monitoring
+
+Your agents can watch the world and act on your fleet proactively.
+
+### Weather Monitoring
+```
+MONITOR: Weather API (OpenWeather, Tomorrow.io)
+DETECT:  Severe weather warning for fleet area
+ACT:
+  - Create temporary hazard zones in Geotab
+  - Alert drivers in affected areas
+  - Suggest alternate routes
+  - Notify dispatch of potential delays
+```
+
+### Traffic & Road Closures
+```
+MONITOR: Traffic APIs (Google Maps, HERE, Waze)
+DETECT:  Road closure or major accident on common routes
+ACT:
+  - Create avoidance zones in Geotab
+  - Re-route affected vehicles
+  - Update customer ETAs
+  - Log disruption for reporting
+```
+
+### News & Events
+```
+MONITOR: News APIs, event calendars, city feeds
+DETECT:  Major event (concert, sports game, parade)
+ACT:
+  - Create temporary zones around venue
+  - Adjust delivery windows for area
+  - Alert drivers about parking/traffic
+  - Pre-position vehicles outside affected area
+```
+
+### Fuel Price Monitoring
+```
+MONITOR: Fuel price APIs (GasBuddy, OPIS)
+DETECT:  Price drop at stations along routes
+ACT:
+  - Update recommended fuel stops
+  - Alert drivers near cheap stations
+  - Log savings opportunities
+```
+
+### Customer System Integration
+```
+MONITOR: Your CRM, order system, or scheduling tool
+DETECT:  New order, appointment change, cancellation
+ACT:
+  - Assign/reassign vehicles in Geotab
+  - Update driver assignments
+  - Adjust routes and schedules
+  - Confirm with customer
+```
+
+---
+
+## Example: Proactive Weather Agent
+
+Here's a concrete example of an external → Geotab agent:
+
+```python
+# weather_zone_agent.py
+import requests
+from geotab_api import GeotabAPI
+
+def check_weather_and_update_zones():
+    # 1. MONITOR: Check weather for fleet operating area
+    weather = requests.get(
+        "https://api.tomorrow.io/v4/weather/forecast",
+        params={"location": "Austin,TX", "apikey": WEATHER_API_KEY}
+    ).json()
+
+    # 2. DETECT: Severe weather?
+    alerts = [w for w in weather["alerts"] if w["severity"] == "severe"]
+
+    if alerts:
+        for alert in alerts:
+            # 3. ACT: Create hazard zone in Geotab
+            geotab.add("Zone", {
+                "name": f"WEATHER HAZARD: {alert['event']}",
+                "externalReference": f"weather-{alert['id']}",
+                "points": alert["affected_area"],
+                "zoneTypes": ["ZoneTypeCustomerId"],  # or appropriate type
+                "activeFrom": alert["start"],
+                "activeTo": alert["end"]
+            })
+
+            # 4. ACT: Alert affected drivers
+            vehicles_in_zone = geotab.get("Device", search={
+                "fromDate": now,
+                "zoneId": zone_id
+            })
+
+            for vehicle in vehicles_in_zone:
+                send_driver_alert(vehicle, alert)
+```
+
+**Schedule this to run every 30 minutes** and your fleet is automatically warned about incoming weather.
+
+---
+
 ## Tool Deep Dives
 
 ### n8n (Recommended for Beginners)
@@ -246,6 +398,65 @@ Geotab API (poll) → Filter (speed > 75) → Slack Message
 ```
 
 **[Start with the n8n Quickstart Guide →](./AGENTIC_QUICKSTART_N8N.md)**
+
+---
+
+### Zapier (Simplest Entry Point)
+
+[Zapier](https://zapier.com/) is the most beginner-friendly automation tool with 6,000+ app integrations.
+
+**Why Zapier:**
+- Easiest to learn—build your first automation in minutes
+- Huge library of pre-built integrations
+- No self-hosting required
+- Good free tier for simple workflows
+
+**Limitations:**
+- Can get expensive at scale
+- Less flexible than n8n for complex logic
+- No self-hosting option (data goes through Zapier)
+
+**Example Zap:**
+```
+Webhook (receive Geotab data) → Filter → Slack Message
+```
+
+**Resources:** [zapier.com](https://zapier.com/)
+
+---
+
+### Make (formerly Integromat)
+
+[Make](https://www.make.com/) offers more visual complexity than Zapier with better pricing.
+
+**Why Make:**
+- More powerful than Zapier for complex scenarios
+- Visual workflow builder with branching
+- Better pricing for high-volume workflows
+- Good balance of simplicity and power
+
+**Example scenario:**
+```
+HTTP Request (poll Geotab) → Router → [Slack, Email, Google Sheets]
+```
+
+**Resources:** [make.com](https://www.make.com/)
+
+---
+
+### Workato (Enterprise-Grade)
+
+[Workato](https://www.workato.com/) is designed for enterprise automation with compliance and governance features.
+
+**Why Workato:**
+- SOC 2, HIPAA, GDPR compliance built-in
+- Enterprise-grade security and audit trails
+- IT governance and approval workflows
+- Handles complex enterprise integrations (SAP, Salesforce, ServiceNow)
+
+**Best for:** Large organizations with compliance requirements
+
+**Resources:** [workato.com](https://www.workato.com/)
 
 ---
 
