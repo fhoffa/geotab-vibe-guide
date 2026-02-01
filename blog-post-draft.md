@@ -2,15 +2,15 @@
 
 It's 3am and I'm staring at my screen, watching Claude Code churn through yet another attempt to fix a bug that's been haunting us for hours. We've tried everything. Different patterns. Different file structures. We literally copied a working example character-by-character. Nothing works.
 
-Eight days later, I'd have a complete educational curriculum—133 commits, 70 files, 11,000+ lines of tutorials, working code examples, and troubleshooting guides. I never wrote a single line of code myself.
+Eight days later, I'd have a complete hackathon starter kit—133 commits, 70 files, 11,000+ lines of guides, working examples, and ready-to-steal prompts. I never wrote a single line of code myself.
 
-This is the story of building the [Geotab Vibe Coding Guide](https://github.com/fhoffa/geotab-vibe-guide) entirely through conversation.
+This is the story of building the [Geotab Vibe Coding Guide](https://github.com/fhoffa/geotab-vibe-guide)—a launchpad for developers who want to build fleet management apps fast, with AI doing the heavy lifting.
 
 ## It Started With a Simple Idea
 
 I work with developers who want to build fleet management applications using the Geotab API. Most of them hit the same walls: confusing documentation, authentication headaches, and that particular flavor of frustration that comes from staring at code that *should* work but doesn't.
 
-What if I could create a curriculum that taught them to build these apps using AI assistants? Not just tutorials—but actual prompts they could copy-paste and run?
+What if I could create something that got them unstuck fast? Not documentation to read—but prompts they could copy-paste and run. Examples they could remix. A hackathon kit that made the first hour exciting instead of frustrating.
 
 I opened Claude Code and typed something like: *"Help me create a beginner-friendly guide for building Geotab applications using AI tools."*
 
@@ -152,7 +152,7 @@ Claude Code did the heavy lifting. But the steering? That was me.
 
 There's a new kind of software development emerging. Call it "vibe coding," call it "prompt engineering," call it whatever you want. The point is: the barrier between "having an idea" and "having working software" is collapsing.
 
-I'm not a JavaScript developer. I couldn't write a webpack configuration from scratch. But I built a curriculum that includes React components, design system integration, and deployment configurations—because I could *describe* what I wanted and iterate on the results.
+I'm not a JavaScript developer. I couldn't write a webpack configuration from scratch. But I built a hackathon kit that includes React components, design system integration, and deployment configurations—because I could *describe* what I wanted and iterate on the results.
 
 That's not cheating. That's leverage.
 
