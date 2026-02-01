@@ -62,13 +62,17 @@ We tried everything. We added translation files (maybe it needed localization?).
 
 Nothing. Worked.
 
-By 9:11am, I was exhausted. Claude committed a comprehensive debugging guide documenting every dead end we'd tried. I gave up and posted a desperate plea in our internal forums: *"Has anyone gotten a custom Add-In to actually work?"*
+By 9:11am, I was exhausted. But before giving up, I asked Claude for one more thing: *"Summarize everything we've tried and what happened."*
+
+Claude committed a comprehensive debugging guide documenting every dead end—what we'd tested, what we'd ruled out, what still didn't make sense. It was written for me, a record of our session so I wouldn't forget where we'd left off.
+
+I posted it to our internal forums with a desperate plea: *"Has anyone gotten a custom Add-In to actually work? Here's everything we've tried."*
 
 Then I went to bed.
 
 ## Two Characters
 
-Twelve hours later, a teammate replied. He'd looked at our code and spotted it immediately.
+Twelve hours later, a teammate replied. He didn't need me to explain anything—the debugging summary had all the context. He read through our attempts, looked at our code, and spotted it immediately.
 
 The working Heat Map example had this:
 ```javascript
@@ -164,6 +168,8 @@ Looking back at the git history, some patterns clearly worked. Others... we're s
 **4. Separate docs for humans vs AIs.** We discovered that humans and AI assistants need different documentation. Humans want stories and context. AIs want structured facts. The "Agent Skills" format emerged from this—technical reference docs optimized for AI consumption, alongside conversational guides for humans.
 
 **5. Ask for help earlier.** The teammate who spotted `()` in five seconds had been available the whole time. Twelve hours of solo debugging could have been one Slack message.
+
+**6. Let Claude write the context for others.** When I finally asked for help, I didn't have to write a summary of what we'd tried—Claude had already written it. That debugging guide wasn't just for me; it became the perfect handoff document. My teammate could jump in without asking "what have you already tried?"
 
 **What we should still adopt:**
 
