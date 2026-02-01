@@ -159,7 +159,7 @@ Looking back at the git history, some patterns clearly worked. Others... we're s
 
 **What worked:**
 
-**1. Session URLs in every commit.** Every commit message ends with a Claude Code session link. Six months from now, when someone asks "why did we do it this way?", we can literally replay the conversation. This isn't just documentation—it's institutional memory.
+**1. Session URLs in every commit.** Every commit message ends with a Claude Code session link. Six months from now, when someone asks "why did we do it this way?", we can replay the conversation that created it.
 
 **2. Small, focused PRs.** Eighteen PRs in eight days. Each one did one thing. Easy to review, easy to revert, easy to understand. The alternative—one massive PR with 133 commits—would have been impossible to reason about.
 
