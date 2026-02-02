@@ -1,0 +1,21 @@
+{
+  "name": "CSS Files Test",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "1.0",
+  "items": [{
+    "url": "test-page.html",
+    "path": "ActivityLink",
+    "menuName": {
+      "en": "CSS Files Test"
+    }
+  }],
+  "files": {
+    "test-page.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>CSS Files Test</title><link rel='stylesheet' href='css/styles.css'><script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'></script></head><body><div class='card'><h1 class='title'>CSS Files Test</h1><div id='status' class='status'>Testing...</div><div class='chart-container'><canvas id='chart'></canvas></div></div><script src='js/main.js'></script></body></html>",
+    "js": {
+      "main.js": "geotab.addin['css-files-test']=function(){return{initialize:function(api,state,callback){var statusEl=document.getElementById('status');var results=[];results.push('✅ Separate CSS file: Working (you see styled cards)');if(typeof Chart!=='undefined'){results.push('✅ Chart.js CDN: Loaded (v'+Chart.version+')');}else{results.push('❌ Chart.js CDN: Failed to load');}api.call('Get',{typeName:'Device',resultsLimit:5},function(devices){results.push('✅ API call: Found '+devices.length+' devices');statusEl.className='status success';statusEl.innerHTML=results.join('<br>');var ctx=document.getElementById('chart').getContext('2d');new Chart(ctx,{type:'doughnut',data:{labels:['Vehicles Found','Example Data'],datasets:[{data:[devices.length,10-devices.length],backgroundColor:['#667eea','#e0e0e0']}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}}}});},function(err){results.push('❌ API error: '+err);statusEl.className='status error';statusEl.innerHTML=results.join('<br>');});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('CSS Files Test registered');"
+    },
+    "css": {
+      "styles.css": "body{font-family:Arial,sans-serif;padding:20px;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;margin:0;}.card{background:white;border-radius:12px;padding:24px;box-shadow:0 4px 6px rgba(0,0,0,0.1);max-width:600px;margin:0 auto;}.title{color:#333;margin:0 0 20px 0;font-size:24px;}.status{padding:12px;border-radius:8px;margin-bottom:16px;}.status.success{background:#d4edda;color:#155724;}.status.error{background:#f8d7da;color:#721c24;}.chart-container{height:300px;margin-top:20px;}"
+    }
+  }
+}
