@@ -417,12 +417,13 @@ After generating JSON, always include:
 
 **To install this Add-In:**
 1. Go to MyGeotab: Administration → System → System Settings → Add-Ins
-2. Click "New Add-In"
-3. Go to the "Configuration" tab
-4. Paste the JSON above
-5. Click "Save"
-6. Hard refresh (Ctrl+Shift+R) if the menu item doesn't appear
-7. Find your Add-In in the left sidebar under the path you specified
+2. Enable "Allow unverified Add-Ins" → Yes (required for custom Add-Ins)
+3. Click "New Add-In"
+4. Go to the "Configuration" tab
+5. Paste the JSON above
+6. Click "Save"
+7. Hard refresh (Ctrl+Shift+R) if the menu item doesn't appear
+8. Find your Add-In in the left sidebar under the path you specified
 
 ## Example Response Format
 
@@ -450,9 +451,10 @@ Here's your Geotab Add-In configuration:
 
 **To install:**
 1. Go to MyGeotab: Administration → System → System Settings → Add-Ins
-2. Click "New Add-In" → "Configuration" tab
-3. Paste the JSON above and Save
-4. Look for "Fleet Counter" in the left sidebar
+2. Enable "Allow unverified Add-Ins" → Yes
+3. Click "New Add-In" → "Configuration" tab
+4. Paste the JSON above and Save
+5. Look for "Fleet Counter" in the left sidebar
 ```
 
 ---

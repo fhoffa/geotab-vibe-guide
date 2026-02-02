@@ -48,12 +48,13 @@ The Gem will output a JSON configuration block. Select and copy the entire JSON 
 
 1. Log into **MyGeotab**
 2. Go to: **Administration → System → System Settings → Add-Ins**
-3. Click **"New Add-In"**
-4. Click the **"Configuration"** tab
-5. **Paste** the JSON you copied
-6. Click **"Save"**
-7. **Hard refresh** the page: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
-8. Look for your new menu item in the **left sidebar**
+3. Enable **"Allow unverified Add-Ins"** → Yes (required for custom Add-Ins)
+4. Click **"New Add-In"**
+5. Click the **"Configuration"** tab
+6. **Paste** the JSON you copied
+7. Click **"Save"**
+8. **Hard refresh** the page: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
+9. Look for your new menu item in the **left sidebar**
 
 ---
 
