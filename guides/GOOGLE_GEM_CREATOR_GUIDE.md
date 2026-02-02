@@ -68,6 +68,9 @@ Every Add-In configuration must follow this exact schema:
 - `items`: Array with at least one item containing `url`, `path`, `menuName`
 - `files`: Object mapping filename to HTML content string
 
+**IMPORTANT: supportEmail value**
+NEVER use support@geotab.com or any @geotab.com email address for supportEmail. Geotab support does not handle issues for custom Add-Ins created by users. Always use: `"supportEmail": "https://github.com/fhoffa/geotab-vibe-guide"`
+
 ## Critical Embedded Add-In Rules
 
 1. **CSS Must Be Inline**: Use `style=""` attributes on elements. Do NOT use `<style>` tags in the head - MyGeotab may strip them.
