@@ -8,6 +8,56 @@ This primer shows you what's possible.
 
 ---
 
+## They Started Small Too
+
+These partners began with simple ideas. Now they're in the Marketplace.
+
+### GoAnalytics: From Reseller to Order Now Partner
+
+**The founder** spent 14 years as a Geotab reseller before building his own product.
+
+**The start:** Simple dashboards to visualize key metrics at a glance.
+
+**The growth:**
+> "Our original product began with simple dashboards designed to visualize key metrics at a glance. But innovation doesn't happen in a vacuum. Through constant conversations with customers and partners — including deep collaboration with Geotab — we evolved rapidly."
+
+**Today:** Order Now partner (highest tier). One of only 3 software solutions launched on Order Now in January 2025. 5-star rated.
+
+---
+
+### LifeSaver Mobile: Two Dads Worried About Their Kids
+
+**The problem:** Co-founders Ted Chen and Mike Demele had teenage sons learning to drive. They were worried about phone distraction.
+
+> "This generation was raised with phones in their hands, and eliminating that distraction while driving was a serious concern."
+
+**The solution:** 100% software—no hardware required. Prevents phone use while driving.
+
+**The validation:** 50+ million miles of driving data.
+
+**The results for customers:**
+- **25-50% reduction** in at-fault collisions
+- **50% drop** in annual fleet insurance claims
+
+**Today:** Premier Partner. Their interest was confirmed at Geotab Connect 2020 when they saw strong responses from resellers and customers.
+
+---
+
+### Whip Around: Founded 2016, Now Premier Partner
+
+**The product:** Electronic DVIR (driver vehicle inspection reports), work orders, maintenance scheduling.
+
+**The journey:** Started in 2016. Built integration with Geotab Drive app. Achieved Premier Partner status.
+
+**Customer results:**
+- "Over **30% per month in savings** after putting Whip Around into play"
+- "Saves us **tens of thousands of dollars a year**"
+
+> "We are honored to reach Premier Partner status as we strive to collaborate with key partners such as Geotab."
+> — Noah Hickey, CEO
+
+---
+
 ## What Can You Build?
 
 The Marketplace has 15 categories. Each represents a real customer problem and a business opportunity:
@@ -50,7 +100,7 @@ Geotab ranks **#1 in ABI Research's commercial telematics rankings** for four co
 
 ---
 
-## From Hackathon to Marketplace: Real Examples
+## From Idea to Product: More Examples
 
 ### Cameras That Pay for Themselves
 
@@ -72,11 +122,13 @@ Connects to **85,000+ maintenance shops** across the US.
 
 ---
 
-### Asset Tracking Beyond Vehicles
+### Collision Reconstruction in Real-Time
 
-**Link Labs** — BLE and GPS trackers for trailers, containers, and equipment. Custom Add-In shows all tracked assets in MyGeotab.
+**Xtract360** — Digital incident reporting with instant collision reconstruction. Shows damage, cost, and liability analysis.
 
-**What you could build:** A "where's my stuff?" dashboard that shows every trailer, tool, and container across the fleet.
+**Order Now partner** (January 2025 launch). Transforms paper-based claims to digital.
+
+**What you could build:** An InsurTech tool that automatically generates claims reports from telematics data.
 
 ---
 
@@ -118,6 +170,34 @@ Findings:
 
 ---
 
+## How to Join the Marketplace
+
+### The Process
+
+1. **Build** — Use the free SDK at [geotab.github.io/sdk](https://geotab.github.io/sdk/)
+2. **Follow best practices** — Use the Integration Toolkit guidelines
+3. **Apply** — Submit via [Google Form](https://forms.gle/FU4XgffDK7xmRy3F9)
+4. **Get vetted** — Higher tiers require legal, technical, and security review
+
+### Partnership Tiers
+
+| Tier | Vetting | What You Get |
+|------|---------|--------------|
+| **Order Now** | Exceeds quality standards | Seamless purchase, highest visibility |
+| **Premier** | Meets industry standards (legal, technical, security) | Premium placement, co-marketing |
+| **Standard** | Meets industry standards | Quality badge, Marketplace listing |
+| **Basic** | No vetting required | Marketplace listing, SDK access |
+
+**No upfront fees disclosed.** Start building with the free SDK.
+
+**Timeline:**
+- Marketplace launched: 2015
+- Order Now program: 2020
+- First Order Now software: Lytx Surfsight
+- January 2025: GoAnalytics, Xtract360, Commerce Logic join Order Now
+
+---
+
 ## Four Ways to Integrate
 
 ### 1. Software Add-Ins
@@ -125,7 +205,7 @@ Custom pages inside MyGeotab. Users never leave the platform.
 
 *Build:* Dashboards, reports, workflow tools, video viewers
 
-*Examples:* GoAnalytics dashboards (5-star rated), Xtract incident reporting (5-star rated)
+*Examples:* GoAnalytics dashboards, Xtract incident reporting, ORIGOInspect
 
 ### 2. API Integration
 Pull data into your app or push data to Geotab.
@@ -148,33 +228,53 @@ Continuous streaming to external systems.
 
 ---
 
-## What Partners Say
+## 2025 Innovation Award Winners
 
-> "Different fleets have different needs. The beauty of the Marketplace is making sure that every end-user has the best customer experience possible, because they're using the solution that actually solves the unique business challenges that they have."
-> — **Max Hillman, CEO, SureCam**
+These organizations won at Geotab Connect 2025:
 
-> "Everyone in this fleet space has solutions that may cross over, but if we work together, our odds of getting people over that line are much greater."
-> — **Kate Coomber, Product Marketing and Business Development, CarIQ**
+### Productivity
+- **Nussbaum Transportation** (US) — Small-medium commercial
+- **Grupo Bimbo** (Mexico) — 35 countries, 223 bakeries, 58,000+ routes
+- **Florida Department of Corrections** — Public sector large
 
-> "Many fleet managers today are utilizing multiple technologies and looking for ways to streamline management, without sacrificing quality."
-> — **Brandon Nixon, Chairman and CEO, Lytx**
+### Sustainability
+- **SIRO** (Ireland) — Commercial small-medium
+- **DB Regio AG** (Germany) — Operates 10,000+ buses in 400+ districts
+- **City of Carmel** (US) — Public sector
+
+### Safety Champion
+- **PepsiCo Sales Turkey** — Commercial
+- **Kentucky Transportation Cabinet** — Public sector
+
+### Maintenance Champion
+- **Go-Ahead Group** (UK) — Commercial
+- **Maryland DOT State Highway Administration** — Public sector
 
 ---
 
-## Featured Solutions (Inspiration)
+## Recent Major Partnerships (2024-2025)
 
-These are highlighted on the Marketplace homepage right now:
+| Partner | Type | What It Means |
+|---------|------|---------------|
+| **Volvo Cars** | OEM Integration | Works back to 2014 models, Volvo On Call + Android infotainment |
+| **Bridgestone Americas** | Data Collaboration | Multi-year deal, anonymized data from millions of vehicles |
+| **Lytx** | Enhanced Partnership | Lytx+ with Geotab unified platform |
+| **Autocar** | Strategic Partnership | Leading commercial truck manufacturer |
+| **Revvo** | Integration | AI-driven tire analytics |
+| **Vitality** | Joint Venture | Behavioral science + telematics for driver safety |
 
-| Solution | Company | What It Does |
-|----------|---------|--------------|
-| GO Focus Plus | Geotab | AI dashcam and video coaching |
-| Surfsight AI-12 | Lytx | Premier dash cam with AI |
-| KP2 AI Dashcam | Xirgo | ADAS + driver monitoring |
-| CT 1000 | ORBCOMM | Solar-powered asset tracking ⭐⭐⭐⭐⭐ |
-| AirFinder Everywhere | Link Labs | BLE asset tracking |
-| GoAnalytics | GoAnalytics | Interactive data dashboards ⭐⭐⭐⭐⭐ |
-| Xtract | Xtract360 | Digital incident reporting ⭐⭐⭐⭐⭐ |
-| ORIGOInspect | ORIGO | Vehicle inspections ⭐⭐⭐⭐⭐ |
+---
+
+## What Partners Say
+
+> "Different fleets have different needs. The beauty of the Marketplace is making sure that every end-user has the best customer experience possible."
+> — **Max Hillman, CEO, SureCam**
+
+> "Everyone in this fleet space has solutions that may cross over, but if we work together, our odds of getting people over that line are much greater."
+> — **Kate Coomber, CarIQ**
+
+> "Many fleet managers today are utilizing multiple technologies and looking for ways to streamline management, without sacrificing quality."
+> — **Brandon Nixon, Chairman and CEO, Lytx**
 
 ---
 
@@ -184,12 +284,42 @@ Your solution could reach these organizations:
 
 | Industry | Who's Using Geotab |
 |----------|-------------------|
-| **Government** | Kentucky Transportation Cabinet, Regina Police, Province of New Brunswick |
-| **Utilities** | ENMAX Power (500+ vehicles), TELUS (serves 16M customers) |
+| **Government** | Kentucky Transportation Cabinet, Regina Police, Province of New Brunswick, Florida DOC |
+| **Utilities** | ENMAX Power (500+ vehicles), TELUS (16M customers) |
 | **Logistics** | Savage (1,200 vehicles), Plastic Express, Brown Dog Carriers |
 | **Construction** | White Cap, JJM Mechanical Group |
+| **Food & Beverage** | Grupo Bimbo (58,000+ routes), PepsiCo Turkey |
+| **Transit** | DB Regio (10,000+ buses), Go-Ahead Group |
 | **Research** | British Antarctic Survey (yes, Antarctica) |
-| **Retail** | Giant Tiger |
+
+---
+
+## Results Partners Have Achieved
+
+| Customer | Result |
+|----------|--------|
+| 3 Sisters Logistics | **$45,000/year** saved on insurance (30% reduction) |
+| California Freight | **$50,000/month** saved on fuel via idling reduction |
+| City of Miami Gardens | **$1.1 million** from vehicle resales |
+| Enterprise Fleet | **$167 million** potential EV savings identified |
+| King Township | **30%** material reduction, **25%** cost reduction |
+| Halifax Municipality | Full ROI in **under 12 months** |
+| White Cap | **97%** reduction in speeding violations |
+| LifeSaver customers | **25-50%** reduction in at-fault collisions |
+| Whip Around customers | **30%+ monthly savings** |
+
+---
+
+## Geotab Vitality: Driver Behavior Results
+
+Across pilot programs with gamified driver coaching:
+
+- **41%** improvement in safe driving behavior
+- **24%** reduction in collision frequency
+- **15%** behavior improvement within 30 days
+- **11.2%** reduction in driver turnover
+
+**Idea:** Build a gamification layer that makes safe driving competitive and rewarding.
 
 ---
 
@@ -211,48 +341,6 @@ Your solution could reach these organizations:
 
 ---
 
-## Partnership Tiers
-
-| Tier | What It Means |
-|------|---------------|
-| **Order Now** | Seamless purchase — highest visibility |
-| **Premier** | Best-in-class — premium placement |
-| **Standard** | Vetted integration — quality badge |
-| **Basic** | Uses SDK — Marketplace listing |
-
-**Timeline:**
-- Marketplace launched: 2015
-- Order Now program: 2020
-- First Order Now solution: Lytx Surfsight
-
----
-
-## Results Partners Have Achieved
-
-| Customer | Result |
-|----------|--------|
-| 3 Sisters Logistics | **$45,000/year** saved on insurance (30% reduction) |
-| City of Miami Gardens | **$1.1 million** from vehicle resales |
-| Enterprise Fleet | **$167 million** potential EV savings identified |
-| King Township | **30%** material reduction, **25%** cost reduction |
-| Halifax Municipality | Full ROI in **under 12 months** |
-| White Cap | **97%** reduction in speeding violations |
-
----
-
-## Geotab Vitality: Driver Behavior Results
-
-Across pilot programs with gamified driver coaching:
-
-- **41%** improvement in safe driving behavior
-- **24%** reduction in collision frequency
-- **15%** behavior improvement within 30 days
-- **11.2%** reduction in driver turnover
-
-**Idea:** Build a gamification layer that makes safe driving competitive and rewarding.
-
----
-
 ## Industry Recognition
 
 - **#1 in ABI Research Commercial Telematics** (2022, 2023, 2024, 2025)
@@ -265,21 +353,21 @@ Across pilot programs with gamified driver coaching:
 
 | Resource | Link |
 |----------|------|
+| SDK (start here) | [geotab.github.io/sdk](https://geotab.github.io/sdk/) |
 | Browse existing solutions | [marketplace.geotab.com](https://marketplace.geotab.com/) |
+| Apply to be a partner | [Google Form](https://forms.gle/FU4XgffDK7xmRy3F9) |
 | Partner program info | [geotab.com/partners/overview](https://www.geotab.com/partners/overview/) |
-| Apply to be a partner | [marketplace.geotab.com/integrate-geotab](https://marketplace.geotab.com/integrate-geotab/) |
 | Customer success stories | [geotab.com/success-stories](https://www.geotab.com/success-stories/) |
-| SDK documentation | [developers.geotab.com](https://developers.geotab.com/) |
 
 ---
 
 ## The Bottom Line
 
-Geotab has 5 million vehicles, 55,000 customers, and 100 billion data points per day.
+GoAnalytics started as simple dashboards from a reseller. LifeSaver Mobile started because two dads worried about their teenagers. Whip Around started in 2016 with inspection forms.
 
-They've built the infrastructure. They've acquired the customers. They've created the channel.
+Now they're all in the Marketplace, reaching millions of vehicles.
 
-**Your hackathon project could become a real product in the Marketplace.**
+**Your hackathon project could be next.**
 
 350 companies have done it. Why not you?
 
