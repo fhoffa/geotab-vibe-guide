@@ -1,6 +1,6 @@
 {
   "name": "Simple Fleet Test",
-  "supportEmail": "test@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/simple-test.html",

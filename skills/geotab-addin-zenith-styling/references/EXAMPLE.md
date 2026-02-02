@@ -468,7 +468,7 @@ module.exports = {
 ```json
 {
   "name": "Fleet Dashboard",
-  "supportEmail": "support@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [
     {

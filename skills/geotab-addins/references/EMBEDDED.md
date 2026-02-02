@@ -30,7 +30,7 @@ Instead of hosting files externally, you can embed everything directly in the JS
 ```json
 {
   "name": "Embedded Add-In",
-  "supportEmail": "you@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
     "url": "page.html",
@@ -58,7 +58,7 @@ This embedded add-in shows vehicle count with inline styles:
 ```json
 {
   "name": "Embedded Fleet Stats",
-  "supportEmail": "test@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
     "url": "fleet-stats.html",

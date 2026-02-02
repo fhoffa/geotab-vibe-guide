@@ -1,6 +1,6 @@
 {
   "name": "Embedded Fleet Stats",
-  "supportEmail": "test@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "embedded-fleet.html",

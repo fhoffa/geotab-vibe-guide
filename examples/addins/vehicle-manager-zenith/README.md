@@ -40,7 +40,7 @@ Host these files on GitHub Pages, Netlify, or any HTTPS server.
 ```json
 {
   "name": "Vehicle Manager (Zenith)",
-  "supportEmail": "you@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "https://yourusername.github.io/repo/vehicle-manager.html",

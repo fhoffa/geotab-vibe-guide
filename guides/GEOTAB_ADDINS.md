@@ -17,7 +17,7 @@ Copy-paste this into MyGeotab to see a working Add-In:
 ```json
 {
   "name": "Simple Fleet Test",
-  "supportEmail": "test@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/simple-test.html",
@@ -80,7 +80,7 @@ Copy-paste this into MyGeotab (no hosting required):
 ```json
 {
   "name": "Embedded Fleet Stats",
-  "supportEmail": "test@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
     "url": "fleet.html",
@@ -202,7 +202,7 @@ OUTPUT REQUIREMENTS:
 After creating the add-in, provide the MyGeotab configuration JSON in this format:
 {
   "name": "Fleet Statistics",
-  "supportEmail": "you@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "YOUR_DEPLOYED_URL_HERE",

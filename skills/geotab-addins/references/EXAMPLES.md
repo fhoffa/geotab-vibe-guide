@@ -176,7 +176,7 @@ console.log("Fleet Stats registered");
 ```json
 {
   "name": "Fleet Statistics",
-  "supportEmail": "you@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "https://yourusername.github.io/your-repo/fleet-stats.html",

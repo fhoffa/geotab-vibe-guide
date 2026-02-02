@@ -93,7 +93,7 @@ body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
 ```json
 {
   "name": "Your Add-In",
-  "supportEmail": "you@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "https://yourusername.github.io/repo/your-addin.html",
@@ -443,7 +443,7 @@ For quick prototypes without hosting:
 ```json
 {
   "name": "Embedded Add-In",
-  "supportEmail": "you@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
     "url": "page.html",
@@ -644,7 +644,7 @@ The Vehicle Manager example above uses vanilla JavaScript with external CSS. Thi
 ```json
 {
   "name": "Vehicle Manager (Vanilla)",
-  "supportEmail": "test@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/vehicle-manager.html",
@@ -695,7 +695,7 @@ Here's my current vanilla JS add-in:
 ```json
 {
   "name": "Vehicle Manager (Zenith)",
-  "supportEmail": "test@example.com",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
     "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager-zenith/dist/vehicle-manager.html",
