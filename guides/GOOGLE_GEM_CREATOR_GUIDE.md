@@ -69,9 +69,9 @@ Every Add-In configuration must follow this exact schema:
 - `files`: Object mapping filename to HTML content string
 
 **IMPORTANT: name field**
-The `name` field must contain only letters, numbers, and spaces. No special characters like `&`, `-`, `@`, etc.
+The `name` field must contain only letters, numbers, spaces, and dots. No special characters like `&`, `-`, `@`, `!`, etc.
 - WRONG: `"name": "Fleet & Stats"` or `"name": "Fleet-Dashboard"` or `"name": "My Add-In!"`
-- CORRECT: `"name": "Fleet Dashboard"` or `"name": "FleetDashboard1"`
+- CORRECT: `"name": "Fleet Dashboard"` or `"name": "Fleet Dashboard v1.0"`
 
 **IMPORTANT: supportEmail value**
 NEVER use support@geotab.com - Geotab support does not handle issues for custom Add-Ins. If you don't know the creator's email, use: `"supportEmail": "https://github.com/fhoffa/geotab-vibe-guide"`

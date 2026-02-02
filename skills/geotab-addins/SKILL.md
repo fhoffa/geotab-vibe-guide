@@ -104,7 +104,7 @@ body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
 ```
 
 **Configuration Rules:**
-- `name`: Letters, numbers, and spaces only (no special characters like `&`, `-`). Use `"Fleet Dashboard"` not `"Fleet & Dashboard"`
+- `name`: Letters, numbers, spaces, and dots only (no `&`, `-`, `!`). Use `"Fleet Dashboard v1.0"` not `"Fleet & Dashboard"`
 - `supportEmail`: Never use support@geotab.com. Use `https://github.com/fhoffa/geotab-vibe-guide` or your own contact
 - `menuName`: Can contain spaces and special characters (this is what users see in the menu)
 
