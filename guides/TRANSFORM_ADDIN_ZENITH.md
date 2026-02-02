@@ -125,12 +125,12 @@ Tell AI: "Add source maps to webpack config for debugging"
 
 Compare the results:
 
-| Version | URL |
-|---------|-----|
-| **Vanilla** | `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/vehicle-manager.html` |
-| **Zenith** | `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager-zenith/dist/vehicle-manager.html` |
+| Version | Preview | Source Code |
+|---------|---------|-------------|
+| **Vanilla** | [Preview](https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/vehicle-manager-preview.html) | [Source](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager) |
+| **Zenith** | [Preview](https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager-zenith/dist/vehicle-manager-preview.html) | [Source](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager-zenith) |
 
-Source code: [vehicle-manager](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager) vs [vehicle-manager-zenith](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager-zenith)
+> **Note:** The preview files show static mockups with sample data. The actual Add-Ins run inside MyGeotab and interact with live fleet data.
 
 Same functionality. The Zenith version looks more polished but took longer to build and debug.
 
