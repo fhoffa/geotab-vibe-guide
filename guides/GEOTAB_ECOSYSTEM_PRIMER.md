@@ -116,7 +116,7 @@ A customer deployed Geotab GO devices with Surfsight cameras. Result: **30% redu
 
 **Fleetio** — Syncs with Geotab for automated odometer updates and fault code alerts. When Geotab detects a check engine light, Fleetio automatically creates a work order.
 
-Connects to **85,000+ maintenance shops** across the US.
+Connects to **100,000+ maintenance shops** across the US.
 
 **What you could build:** A predictive model that says "this vehicle will break down in 2 weeks" based on engine data patterns.
 
