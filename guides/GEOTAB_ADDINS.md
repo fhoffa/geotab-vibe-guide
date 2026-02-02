@@ -516,6 +516,7 @@ The AI will walk you through every step. When done, your URL will look like:
 - Verify the URL is accessible in a regular browser tab
 - Check GitHub Pages is enabled (Settings → Pages)
 - Wait 2-3 minutes after pushing changes
+- If deployment takes too long, check GitHub Actions at `https://github.com/YOUR-USERNAME/YOUR-REPO/actions` to see if GitHub is being slow
 
 **Data not loading?**
 - Open browser console (F12) to see errors
