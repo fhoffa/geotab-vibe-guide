@@ -1,13 +1,13 @@
 # I Didn't Write a Single Line of Code. I Built This Anyway.
 
-I spent a week building a [hackathon starter kit](https://github.com/fhoffa/geotab-vibe-guide) with Claude Code. I never wrote a single line of code myself.
+I spent a week building a [hackathon starter kit](https://github.com/fhoffa/geotab-vibe-guide) with Claude Code—mostly from my phone. I never wrote a single line of code myself.
 
-Here's what I learned:
+Here's what I learned about using AI to build something real.
 
-- **The workflow that actually works**: prompt → branch → ship → repeat. Each PR traceable back to the conversation that created it.
-- **Where AI falls short**: Some bugs only reveal themselves in the real environment. AI can try a hundred approaches, but you still need human testing and fresh eyes.
-- **How to ask for help effectively**: When I got stuck, Claude's debugging summary became the perfect handoff document. My teammate jumped in without asking "what have you tried?"
-- **The surprise pivot**: We started building a developer toolkit. We ended up realizing the easiest path was no code at all.
+- **The workflow**: prompt → branch → ship → repeat
+- **Where AI hits a wall**: some bugs only reveal themselves when you test in the real environment
+- **How to hand off effectively**: Claude can write the context for you, so teammates don't ask "what have you tried?"
+- **The surprise pivot**: we built a developer toolkit, then realized beginners didn't need code at all
 
 If you're thinking about using AI to build something substantial—not just one-off scripts, but a real project with commits and PRs and collaboration—this is what I wish I'd known.
 
@@ -19,13 +19,9 @@ I wanted to create something that got them unstuck fast. Not documentation to re
 
 By the end of the week, we'd built that. But we'd also discovered something better: a way for people to build Add-Ins without writing any code at all.
 
-## The Workflow That Made It Possible
+## The Workflow
 
-We fell into a rhythm quickly. I'd describe what I wanted. Claude would create a branch, write the content, commit with detailed messages, and push. I'd review, tweak, merge.
-
-Each PR was focused on one thing. And each one traceable—every commit message includes a Claude Code session URL, so you can replay the conversation that created it.
-
-The pattern was simple: **prompt → branch → ship → repeat.**
+We fell into a rhythm quickly. I'd describe what I wanted—often typing on my phone during a commute or waiting for coffee. Claude would create a branch, write the content, commit, and push. I'd review, tweak, merge.
 
 The first two days were smooth. Beginner glossaries. Security warnings. Foundation stuff.
 
@@ -59,53 +55,30 @@ I created a Google Gem—a custom Gemini persona loaded with everything we'd lea
 
 No coding. No hosting. No terminal. Just conversation.
 
-The commits tell the story of the pivot:
-- First we added the Gem as an option
-- Then we made it the recommended path
-- Finally we redirected beginners there instead of to Claude
-
-We started building a developer toolkit. We ended up realizing the easiest path was no code at all. The Gem became the front door.
+We added it as an option. Then it became the recommended path. Then we redirected all beginners there. The Gem became the front door, and the developer toolkit became the basement for power users who wanted to peek under the hood.
 
 ## What I Actually Did
 
-Let me be honest about my role. I didn't write code. But I wasn't idle.
+I didn't write code. But I made decisions Claude couldn't.
 
-I was the **product manager**—deciding what to build, what mattered.
+Which feature matters more to a beginner? Is this explanation clear or just technically correct? Should we prioritize the happy path or document the edge cases? When the Add-In failed silently, I was the one loading it in a real browser and watching nothing happen. When we were stuck, I was the one who decided to post to the forums instead of burning more hours alone.
 
-I was the **tester**—loading Add-Ins in MyGeotab, reporting what actually happened.
+Claude generated the code and docs. I decided what was worth generating, what was good enough to ship, and when to ask for help.
 
-I was the **editor**—pushing back when explanations weren't clear.
+## Lessons
 
-I was the **person who asked for help**—posting to forums when we were stuck.
+**Document dead ends, not just solutions.** The debugging guide listing every failed approach? More valuable than the fix. The fix is one line. The guide saves someone else hours of pain.
 
-Claude did the heavy lifting. The steering was me.
+**Let Claude write context for others.** When I asked for help, I didn't have to summarize—Claude had already written it. My teammate jumped in immediately. This is underrated: AI can document your debugging session *as you go*, so handoffs are effortless.
 
-## What Worked
+**Ask for help sooner.** The teammate who spotted `()` in seconds had been available the whole time. I could have saved myself a night of frustration with one forum post.
 
-**Session URLs in every commit.** Six months from now, when someone asks "why did we do it this way?", we can replay the conversation.
-
-**Small, focused PRs.** Many small PRs, not one monster. Easy to review, easy to revert.
-
-**Documenting dead ends.** That debugging guide listing every failed approach? More valuable than the fix. The fix is one line. The guide saves someone else twelve hours.
-
-**Letting Claude write context for others.** When I asked for help, I didn't have to summarize—Claude had already written it. My teammate could jump in immediately.
-
-**Asking for help sooner.** The teammate who spotted `()` in seconds had been available the whole time.
-
-## What We'd Do Differently
-
-**Test in the real environment earlier.** We burned so many commits because we couldn't programmatically test Add-Ins. Manual refresh cycles are slow and error-prone.
-
-**Mark exploratory work clearly.** The debugging session mixed experiments with documentation. A `[WIP]` prefix would help readers understand which commits were serious attempts vs. shots in the dark.
+**Test in the real environment earlier.** We burned through iterations because we couldn't programmatically test Add-Ins. If your feedback loop is "change code, refresh browser, click around, see nothing happen," you're going to move slowly.
 
 ## Try It Yourself
 
-The entire repository is open. Every commit links back to the conversation that created it.
+The [repository is open](https://github.com/fhoffa/geotab-vibe-guide).
 
-**[Start with the Google Gem](./guides/GOOGLE_GEM_USER_GUIDE.md)** if you want the easiest path—describe what you want, paste JSON, done.
+**[Start with the Google Gem](./guides/GOOGLE_GEM_USER_GUIDE.md)** if you want the easiest path—describe what you want, paste the config, you're live.
 
-Or dive into the code examples if you want to understand how it all works under the hood.
-
----
-
-*The git history is at [github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide). Every commit tells a story.*
+If you want to see how this was actually built—what worked, what didn't, how the conversations evolved—the git history has it all. Every commit links back to its Claude Code session.
