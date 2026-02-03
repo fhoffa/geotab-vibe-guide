@@ -15,7 +15,7 @@ Quick navigation to the right resource for your needs.
 | Setting up credentials | [CREDENTIALS.md](./guides/CREDENTIALS.md) | Concise .env setup |
 | Credential issues | [CREDENTIALS.md](./guides/CREDENTIALS.md) | Detailed troubleshooting |
 | Teaching workshop | [TUTORIAL_DESIGN.md](./guides/TUTORIAL_DESIGN.md) | Full curriculum design |
-| Running workshop | [MINUTE_BY_MINUTE.md](./guides/MINUTE_BY_MINUTE.md) | Step-by-step timing |
+| Running workshop | [slides/README.md](./slides/README.md) | Slides + facilitator notes |
 | Need project ideas | [HACKATHON_IDEAS.md](./guides/HACKATHON_IDEAS.md) | 20+ hackathon projects |
 | Advanced integrations | [ADVANCED_INTEGRATIONS.md](./guides/ADVANCED_INTEGRATIONS.md) | MCP servers, voice interfaces, AI content generation |
 | Writing prompts | [CLAUDE_PROMPTS.md](./guides/CLAUDE_PROMPTS.md) | AI prompt templates |
@@ -48,7 +48,7 @@ Are you a human or AI tool?
 │  │  └─> INSTANT_START.md (fastest) or QUICKSTART.md (local setup)
 │  │
 │  ├─ Teaching a workshop?
-│  │  └─> TUTORIAL_DESIGN.md → MINUTE_BY_MINUTE.md
+│  │  └─> TUTORIAL_DESIGN.md → slides/README.md
 │  │
 │  └─ Building a project?
 │      │
@@ -82,10 +82,10 @@ If you need to minimize context size:
 **Pre-workshop:**
 1. Share GOOGLE_GEM_USER_GUIDE.md (easiest) or INSTANT_START_WITH_CLAUDE.md with participants
 2. Review TUTORIAL_DESIGN.md for philosophy
-3. Practice with MINUTE_BY_MINUTE.md
+3. Practice with slides/README.md
 
 **During workshop:**
-1. Present from MINUTE_BY_MINUTE.md
+1. Present from slides/README.md
 2. Share VIBE_CODING_CONTEXT.md for AI tool users
 3. Share CLAUDE_PROMPTS.md for prompting help
 
