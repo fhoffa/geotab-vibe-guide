@@ -106,6 +106,7 @@ Before fetching data, you need to authenticate with Geotab.
 | Body Content Type | JSON |
 
 **Body (JSON):**
+{% raw %}
 ```json
 {
   "method": "Authenticate",
@@ -116,6 +117,7 @@ Before fetching data, you need to authenticate with Geotab.
   }
 }
 ```
+{% endraw %}
 
 4. **Set up variables** (keeps credentials secure):
    - Go to **Settings** (gear icon) → **Variables**
@@ -145,6 +147,7 @@ Now fetch trips from the last hour to check for speeding.
 | Body Content Type | JSON |
 
 **Body (JSON):**
+{% raw %}
 ```json
 {
   "method": "Get",
@@ -158,6 +161,7 @@ Now fetch trips from the last hour to check for speeding.
   }
 }
 ```
+{% endraw %}
 
 4. Name this node: `Fetch Trips`
 
@@ -177,7 +181,7 @@ Only send alerts for trips with speeding events.
 - **Value**: `30` (trips with more than 30 seconds of speeding)
 
 Alternatively, use an **IF** node for more complex conditions:
-- Condition: `{{ $json.result.speedingDuration > 30 }}`
+- Condition: {% raw %}`{{ $json.result.speedingDuration > 30 }}`{% endraw %}
 
 4. Name this node: `Filter Speeding`
 
@@ -217,6 +221,7 @@ Pick the option that works for you:
    - **Webhook URL**: (paste your URL)
 
 **Message:**
+{% raw %}
 ```
 🚨 *Speeding Alert*
 
@@ -227,6 +232,7 @@ Pick the option that works for you:
 
 <https://my.geotab.com|View in MyGeotab>
 ```
+{% endraw %}
 
 ---
 
@@ -247,6 +253,7 @@ Pick the option that works for you:
    - **Webhook URL**: (paste your URL)
 
 **Message:**
+{% raw %}
 ```
 🚨 **Speeding Alert**
 
@@ -255,6 +262,7 @@ Pick the option that works for you:
 **Trip Distance:** {{ ($json.result.distance / 1000).toFixed(1) }} km
 **Time:** {{ $json.result.start }}
 ```
+{% endraw %}
 
 ---
 
@@ -266,9 +274,10 @@ Pick the option that works for you:
 2. Search for **"Send Email"**
 3. Configure:
    - **To**: your-email@example.com
-   - **Subject**: `Speeding Alert: {{ $json.result.device.name }}`
+   - **Subject**: {% raw %}`Speeding Alert: {{ $json.result.device.name }}`{% endraw %}
 
 **Body:**
+{% raw %}
 ```
 Speeding Alert
 
@@ -279,6 +288,7 @@ Time: {{ $json.result.start }}
 
 View in MyGeotab: https://my.geotab.com
 ```
+{% endraw %}
 
 **Note:** n8n Cloud includes email sending. Self-hosted requires SMTP configuration.
 

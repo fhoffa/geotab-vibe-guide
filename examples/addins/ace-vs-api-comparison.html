@@ -23,7 +23,7 @@
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 16px;
         }
         .card {
@@ -103,8 +103,15 @@
         }
         .question {
             margin-top: 10px;
-            font-size: 11px;
-            color: #64748b;
+            font-size: 12px;
+            color: #334155;
+            background: #f1f5f9;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border-left: 3px solid #3b82f6;
+        }
+        .question strong {
+            color: #1e40af;
         }
         .debug {
             font-size: 9px;
@@ -156,7 +163,7 @@
         }
         .takeaways-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 12px;
             font-size: 12px;
         }
@@ -187,7 +194,7 @@
     </style>
 </head>
 <body>
-    <h1>Ace vs Direct API Comparison v1.4</h1>
+    <h1>Ace vs Direct API Comparison v1.5</h1>
     <p class="subtitle">Three tests demonstrating when to use each approach</p>
 
     <div class="grid">
@@ -212,7 +219,7 @@
                     <div class="status" id="t1-ace-status">Waiting...</div>
                 </div>
             </div>
-            <div class="question">Q: "How many vehicles?"</div>
+            <div class="question"><strong>Q:</strong> "How many vehicles are in my fleet?"</div>
             <pre class="debug" id="t1-debug"></pre>
         </div>
 
@@ -235,7 +242,7 @@
                     <div id="t2-ace-result">Waiting...</div>
                 </div>
             </div>
-            <div class="question">Compares most recent trip timestamp</div>
+            <div class="question"><strong>Q:</strong> "When was the most recent trip? Give exact end time and vehicle name."</div>
             <pre class="debug" id="t2-debug"></pre>
         </div>
 
@@ -260,6 +267,7 @@
                     <div class="status" id="t3-ace-status">Waiting...</div>
                 </div>
             </div>
+            <div class="question"><strong>Q:</strong> "Top 3 vehicles by total distance this month? (API: raw trips + manual aggregation)"</div>
             <pre class="debug" id="t3-result"></pre>
             <pre class="debug debug-ace" id="t3-debug"></pre>
         </div>
@@ -691,7 +699,7 @@
             });
         }
 
-        console.log('Ace vs API Comparison v1.4 registered');
+        console.log('Ace vs API Comparison v1.5 registered');
     </script>
 </body>
 </html>
