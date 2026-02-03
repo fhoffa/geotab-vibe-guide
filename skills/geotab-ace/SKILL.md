@@ -11,6 +11,8 @@ metadata:
 
 Geotab Ace is an AI-powered query interface that lets you ask natural language questions about fleet data. It automatically generates SQL queries, aggregates data, and returns analyzed results.
 
+> **Enable Ace First:** Ace must be enabled by an admin in **Administration → Beta Features**. It's graduating from beta soon but may still require admin activation. With a demo account, you're the admin - just enable it yourself!
+
 ## When to Use Ace vs Direct API
 
 | Metric | Direct API | Ace AI |
@@ -452,9 +454,9 @@ Ace data runs **behind** real-time API data:
 ## Common Issues
 
 ### "No chat_id in response"
+- **Ace not enabled** - Admin must enable in Administration → Beta Features
 - Rate limiting - wait and retry (use retry logic above)
 - create-chat can fail silently under load
-- Account doesn't have Ace access
 
 ### Query times out
 - Complex queries can take 60-90+ seconds
