@@ -129,11 +129,7 @@ Compare the results:
 |---------|--------|
 | ![Vanilla](../examples/addins/vehicle-manager/fleet-statistics.vanilla.png) | ![Zenith](../examples/addins/vehicle-manager-zenith/fleet-statistics.zenith.png) |
 | Custom styling with purple gradient | Matches MyGeotab's native look |
-
-| Version | Preview | Source Code |
-|---------|---------|-------------|
-| **Vanilla** | [Preview](https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/vehicle-manager-preview.html) | [Source](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager) |
-| **Zenith** | [Preview](https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager-zenith/dist/vehicle-manager-preview.html) | [Source](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager-zenith) |
+| [Source](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager) | [Source](https://github.com/fhoffa/geotab-vibe-guide/tree/main/examples/addins/vehicle-manager-zenith) |
 
 Same functionality. The Zenith version looks more polished but took longer to build and debug.
 

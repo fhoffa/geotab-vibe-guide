@@ -2,7 +2,7 @@
 
 A MyGeotab Add-In using React and the Geotab Zenith design system.
 
-**[View Preview](https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager-zenith/dist/vehicle-manager-preview.html)** - See how it looks with sample data
+![Screenshot](fleet-statistics.zenith.png)
 
 ## Features
 
