@@ -349,7 +349,7 @@ function pollForResults(chatId, messageGroupId, onComplete, attempt, delay) {
 
     api.call("GetAceResults", {
         serviceName: "dna-planet-orchestration",
-        functionName: "get-status",
+        functionName: "get-message-group",  // NOT "get-status"!
         functionParameters: {
             chat_id: chatId,
             message_group_id: messageGroupId
