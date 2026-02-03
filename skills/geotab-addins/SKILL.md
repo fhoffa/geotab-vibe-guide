@@ -288,6 +288,13 @@ This is different from regular API calls which return immediately.
 - New demo accounts: wait **~1 day** before Ace has enough data to answer questions
 - For real-time data, use direct API calls instead
 
+**Ace Rate Limits**
+- Ace has rate limits (429 errors) - don't poll too frequently
+- Start polling **5 seconds** after send-prompt (not immediately)
+- Poll every **5-10 seconds** (not 3 seconds)
+- Add exponential backoff on rate limit errors
+- Stop polling after ~2 minutes (query likely failed)
+
 ```javascript
 // Ace uses the SAME api object and credentials!
 // Async pattern: create chat → send prompt → poll for results
@@ -325,13 +332,21 @@ function askAce(question, onComplete) {
             var data = getAceData(response);
             var messageGroupId = data.message_group.id;  // Nested object
 
-            // Step 3: Poll for results (can take 30-60+ seconds)
-            pollForResults(chatId, messageGroupId, onComplete);
+            // Step 3: Wait 5s then start polling (don't poll immediately!)
+            setTimeout(function() {
+                pollForResults(chatId, messageGroupId, onComplete, 0, 5000);
+            }, 5000);
         }, handleError);
     }, handleError);
 }
 
-function pollForResults(chatId, messageGroupId, onComplete) {
+function pollForResults(chatId, messageGroupId, onComplete, attempt, delay) {
+    if (attempt > 20) {  // ~2 minutes max
+        hideLoading();
+        console.error("Ace query timed out");
+        return;
+    }
+
     api.call("GetAceResults", {
         serviceName: "dna-planet-orchestration",
         functionName: "get-status",
@@ -340,6 +355,16 @@ function pollForResults(chatId, messageGroupId, onComplete) {
             message_group_id: messageGroupId
         }
     }, function(response) {
+        // Check for rate limit error
+        if (response.errors && response.errors[0] && response.errors[0].code === 429) {
+            console.log("Rate limited, backing off...");
+            var backoff = Math.min(delay * 2, 30000);  // Double delay, max 30s
+            setTimeout(function() {
+                pollForResults(chatId, messageGroupId, onComplete, attempt + 1, backoff);
+            }, backoff);
+            return;
+        }
+
         var data = getAceData(response);
         var msgGroup = data.message_group || {};
         var statusObj = msgGroup.status || {};
@@ -354,10 +379,10 @@ function pollForResults(chatId, messageGroupId, onComplete) {
             hideLoading();
             console.error("Ace query failed");
         } else {
-            // Still processing - poll again in 3 seconds
+            // Still processing - poll again with current delay
             setTimeout(function() {
-                pollForResults(chatId, messageGroupId, onComplete);
-            }, 3000);
+                pollForResults(chatId, messageGroupId, onComplete, attempt + 1, delay);
+            }, delay);
         }
     }, handleError);
 }
