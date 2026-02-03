@@ -8,7 +8,9 @@ Beyond traditional REST API integrations, there are exciting new ways to work wi
 
 **MCP servers** enable AI assistants like Claude to interact with your fleet data conversationally, without writing explicit API calls. Instead of coding requests, you can simply ask questions in natural language.
 
-> **Full Guide:** [MCP_SERVER_GUIDE.md](./MCP_SERVER_GUIDE.md) | **Video Demo:** [YouTube](https://www.youtube.com/watch?v=-eID1rXS1p8)
+> **Full Guide:** [MCP_SERVER_GUIDE.md](./MCP_SERVER_GUIDE.md)
+>
+> [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
 
 **Example MCP Server**: [geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo)
 

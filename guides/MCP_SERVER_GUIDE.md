@@ -1,10 +1,12 @@
-# Build Your Own Fleet MCP Server
+# Build Your Own MCP Custom Server
 
 **Turn Claude into a conversational fleet management assistant.**
 
 This guide shows you how to set up and extend an MCP (Model Context Protocol) server that connects Claude Desktop to Geotab's Ace AI service - enabling natural language queries against your fleet data.
 
-> **Video Demo:** [Geotab Ace MCP Demo](https://www.youtube.com/watch?v=-eID1rXS1p8) by Felipe Hoffa
+> **Video Demo:** See Geotab Ace + MCP in action (3 min)
+>
+> [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/0.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
 
 ---
 

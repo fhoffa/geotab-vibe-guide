@@ -583,7 +583,9 @@ using GPT-4."
 ### Idea 8.3: Fleet MCP Server - Conversational Fleet Control
 **Concept:** Build a Model Context Protocol (MCP) server that lets AI assistants interact with Geotab fleets conversationally, with write-back capabilities.
 
-> **Start here:** [MCP Server Guide](./MCP_SERVER_GUIDE.md) | **Video Demo:** [YouTube](https://www.youtube.com/watch?v=-eID1rXS1p8)
+> **Start here:** [MCP Server Guide](./MCP_SERVER_GUIDE.md)
+>
+> [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
 
 **Why Build Your Own MCP?**
 - Official Geotab MCP is coming, but you can start today
