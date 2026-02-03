@@ -353,14 +353,6 @@ Ace data runs **behind** real-time API data:
 - Ace data lags real-time by hours
 - Use direct API for current data
 
-## Example Add-In
-
-See [examples/ace-vs-api-comparison.html](examples/ace-vs-api-comparison.html) for a complete Add-In that demonstrates:
-- Side-by-side API vs Ace comparison
-- Speed differences (ms vs seconds)
-- Data freshness differences
-- When each approach is better
-
 ## Resources
 
 - [Geotab SDK - Ace Documentation](https://geotab.github.io/sdk/)

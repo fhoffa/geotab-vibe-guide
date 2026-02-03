@@ -268,8 +268,6 @@ Add-Ins can use Geotab Ace for AI-powered natural language queries. **Ace uses t
 | Structured queries | Natural language |
 | Best for: live data, writes | Best for: trends, insights |
 
-> **Try it yourself:** Install [examples/addins/ace-vs-api-comparison.json](../../examples/addins/ace-vs-api-comparison.json) to see the difference live.
-
 ### Quick Example
 
 ```javascript
