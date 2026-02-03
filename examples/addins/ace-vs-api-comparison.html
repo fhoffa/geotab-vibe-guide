@@ -23,7 +23,7 @@
         }
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
         }
         .card {
@@ -103,15 +103,8 @@
         }
         .question {
             margin-top: 10px;
-            font-size: 12px;
-            color: #334155;
-            background: #f1f5f9;
-            padding: 8px 10px;
-            border-radius: 6px;
-            border-left: 3px solid #3b82f6;
-        }
-        .question strong {
-            color: #1e40af;
+            font-size: 11px;
+            color: #64748b;
         }
         .debug {
             font-size: 9px;
@@ -163,7 +156,7 @@
         }
         .takeaways-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
             font-size: 12px;
         }
@@ -194,7 +187,7 @@
     </style>
 </head>
 <body>
-    <h1>Ace vs Direct API Comparison v1.5</h1>
+    <h1>Ace vs Direct API Comparison v1.3</h1>
     <p class="subtitle">Three tests demonstrating when to use each approach</p>
 
     <div class="grid">
@@ -219,7 +212,7 @@
                     <div class="status" id="t1-ace-status">Waiting...</div>
                 </div>
             </div>
-            <div class="question"><strong>Q:</strong> "How many vehicles are in my fleet?"</div>
+            <div class="question">Q: "How many vehicles?"</div>
             <pre class="debug" id="t1-debug"></pre>
         </div>
 
@@ -242,7 +235,7 @@
                     <div id="t2-ace-result">Waiting...</div>
                 </div>
             </div>
-            <div class="question"><strong>Q:</strong> "When was the most recent trip? Give exact end time and vehicle name."</div>
+            <div class="question">Compares most recent trip timestamp</div>
             <pre class="debug" id="t2-debug"></pre>
         </div>
 
@@ -267,7 +260,6 @@
                     <div class="status" id="t3-ace-status">Waiting...</div>
                 </div>
             </div>
-            <div class="question"><strong>Q:</strong> "Top 3 vehicles by total distance this month? (API: raw trips + manual aggregation)"</div>
             <pre class="debug" id="t3-result"></pre>
             <pre class="debug debug-ace" id="t3-debug"></pre>
         </div>
@@ -340,27 +332,10 @@
         geotab.addin['ace-api-comparison'] = function() {
             return {
                 initialize: function(api, state, callback) {
-                    log('Starting 3 comparison tests (Ace calls staggered)...');
-
-                    // Run all API calls immediately (they're fast)
-                    runTest1Api(api);
-                    runTest2Api(api);
-                    runTest3Api(api);
-
-                    // Stagger Ace calls to avoid rate limiting
-                    log('Starting Test1 Ace...');
-                    runTest1Ace(api, function() {
-                        log('Test1 Ace done, starting Test2 Ace in 2s...');
-                        setTimeout(function() {
-                            runTest2Ace(api, function() {
-                                log('Test2 Ace done, starting Test3 Ace in 2s...');
-                                setTimeout(function() {
-                                    runTest3Ace(api);
-                                }, 2000);
-                            });
-                        }, 2000);
-                    });
-
+                    log('Starting 3 comparison tests...');
+                    runTest1(api);
+                    runTest2(api);
+                    runTest3(api);
                     callback();
                 },
                 focus: function() {},
@@ -368,8 +343,9 @@
             };
         };
 
-        // Test 1: Speed comparison - API part
-        function runTest1Api(api) {
+        // Test 1: Speed comparison
+        function runTest1(api) {
+            // Direct API call
             var apiStart = Date.now();
             document.getElementById('t1-api-status').textContent = 'Fetching...';
 
@@ -383,14 +359,12 @@
                 document.getElementById('t1-api-status').textContent = 'Error';
                 debug('t1-debug', 'API ERROR: ' + JSON.stringify(e));
             });
-        }
 
-        // Test 1: Speed comparison - Ace part
-        function runTest1Ace(api, onComplete) {
+            // Ace AI call
             var aceStart = Date.now();
             document.getElementById('t1-ace-status').textContent = 'Processing...';
 
-            aceQuery(api, 't1-debug', 'How many vehicles are in my fleet?', function(result) {
+            aceQuery(api, 'How many vehicles are in my fleet?', function(result) {
                 var t = Date.now() - aceStart;
                 document.getElementById('t1-ace-time').textContent = Math.round(t / 1000) + 's';
                 debug('t1-debug', 'Ace result.data: ' + JSON.stringify(result.data));
@@ -404,20 +378,19 @@
                 }
                 document.getElementById('t1-ace-status').textContent = count + ' vehicles';
                 log('Test1 Ace: completed in ' + Math.round(t / 1000) + 's');
-                if (onComplete) onComplete();
             }, function(e) {
                 document.getElementById('t1-ace-status').textContent = 'Error';
                 debug('t1-debug', 'Ace ERROR: ' + e);
-                if (onComplete) onComplete();
             });
         }
 
-        // Test 2: Freshness comparison - API part
-        function runTest2Api(api) {
+        // Test 2: Freshness comparison
+        function runTest2(api) {
             document.getElementById('t2-api-result').textContent = 'Fetching...';
             var now = new Date();
             debug('t2-debug', 'Current time: ' + now.toISOString());
 
+            // API: Get recent trips
             api.call('Get', {
                 typeName: 'Trip',
                 search: {
@@ -449,12 +422,10 @@
                 document.getElementById('t2-api-result').textContent = 'Error';
                 debug('t2-debug', 'API ERROR: ' + JSON.stringify(e));
             });
-        }
 
-        // Test 2: Freshness comparison - Ace part
-        function runTest2Ace(api, onComplete) {
+            // Ace: Ask about recent trips
             document.getElementById('t2-ace-result').textContent = 'Processing...';
-            aceQuery(api, 't2-debug', 'When was the most recent trip in my fleet? Give me the exact end time and vehicle name.', function(res) {
+            aceQuery(api, 'When was the most recent trip in my fleet? Give me the exact end time and vehicle name.', function(res) {
                 debug('t2-debug', 'Ace result.data: ' + JSON.stringify(res.data));
                 debug('t2-debug', 'Ace reasoning: ' + (res.reasoning || '').substring(0, 150));
 
@@ -466,20 +437,19 @@
                 }
                 document.getElementById('t2-ace-result').innerHTML = aceText;
                 log('Test2 Ace: Got historical trip data');
-                if (onComplete) onComplete();
             }, function(e) {
                 document.getElementById('t2-ace-result').textContent = 'Error';
                 debug('t2-debug', 'Ace ERROR: ' + e);
-                if (onComplete) onComplete();
             });
         }
 
-        // Test 3: Complex analysis comparison - API part
-        function runTest3Api(api) {
+        // Test 3: Complex analysis comparison
+        function runTest3(api) {
             var now = new Date();
             var monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
             debug('t3-debug', 'Fetching trips from ' + monthStart.toISOString());
 
+            // API: Get raw trips and aggregate manually
             var apiStart = Date.now();
             document.getElementById('t3-api-status').textContent = 'Fetching trips...';
 
@@ -524,14 +494,12 @@
                 document.getElementById('t3-api-status').textContent = 'Error';
                 debug('t3-debug', 'API ERROR: ' + JSON.stringify(e));
             });
-        }
 
-        // Test 3: Complex analysis comparison - Ace part
-        function runTest3Ace(api, onComplete) {
+            // Ace: Pre-analyzed answer
             var aceStart = Date.now();
             document.getElementById('t3-ace-status').textContent = 'Analyzing...';
 
-            aceQuery(api, 't3-debug', 'What are the top 3 vehicles by total distance traveled this month? Show vehicle name and distance in miles.', function(res) {
+            aceQuery(api, 'What are the top 3 vehicles by total distance traveled this month? Show vehicle name and distance in miles.', function(res) {
                 var aceTime = Date.now() - aceStart;
                 document.getElementById('t3-ace-time').textContent = Math.round(aceTime / 1000) + 's';
                 debug('t3-debug', 'Ace completed in ' + aceTime + 'ms');
@@ -554,46 +522,33 @@
 
                 document.getElementById('t3-ace-status').textContent = 'Done';
                 log('Test3 Ace: completed in ' + Math.round(aceTime / 1000) + 's');
-                if (onComplete) onComplete();
             }, function(e) {
                 document.getElementById('t3-ace-status').textContent = 'Error';
                 debug('t3-debug', 'Ace ERROR: ' + e);
                 result('t3-result', 'Ace error: ' + e);
-                if (onComplete) onComplete();
             });
         }
 
         // Ace query helper with create-chat → send-prompt → poll pattern
-        // debugId: element ID to write debug info to
-        function aceQuery(api, debugId, question, onSuccess, onError) {
+        function aceQuery(api, question, onSuccess, onError) {
             log('Ace query: ' + question.substring(0, 40) + '...');
-            debug(debugId, 'Starting Ace query...');
 
             // Step 1: Create chat
-            debug(debugId, 'Calling create-chat...');
             api.call('GetAceResults', {
                 serviceName: 'dna-planet-orchestration',
                 functionName: 'create-chat',
                 functionParameters: {}
             }, function(r) {
-                debug(debugId, 'create-chat raw response type: ' + typeof r);
-                debug(debugId, 'create-chat raw: ' + JSON.stringify(r).substring(0, 300));
-
                 var d = getAceData(r);
-                debug(debugId, 'create-chat parsed: ' + JSON.stringify(d).substring(0, 200));
-
                 var chatId = d.chat_id;
+
                 if (!chatId) {
-                    debug(debugId, 'ERROR: No chat_id found in response');
-                    debug(debugId, 'Response keys: ' + Object.keys(d || {}).join(', '));
-                    onError('No chat_id in response. Keys: ' + Object.keys(d || {}).join(', '));
+                    onError('No chat_id in response');
                     return;
                 }
-                debug(debugId, 'Got chat_id: ' + chatId);
                 log('Got chat_id: ' + chatId.substring(0, 8) + '...');
 
                 // Step 2: Send prompt
-                debug(debugId, 'Calling send-prompt...');
                 api.call('GetAceResults', {
                     serviceName: 'dna-planet-orchestration',
                     functionName: 'send-prompt',
@@ -602,41 +557,31 @@
                         prompt: question
                     }
                 }, function(r2) {
-                    debug(debugId, 'send-prompt raw: ' + JSON.stringify(r2).substring(0, 300));
-
                     var d2 = getAceData(r2);
-                    debug(debugId, 'send-prompt parsed: ' + JSON.stringify(d2).substring(0, 200));
-
                     // Handle both flat and nested message_group_id
                     var mgId = d2.message_group_id || ((d2.message_group || {}).id);
-                    debug(debugId, 'message_group_id: ' + mgId);
 
                     if (!mgId) {
-                        debug(debugId, 'ERROR: No message_group_id found');
-                        debug(debugId, 'Response keys: ' + Object.keys(d2 || {}).join(', '));
-                        onError('No message_group_id. Keys: ' + Object.keys(d2 || {}).join(', '));
+                        onError('No message_group_id');
                         return;
                     }
                     log('Got message_group_id, waiting 10s...');
 
                     // Step 3: Poll after initial delay
                     setTimeout(function() {
-                        pollAce(api, debugId, chatId, mgId, onSuccess, onError, 0);
+                        pollAce(api, chatId, mgId, onSuccess, onError, 0);
                     }, 10000);
                 }, function(e) {
-                    debug(debugId, 'send-prompt ERROR: ' + JSON.stringify(e));
                     onError('send-prompt failed: ' + JSON.stringify(e));
                 });
             }, function(e) {
-                debug(debugId, 'create-chat ERROR: ' + JSON.stringify(e));
                 onError('create-chat failed: ' + JSON.stringify(e));
             });
         }
 
         // Poll for Ace results
-        function pollAce(api, debugId, chatId, mgId, onSuccess, onError, attempt) {
+        function pollAce(api, chatId, mgId, onSuccess, onError, attempt) {
             if (attempt > 15) {
-                debug(debugId, 'TIMEOUT after ' + attempt + ' attempts');
                 onError('Timeout after ' + attempt + ' attempts');
                 return;
             }
@@ -655,7 +600,6 @@
                 var mg = d.message_group || {};
                 var st = mg.status ? mg.status.status : 'UNKNOWN';
 
-                debug(debugId, 'Poll #' + (attempt + 1) + ' status: ' + st);
                 log('Poll status: ' + st);
 
                 if (st === 'DONE') {
@@ -663,43 +607,37 @@
                     var res = { data: null, reasoning: null };
                     var msgKeys = Object.keys(msgs);
 
-                    debug(debugId, 'DONE - Found ' + msgKeys.length + ' messages');
                     log('Found ' + msgKeys.length + ' messages');
 
                     msgKeys.forEach(function(k) {
                         var m = msgs[k];
-                        debug(debugId, 'Message ' + k + ' keys: ' + Object.keys(m).join(', '));
                         if (m.preview_array) {
                             res.data = m.preview_array;
-                            debug(debugId, 'preview_array has ' + res.data.length + ' items');
                             log('Found preview_array with ' + res.data.length + ' items');
                         }
                         if (m.reasoning) {
                             res.reasoning = m.reasoning;
-                            debug(debugId, 'reasoning: ' + res.reasoning.substring(0, 100) + '...');
                         }
                     });
 
                     onSuccess(res);
                 } else if (st === 'FAILED') {
                     var errMsg = mg.status.message || 'Unknown failure';
-                    debug(debugId, 'FAILED: ' + errMsg);
                     onError('Query FAILED: ' + errMsg);
                 } else {
                     setTimeout(function() {
-                        pollAce(api, debugId, chatId, mgId, onSuccess, onError, attempt + 1);
+                        pollAce(api, chatId, mgId, onSuccess, onError, attempt + 1);
                     }, 8000);
                 }
             }, function(e) {
-                debug(debugId, 'Poll error: ' + JSON.stringify(e));
                 log('Poll error, retrying...');
                 setTimeout(function() {
-                    pollAce(api, debugId, chatId, mgId, onSuccess, onError, attempt + 1);
+                    pollAce(api, chatId, mgId, onSuccess, onError, attempt + 1);
                 }, 8000);
             });
         }
 
-        console.log('Ace vs API Comparison v1.5 registered');
+        console.log('Ace vs API Comparison v1.3 registered');
     </script>
 </body>
 </html>
