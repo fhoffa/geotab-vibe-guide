@@ -32,7 +32,7 @@ Claude: *queries your actual fleet data* "Your fleet averaged 8.2 MPG last week.
 
 | MCP Option | Capabilities | Limitations |
 |------------|--------------|-------------|
-| **Official Geotab (coming)** | API + Ace, cloud-hosted | No local processing, standard tools only |
+| **Official Geotab (coming)** | API + Ace, read/write, cloud-hosted | No local processing, standard tools only |
 | **Felipe's demo** | Ace queries, DuckDB caching | Ace-only (no direct API calls yet) |
 | **Your custom MCP** | Whatever you need | You build it |
 
@@ -42,10 +42,10 @@ Claude: *queries your actual fleet data* "Your fleet averaged 8.2 MPG last week.
 |--------|---------|
 | **Available Now** | Official Geotab MCP is coming, but you can start today |
 | **Local Processing** | DuckDB caching, offline analysis - official is cloud-only |
-| **Direct API + Ace** | Felipe's demo is Ace-only - add direct API for real-time + writes |
+| **Custom Tools** | Build specialized skills, frameworks, analysis methods |
+| **Direct API + Ace** | Felipe's demo is Ace-only - add direct API for real-time data |
 | **Composability** | Design tools that work with other MCPs (Maps, Slack, Calendar) |
 | **Multi-Account** | Query multiple Geotab databases in one conversation |
-| **Write Operations** | Create zones, groups, rules via conversation |
 
 ---
 

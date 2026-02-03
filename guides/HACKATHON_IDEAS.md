@@ -863,7 +863,7 @@ for each city boundary."
 
 | MCP Option | What It Has | What It Lacks |
 |------------|-------------|---------------|
-| **Official (coming)** | API + Ace, cloud-hosted | Local processing, custom tools |
+| **Official (coming)** | API + Ace, read/write, cloud-hosted | Local processing, custom tools/skills |
 | **Felipe's demo** | Ace queries, DuckDB caching | Direct API calls (you can add!) |
 | **Your hackathon project** | Whatever you build! | Nothing - sky's the limit |
 
@@ -873,9 +873,9 @@ for each city boundary."
 |------------|--------------|-------------------|
 | **Direct API + Ace** | Felipe's demo is Ace-only | Add direct API calls for real-time data |
 | **DuckDB Local Caching** | Official = cloud-only | Cache datasets locally, run SQL offline |
-| **Write Operations** | Create zones, groups, rules via conversation | "Create a geofence around this address" |
+| **Custom Skills/Tools** | Build specialized methods | Fuel theft detection, parking optimization, carbon tracking |
 | **MCP Composability** | Combine multiple MCP servers | Geotab + Google Maps + Slack working together |
-| **Custom Analysis** | Build specialized analytics | Carbon tracking, safety scoring, route optimization |
+| **Custom Frameworks** | Your analysis patterns | Safety scoring algorithms, route optimization |
 | **Offline Mode** | Query cached data without internet | Field workers with spotty connectivity |
 
 ### MCP Composability: The Real Power
