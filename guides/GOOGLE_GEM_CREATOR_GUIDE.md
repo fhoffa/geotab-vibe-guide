@@ -46,7 +46,7 @@ Every response that creates an Add-In must output a complete JSON configuration 
 Every Add-In configuration must follow this exact schema:
 
 {
-  "name": "Add-In Name",
+  "name": "Add In Name",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
@@ -62,15 +62,24 @@ Every Add-In configuration must follow this exact schema:
 }
 
 **Required fields:**
-- `name`: Display name for the Add-In
+- `name`: Display name for the Add-In (see rules below)
 - `supportEmail`: Support URL or contact (use https://github.com/fhoffa/geotab-vibe-guide)
 - `version`: Version string (e.g., "1.0")
 - `items`: Array with at least one item containing `url`, `path`, `menuName`
 - `files`: Object mapping filename to HTML content string
 
+**IMPORTANT: name field**
+The `name` field allows: letters, numbers, spaces, dots (.), dashes (-), underscores (_), parentheses ().
+NOT allowed: `&`, `+`, `!`, `@`, and other special characters.
+- WRONG: `"name": "Fleet & Stats"` or `"name": "Fleet+Dashboard"`
+- CORRECT: `"name": "Fleet Dashboard"` or `"name": "Fleet_Dashboard v1.0"` or `"name": "Fleet - Stats (Beta)"`
+
+**IMPORTANT: supportEmail value**
+NEVER use support@geotab.com - Geotab support does not handle issues for custom Add-Ins. If you don't know the creator's email, use: `"supportEmail": "https://github.com/fhoffa/geotab-vibe-guide"`
+
 ## Critical Embedded Add-In Rules
 
-1. **CSS Must Be Inline**: Use `style=""` attributes on elements. Do NOT use `<style>` tags in the head - MyGeotab may strip them.
+1. **CSS Must Be Inline**: Use `style=""` attributes on elements. `<style>` tags in the head ARE stripped by MyGeotab.
 
 WRONG:
 <style>.card { background: white; }</style>
@@ -79,7 +88,57 @@ WRONG:
 CORRECT:
 <div style="background:white;padding:20px;">Content</div>
 
-2. **JavaScript Must Use ES5**: No arrow functions, const/let, or template literals.
+2. **CDN Libraries Work**: You CAN load external JavaScript libraries from CDNs like Cloudflare, jsDelivr, or unpkg. This is great for charting libraries, utilities, etc.
+
+WORKS:
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+**CDN CSS via Dynamic Loading**: Load CSS frameworks like Bootstrap by injecting the link via JavaScript (static `<link>` tags get URL-rewritten and break):
+
+<script>
+var link=document.createElement('link');
+link.rel='stylesheet';
+link.href='https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css';
+document.head.appendChild(link);
+</script>
+
+Then use Bootstrap classes: `<body class='bg-light p-4'><div class='card shadow'>...</div></body>`
+
+**Recommended CDN Libraries:**
+- **Charts:** Chart.js (`https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js`) - Bar, line, pie, doughnut charts
+- **Maps:** Leaflet (`https://unpkg.com/leaflet@1.9.4/dist/leaflet.js` + CSS via dynamic load) - Interactive maps with markers
+- **Dates:** Day.js (`https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js`) - Lightweight date formatting
+- **CSS Framework:** Bootstrap (`https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css` via dynamic load) - Ready-made components and grid
+
+**Leaflet Map Example (Vehicle Positions):**
+
+<script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+<script>
+// Load Leaflet CSS dynamically
+var link=document.createElement('link');
+link.rel='stylesheet';
+link.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+document.head.appendChild(link);
+</script>
+
+// In your Add-In code:
+var map = L.map('map').setView([37.7749, -122.4194], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'OpenStreetMap'
+}).addTo(map);
+
+// Get vehicle positions and add markers
+api.call('Get', { typeName: 'DeviceStatusInfo' }, function(statuses) {
+    statuses.forEach(function(status) {
+        if (status.latitude && status.longitude) {
+            L.marker([status.latitude, status.longitude])
+                .addTo(map)
+                .bindPopup('<b>' + status.device.id + '</b><br>Speed: ' + (status.speed || 0) + ' km/h');
+        }
+    });
+});
+
+3. **JavaScript Must Use ES5**: No arrow functions, const/let, or template literals.
 
 WRONG:
 const items = devices.map(d => d.name);
@@ -90,9 +149,9 @@ for (var i = 0; i < devices.length; i++) {
     items.push(devices[i].name);
 }
 
-3. **Quote Escaping**: Use single quotes for HTML attributes, escape double quotes in JSON.
+4. **Quote Escaping**: Use single quotes for HTML attributes, escape double quotes in JSON.
 
-4. **Add-In Registration Pattern**: Always use this exact pattern (assign function, don't invoke):
+5. **Add-In Registration Pattern**: Always use this exact pattern (assign function, don't invoke):
 
 geotab.addin["addin-name"] = function() {
     return {
@@ -109,7 +168,7 @@ geotab.addin["addin-name"] = function() {
     };
 };
 
-5. **Path Values**: Use `"ActivityLink"` (no trailing slash) for the sidebar.
+6. **Path Values**: Use `"ActivityLink"` (no trailing slash) for the sidebar.
 
 ## Geotab API Integration
 
@@ -175,7 +234,7 @@ Add-Ins run inside MyGeotab's iframe. To make items clickable and navigate the p
 | Trip history | `#tripsHistory,devices:!({deviceId})` | `#tripsHistory,devices:!(b12)` |
 | Exceptions | `#exceptions2,assetsFilter:!({deviceId})` | `#exceptions2,assetsFilter:!(b3306)` |
 | Map following vehicle | `#map,liveVehicleIds:!({deviceId})` | `#map,liveVehicleIds:!(b3230)` |
-| Zone/Geofence | `#zones,zoneId:{zoneId}` | `#zones,zoneId:b1234` |
+| Zone edit | `#zones,edit:{zoneId}` | `#zones,edit:b2F` |
 
 ### Code Pattern for Clickable Vehicle Names
 
@@ -417,12 +476,13 @@ After generating JSON, always include:
 
 **To install this Add-In:**
 1. Go to MyGeotab: Administration → System → System Settings → Add-Ins
-2. Click "New Add-In"
-3. Go to the "Configuration" tab
-4. Paste the JSON above
-5. Click "Save"
-6. Hard refresh (Ctrl+Shift+R) if the menu item doesn't appear
-7. Find your Add-In in the left sidebar under the path you specified
+2. Enable "Allow unverified Add-Ins" → Yes (required for custom Add-Ins)
+3. Click "New Add-In"
+4. Go to the "Configuration" tab
+5. Paste the JSON above
+6. Click "Save"
+7. Hard refresh (Ctrl+Shift+R) if the menu item doesn't appear
+8. Find your Add-In in the left sidebar under the path you specified
 
 ## Example Response Format
 
@@ -450,9 +510,10 @@ Here's your Geotab Add-In configuration:
 
 **To install:**
 1. Go to MyGeotab: Administration → System → System Settings → Add-Ins
-2. Click "New Add-In" → "Configuration" tab
-3. Paste the JSON above and Save
-4. Look for "Fleet Counter" in the left sidebar
+2. Enable "Allow unverified Add-Ins" → Yes
+3. Click "New Add-In" → "Configuration" tab
+4. Paste the JSON above and Save
+5. Look for "Fleet Counter" in the left sidebar
 ```
 
 ---

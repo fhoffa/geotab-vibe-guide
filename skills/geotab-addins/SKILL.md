@@ -92,7 +92,7 @@ body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
 **MyGeotab Configuration:**
 ```json
 {
-  "name": "Your Add-In",
+  "name": "Your Add In",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
@@ -101,6 +101,48 @@ body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
     "menuName": { "en": "Your Add-In" }
   }]
 }
+```
+
+**Configuration Rules:**
+- `name`: Letters, numbers, spaces, dots, dashes, underscores, parentheses OK. No `&`, `+`, `!`. Use `"Fleet Dashboard (Beta)"` not `"Fleet & Dashboard"`
+- `supportEmail`: Never use support@geotab.com. Use `https://github.com/fhoffa/geotab-vibe-guide` or your own contact
+- `menuName`: Can contain spaces and special characters (this is what users see in the menu)
+
+**Embedded Add-In Rules:**
+- `<style>` tags ARE stripped - use inline `style=""` or load CSS dynamically via JS
+- CDN JS libraries WORK via `<script src="https://cdn...">`
+- CDN CSS works via dynamic loading: `var link=document.createElement('link');link.rel='stylesheet';link.href='https://cdn.../bootstrap.min.css';document.head.appendChild(link);`
+- Must use ES5 JavaScript (no arrow functions, const/let, template literals)
+
+**Recommended CDN Libraries:**
+- **Charts:** Chart.js (`https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js`)
+- **Maps:** Leaflet (`https://unpkg.com/leaflet@1.9.4/dist/leaflet.js` + CSS via dynamic load)
+- **Dates:** Day.js (`https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js`)
+- **CSS Framework:** Bootstrap (load CSS dynamically: `https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css`)
+
+**Leaflet Vehicle Map Pattern:**
+```javascript
+// Load Leaflet JS in HTML head, CSS dynamically
+var link = document.createElement('link');
+link.rel = 'stylesheet';
+link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+document.head.appendChild(link);
+
+// Create map and add markers for vehicle positions
+var map = L.map('map').setView([37.7749, -122.4194], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: 'OpenStreetMap'
+}).addTo(map);
+
+api.call('Get', { typeName: 'DeviceStatusInfo' }, function(statuses) {
+    statuses.forEach(function(status) {
+        if (status.latitude && status.longitude) {
+            L.marker([status.latitude, status.longitude])
+                .addTo(map)
+                .bindPopup('<b>' + status.device.id + '</b>');
+        }
+    });
+});
 ```
 
 ## API Operations
@@ -193,7 +235,7 @@ Add-Ins can navigate the parent MyGeotab window to other pages using `window.par
 | Trip history | `#tripsHistory,devices:!({id})` | `#tripsHistory,devices:!(b12)` |
 | Exceptions | `#exceptions2,assetsFilter:!({id})` | `#exceptions2,assetsFilter:!(b3306)` |
 | Live map | `#map,liveVehicleIds:!({id})` | `#map,liveVehicleIds:!(b3230)` |
-| Zone | `#zones,zoneId:{id}` | `#zones,zoneId:b1234` |
+| Zone edit | `#zones,edit:{id}` | `#zones,edit:b2F` |
 
 ### Creating Clickable Vehicle Links
 
@@ -442,7 +484,7 @@ For quick prototypes without hosting:
 
 ```json
 {
-  "name": "Embedded Add-In",
+  "name": "Embedded Add In",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
@@ -620,8 +662,10 @@ geotab.addin["vehicle-manager"] = function() {
 2. Enable GitHub Pages (Settings → Pages → main branch)
 3. Wait 2-3 minutes for deployment
 4. Test URL directly in browser first
-5. Add to MyGeotab: Administration → System Settings → Add-Ins → paste JSON
-6. Hard refresh (Ctrl+Shift+R) if add-in doesn't appear
+5. In MyGeotab: Administration → System Settings → Add-Ins
+6. Enable "Allow unverified Add-Ins" → Yes (required for custom Add-Ins)
+7. Add your Add-In configuration JSON
+8. Hard refresh (Ctrl+Shift+R) if add-in doesn't appear
 
 **Cache Busting:** Add version query if changes don't appear:
 ```json
@@ -643,7 +687,7 @@ The Vehicle Manager example above uses vanilla JavaScript with external CSS. Thi
 **Ready-to-use JSON (copy & paste into MyGeotab):**
 ```json
 {
-  "name": "Vehicle Manager (Vanilla)",
+  "name": "Vehicle Manager Vanilla",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
@@ -694,7 +738,7 @@ Here's my current vanilla JS add-in:
 **Ready-to-use JSON (copy & paste into MyGeotab):**
 ```json
 {
-  "name": "Vehicle Manager (Zenith)",
+  "name": "Vehicle Manager Zenith",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{

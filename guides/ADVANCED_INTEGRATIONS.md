@@ -235,6 +235,152 @@ def create_safety_rule_for_risky_driver(driver_id, threshold):
 
 ---
 
+## Maps & Geospatial Integration
+
+Maps are fundamental to fleet applications. Both Google Maps and Mapbox offer MCP servers, enabling AI assistants to work with geospatial data directly.
+
+### Google Maps Platform
+
+[Google Maps Platform](https://developers.google.com/maps) provides comprehensive mapping, routing, and places data.
+
+**MCP Server:** [developers.google.com/maps/ai/mcp](https://developers.google.com/maps/ai/mcp)
+
+| Feature | Description |
+|---------|-------------|
+| **Maps Grounding Lite** | Places, weather, routing, distance, travel time |
+| **RAG-Enhanced** | Fresh documentation and code samples |
+| **Transport** | stdio (local) or Streamable HTTP (remote) |
+
+**Use cases with Geotab:**
+- Find nearest fuel station to a vehicle's current location
+- Calculate ETAs for deliveries using real-time traffic
+- Geocode customer addresses for zone creation
+- Get directions to service centers for breakdown assistance
+
+**Example AI interaction:**
+```
+"Find the three closest truck stops to vehicle 2417's current location
+that have diesel and are open 24 hours"
+```
+
+### Mapbox
+
+[Mapbox](https://www.mapbox.com/) offers powerful mapping with excellent customization and competitive pricing.
+
+**MCP Server:** [github.com/mapbox/mcp-server](https://github.com/mapbox/mcp-server)
+
+**Hosted endpoint (no install):** `https://mcp.mapbox.com/mcp`
+
+| Feature | Description |
+|---------|-------------|
+| **Geocoding** | Address → coordinates and reverse |
+| **POI Search** | Find places by category |
+| **Routing** | Turn-by-turn directions |
+| **Matrix API** | Travel times between multiple points |
+| **Optimization** | Optimal stop ordering |
+
+**Claude Code setup:**
+```bash
+claude mcp add --transport sse mapbox https://mcp.mapbox.com/sse
+```
+
+**Example AI interaction:**
+```
+"Optimize the delivery order for these 10 addresses to minimize
+total drive time, starting and ending at the depot"
+```
+
+### Combining Maps with Geotab Data
+
+Powerful patterns emerge when you combine mapping APIs with fleet data:
+
+**Route Optimization:**
+```
+Get vehicle locations from Geotab
+  → Calculate optimal route via Mapbox Optimization API
+  → Update driver assignments in Geotab
+  → Send turn-by-turn directions to driver
+```
+
+**Dynamic ETAs:**
+```
+Customer asks "where's my delivery?"
+  → Get vehicle location from Geotab
+  → Calculate ETA via Google Maps (with traffic)
+  → Return natural language response
+```
+
+**Geofence Creation:**
+```
+"Create delivery zones around all our customer addresses"
+  → Geocode addresses via Mapbox
+  → Create Zone objects in Geotab
+  → Set up entry/exit notifications
+```
+
+**Fuel Stop Recommendations:**
+```
+Vehicle running low on fuel (from Geotab StatusData)
+  → Find nearby fuel stations via Google Places
+  → Filter by price, amenities, truck accessibility
+  → Send recommendation to driver
+```
+
+**EV Charging Integration:**
+```
+EV battery below 30% (from Geotab StatusData)
+  → Find compatible chargers via Open Charge Map API
+  → Filter by connector type (CCS, CHAdeMO, Tesla), charging speed, real-time availability
+  → Calculate if charge is needed to complete route
+  → Reserve charger slot if API supports it
+  → Route driver with estimated charge time and wait
+```
+
+**Fleet Electrification Planning:**
+```
+Analyze historical trip data from Geotab
+  → Calculate daily range requirements per vehicle
+  → Identify which ICE vehicles can switch to EV
+  → Model depot charging infrastructure needs
+  → Find optimal public charging locations for long routes
+  → Estimate TCO savings from electrification
+```
+
+### EV Charging APIs
+
+| Service | Features | Best For |
+|---------|----------|----------|
+| **Open Charge Map** | Global coverage, free, community-maintained | General EV charging lookup |
+| **PlugShare** | Real-time availability, reviews, photos | Driver-facing apps |
+| **ChargePoint** | Network-specific, reservation support | ChargePoint network fleets |
+| **EVgo / Electrify America** | DC fast charging networks | Long-haul EV routes |
+| **Tesla Supercharger API** | Tesla fleet access | Tesla fleet vehicles |
+| **NREL AFDC** | US DOE data, includes hydrogen | Government/research |
+
+### Other Mapping Options
+
+| Service | Best For | MCP Support |
+|---------|----------|-------------|
+| **Google Maps** | Comprehensive data, high accuracy | Official |
+| **Mapbox** | Customization, pricing | Official |
+| **HERE** | Fleet-specific features, truck routing | Community |
+| **OpenStreetMap** | Free, open data | Community |
+| **TomTom** | Traffic data, EV routing | API only |
+
+### Getting Started
+
+1. **Choose a mapping provider** based on your needs and budget
+2. **Set up MCP server** (if using AI-assisted development)
+3. **Combine with Geotab data** for fleet-specific features
+4. **Cache results** to minimize API costs
+
+**Resources:**
+- [Google Maps Platform MCP](https://developers.google.com/maps/ai/mcp)
+- [Mapbox MCP Server](https://docs.mapbox.com/api/guides/mcp-server/)
+- [Google Maps Grounding Lite](https://developers.google.com/maps/ai/grounding-lite/reference/mcp)
+
+---
+
 ## Next Steps
 
 Ready to explore these advanced patterns? Check out:

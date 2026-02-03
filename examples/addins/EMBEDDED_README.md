@@ -17,12 +17,13 @@ This example shows how to create a Geotab Add-In **without any external hosting*
 1. Open `embedded-config.json`
 2. Copy the entire file contents
 3. In MyGeotab, go to: **Administration → System → System Settings → Add-Ins**
-4. Click **"New Add-In"**
-5. Click the **"Configuration"** tab
-6. Paste the JSON
-7. Click **"Save"**
-8. Refresh MyGeotab (`Ctrl+Shift+R`)
-9. Look for **"Embedded Fleet Stats"** in the left menu
+4. Enable **"Allow unverified Add-Ins"** → Yes (required for custom Add-Ins)
+5. Click **"New Add-In"**
+6. Click the **"Configuration"** tab
+7. Paste the JSON
+8. Click **"Save"**
+9. Refresh MyGeotab (`Ctrl+Shift+R`)
+10. Look for **"Embedded Fleet Stats"** in the left menu
 
 **That's it!** No GitHub, no hosting, no waiting.
 

@@ -43,6 +43,17 @@ Then use [**CLAUDE PROMPTS**](./guides/CLAUDE_PROMPTS.md) for ready-made prompts
 
 ---
 
+### Path E: Automated Monitoring & Alerts (Agentic Systems)
+**Want autonomous agents that monitor your fleet 24/7 and take action?**
+
+[**AGENTIC OVERVIEW**](./guides/AGENTIC_OVERVIEW.md) - Understand what agentic systems are and choose your approach.
+
+[**N8N QUICKSTART**](./guides/AGENTIC_QUICKSTART_N8N.md) - Build your first fleet monitoring agent in 30 minutes using n8n's visual workflow builder.
+
+Examples: Speeding alerts to Slack, maintenance ticket creation, geofence notifications, AI-powered safety coaching.
+
+---
+
 ## 📂 Repository Structure
 
 *   [**`GOOGLE_GEM_USER_GUIDE.md`**](./guides/GOOGLE_GEM_USER_GUIDE.md): **Start here!** Build Add-Ins by describing what you want.

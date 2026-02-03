@@ -10,8 +10,9 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 | **Want to build NOW (easiest!)** | [GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) |
 | **Using Claude** | [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md) |
 | **Using other AI tools** | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) |
+| **Want automated monitoring/alerts** | [AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md) |
 | **At a hackathon** | [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md) |
-| **Teaching a workshop** | [MINUTE_BY_MINUTE.md](./MINUTE_BY_MINUTE.md) |
+| **Teaching a workshop** | [slides/README.md](../slides/README.md) |
 
 ---
 
@@ -41,6 +42,11 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 - **[GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md)** - Use the Geotab Add-In Architect Gem to generate Add-Ins without coding.
 - **[GOOGLE_GEM_CREATOR_GUIDE.md](./GOOGLE_GEM_CREATOR_GUIDE.md)** - Create your own Google Gem that generates Geotab Add-Ins.
 
+### Agentic Systems (Automation & Monitoring)
+
+- **[AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md)** - What are agentic systems? When do you need one? Framework comparison.
+- **[AGENTIC_QUICKSTART_N8N.md](./AGENTIC_QUICKSTART_N8N.md)** - Build your first fleet monitoring agent with n8n (visual, no code).
+
 ### Advanced Topics
 
 - **[ADVANCED_INTEGRATIONS.md](./ADVANCED_INTEGRATIONS.md)** - Voice interfaces, AI integrations, and automation patterns.
@@ -50,7 +56,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 ### Hackathons & Workshops
 
 - **[HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md)** - Project ideas with difficulty levels, APIs to use, and starter prompts.
-- **[MINUTE_BY_MINUTE.md](./MINUTE_BY_MINUTE.md)** - Facilitator guide for running a vibe coding workshop.
+- **[slides/README.md](../slides/README.md)** - Slides and facilitator guide for running a vibe coding workshop.
 - **[TUTORIAL_DESIGN.md](./TUTORIAL_DESIGN.md)** - Design document for the tutorial structure.
 
 ---

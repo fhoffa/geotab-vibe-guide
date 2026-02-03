@@ -19,7 +19,7 @@ This repository contains a complete, production-ready curriculum for a **60-minu
 |----------|---------|----------|--------|
 | **README.md** | Repository overview & getting started | Everyone | ✅ Complete |
 | **TUTORIAL_DESIGN.md** | Full curriculum, teaching philosophy, logistics | Instructors | ✅ Complete |
-| **MINUTE_BY_MINUTE.md** | Detailed 60-min breakdown, run-of-show | Instructors | ✅ Complete |
+| **slides/README.md** | Slides + facilitator guide, run-of-show | Instructors | ✅ Complete |
 | **HACKATHON_IDEAS.md** | 20+ project ideas with vibe prompts | Participants | ✅ Complete |
 | **RESOURCES.md** | Links, tools, documentation, troubleshooting | Everyone | ✅ Complete |
 | **CLAUDE_PROMPTS.md** | Ready-to-copy AI prompts for common tasks | Participants | ✅ Complete |
@@ -30,7 +30,7 @@ This repository contains a complete, production-ready curriculum for a **60-minu
 geotab_vibe_draft/
 ├── README.md                    # Start here
 ├── TUTORIAL_DESIGN.md           # Full curriculum design
-├── MINUTE_BY_MINUTE.md          # 60-minute instructor guide
+├── slides/README.md             # Slides + facilitator guide
 ├── HACKATHON_IDEAS.md           # Project ideas & prompts
 ├── RESOURCES.md                 # All links & references
 ├── guides/
@@ -318,7 +318,7 @@ This curriculum is designed to be flexible:
 
 ### Getting Help
 - **Documentation**: Start with README.md
-- **Instructor Guide**: See MINUTE_BY_MINUTE.md
+- **Instructor Guide**: See slides/README.md
 - **Troubleshooting**: See RESOURCES.md
 - **Community**: [Discord/Slack invite]
 - **Issues**: [GitHub issues link]
@@ -360,7 +360,7 @@ https://geotab.github.io/sdk/
 
 - 🏠 [README](./README.md) - Start here
 - 📚 [Full Design](./TUTORIAL_DESIGN.md) - Complete curriculum
-- ⏱️ [Minute-by-Minute](./MINUTE_BY_MINUTE.md) - Instructor guide
+- ⏱️ [Slides & Guide](../slides/README.md) - Instructor guide
 - 💡 [Project Ideas](./HACKATHON_IDEAS.md) - Hackathon inspiration
 - 📖 [Resources](./RESOURCES.md) - Links & references
 - ⚡ [Prompt Cheatsheet](./guides/CLAUDE_PROMPTS.md) - AI prompts

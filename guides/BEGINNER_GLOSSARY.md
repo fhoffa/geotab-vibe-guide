@@ -12,6 +12,7 @@
 - [Geotab Platform Terms](#geotab-platform-terms)
 - [Fleet Management Concepts](#fleet-management-concepts)
 - [Web Development Terms](#web-development-terms)
+- [Automation & Agentic Systems](#automation--agentic-systems)
 
 ---
 
@@ -589,6 +590,94 @@ Moving from "only works on my computer" to "anyone can use it." Common platforms
 - **React** (JavaScript) - Build interactive user interfaces
 
 Think of frameworks like IKEA furniture: the hard work is done, you just assemble the pieces.
+
+---
+
+## Automation & Agentic Systems
+
+### Agentic System
+**What it is**: Software that runs autonomously, monitoring data and taking action without you clicking buttons.
+
+Instead of you checking a dashboard, an agentic system watches your data 24/7 and alerts you (or takes action) when something important happens.
+
+**Example**: "If any vehicle speeds over 80 mph, send me a Slack message."
+
+### Workflow Automation
+**What it is**: Connecting multiple steps together so they run automatically.
+
+**Example workflow**:
+```
+Fault code detected → Create maintenance ticket → Alert driver → Notify manager
+```
+
+Each step triggers the next. No human needed in between.
+
+### n8n
+**What it is**: A visual workflow automation tool where you connect nodes to build automations.
+
+Think of it like a flowchart that actually runs. You drag and drop boxes (nodes) and connect them:
+- Trigger node (when to start)
+- Action nodes (what to do)
+- Logic nodes (decisions and filters)
+
+**Why use it**: Build automations without writing code. Free tier available.
+
+### Webhook
+**What it is**: A URL that receives data when something happens.
+
+Like a doorbell for your application. When someone "rings" the webhook (sends data to the URL), your code wakes up and does something.
+
+**Example**: Slack webhooks let you send messages by POSTing to a URL.
+
+### Polling
+**What it is**: Repeatedly checking for new data at regular intervals.
+
+Like refreshing your email every 5 minutes to see if anything new arrived.
+
+**Example**: "Check Geotab API every 15 minutes for speeding events."
+
+**Trade-off**: Simple to build, but there's a delay between when something happens and when you notice.
+
+### Cron Job
+**What it is**: A scheduled task that runs automatically at set times.
+
+**Example**: "Run this script every day at 9 AM" or "Check for alerts every 5 minutes."
+
+The name comes from Unix systems, but the concept is just "scheduled automation."
+
+### Slack Webhook
+**What it is**: A special URL that lets you send messages to a Slack channel.
+
+You POST a message to the webhook URL, and it appears in Slack. No need to build a full Slack app.
+
+### Discord Webhook
+**What it is**: Same concept as Slack webhooks, but for Discord.
+
+If your team uses Discord instead of Slack, webhooks work almost identically.
+
+### Integration
+**What it is**: Connecting two different systems so they can share data.
+
+**Examples**:
+- Geotab + Slack (send alerts to chat)
+- Geotab + Google Sheets (log events to spreadsheet)
+- Geotab + ServiceNow (create maintenance tickets)
+
+### Trigger
+**What it is**: The event that starts a workflow.
+
+**Common triggers**:
+- **Schedule**: "Every 15 minutes"
+- **Webhook**: "When data arrives at this URL"
+- **Event**: "When a vehicle enters a zone"
+
+### Node (in workflow tools)
+**What it is**: A single step in a workflow.
+
+In tools like n8n, you build workflows by connecting nodes:
+- HTTP Request node (call an API)
+- Filter node (only continue if condition is met)
+- Slack node (send a message)
 
 ---
 

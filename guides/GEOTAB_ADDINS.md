@@ -11,8 +11,9 @@ This guide shows you how to use AI to build Add-Ins that extend MyGeotab with cu
 Copy-paste this into MyGeotab to see a working Add-In:
 
 **1. Go to:** Administration → System → System Settings → Add-Ins
-**2. Click:** "New Add-In" → "Configuration" tab
-**3. Paste this:**
+**2. Enable:** "Allow unverified Add-Ins" → Yes (required for custom Add-Ins)
+**3. Click:** "New Add-In" → "Configuration" tab
+**4. Paste this:**
 
 ```json
 {
@@ -29,8 +30,8 @@ Copy-paste this into MyGeotab to see a working Add-In:
 }
 ```
 
-**4. Save and refresh MyGeotab**
-**5. Look for "Fleet Stats" in the left menu**
+**5. Save and refresh MyGeotab**
+**6. Look for "Fleet Stats" in the left menu**
 
 You'll see your username, database, and vehicle count. This proves Add-Ins work!
 
@@ -277,6 +278,48 @@ Create a Geotab Add-In with a Leaflet map showing:
 
 ---
 
+## Using CDN Libraries (Charts, Maps, CSS Frameworks)
+
+Add-Ins can load JavaScript and CSS libraries from CDNs. This works for both external and embedded Add-Ins.
+
+**Available libraries:**
+
+| Library | Use Case | CDN URL |
+|---------|----------|---------|
+| **Chart.js** | Bar, line, pie, doughnut charts | `https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js` |
+| **Leaflet** | Interactive maps with markers | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js` |
+| **Day.js** | Date formatting and manipulation | `https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js` |
+| **Bootstrap** | Professional CSS framework | Load dynamically (see below) |
+
+**Example prompts:**
+
+```
+Create an Add-In with a bar chart showing trips per vehicle for the last 7 days.
+Use Chart.js from CDN.
+```
+
+```
+Build an Add-In that shows all my vehicles on a Leaflet map.
+When I click a marker, show the vehicle name and current speed.
+Auto-zoom to fit all vehicles.
+```
+
+```
+Create a dashboard using Bootstrap for styling.
+Show vehicle counts in Bootstrap cards with the grid layout.
+```
+
+**Important for embedded Add-Ins:**
+- `<style>` tags are stripped by MyGeotab
+- Static `<link>` tags get URL-rewritten and break
+- **Solution:** Load CSS dynamically via JavaScript
+
+Tell your AI: "Use Bootstrap with dynamic CSS loading for an embedded Add-In"
+
+The [geotab-addins skill](/skills/geotab-addins/SKILL.md) has the code patterns for dynamic loading.
+
+---
+
 ## How Add-Ins Get Access to Your Data
 
 Understanding how the connection works helps when prompting the AI.
@@ -516,6 +559,7 @@ The AI will walk you through every step. When done, your URL will look like:
 - Verify the URL is accessible in a regular browser tab
 - Check GitHub Pages is enabled (Settings → Pages)
 - Wait 2-3 minutes after pushing changes
+- If deployment takes too long, check GitHub Actions at `https://github.com/YOUR-USERNAME/YOUR-REPO/actions` to see if GitHub is being slow
 
 **Data not loading?**
 - Open browser console (F12) to see errors

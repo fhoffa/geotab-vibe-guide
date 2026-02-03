@@ -166,11 +166,12 @@ api.call("Get", {
 ### Changes Not Appearing
 
 1. **Wait 2-3 minutes** after pushing for deployment
-2. **Add cache buster** to URL:
+2. **Check GitHub Actions** if deployment takes too long: go to `https://github.com/YOUR-USERNAME/YOUR-REPO/actions` to see deployment status and whether GitHub is being slow
+3. **Add cache buster** to URL:
    ```json
    "url": "https://username.github.io/repo/addin.html?v=2"
    ```
-3. **Hard refresh** browser: Ctrl+Shift+R
+4. **Hard refresh** browser: Ctrl+Shift+R
 
 ### 404 Errors
 

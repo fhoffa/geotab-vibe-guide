@@ -348,6 +348,6 @@ Then sit back and watch Claude explore your fleet in real-time!
 
 **Want the traditional setup instead?** See [CREDENTIALS.md](./CREDENTIALS.md)
 
-**Teaching a workshop?** See [MINUTE_BY_MINUTE.md](./MINUTE_BY_MINUTE.md)
+**Teaching a workshop?** See [slides/README.md](../slides/README.md)
 
 **Need more project ideas?** See [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md)

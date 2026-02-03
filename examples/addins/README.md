@@ -20,8 +20,9 @@ Complete working Add-In showing:
 **Try it:**
 1. Copy content of `simple-test-config.json`
 2. Go to MyGeotab: Administration → System → System Settings → Add-Ins
-3. Click "New Add-In" → "Configuration" tab
-4. Paste and save
+3. Enable "Allow unverified Add-Ins" → Yes
+4. Click "New Add-In" → "Configuration" tab
+5. Paste and save
 
 ### minimal-test.* (External Hosted)
 Even simpler example with just the basics.
@@ -52,9 +53,10 @@ Embedded add-in with everything in the JSON configuration.
 **Try it:**
 1. Copy entire contents of `embedded-config.json`
 2. Go to MyGeotab: Administration → System → System Settings → Add-Ins
-3. Click "New Add-In" → "Configuration" tab
-4. Paste and save
-5. Refresh page
+3. Enable "Allow unverified Add-Ins" → Yes
+4. Click "New Add-In" → "Configuration" tab
+5. Paste and save
+6. Refresh page
 
 See `EMBEDDED_README.md` for details.
 
