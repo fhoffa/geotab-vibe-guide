@@ -1,398 +1,400 @@
-# Geotab Vibe Coding Tutorial - Minute-by-Minute Breakdown
+# Geotab Vibe Coding Workshop - Minute-by-Minute Guide
 
-## Pre-Session (Before 0:00)
-- [ ] Participants have received pre-event email with registration link
-- [ ] Testing environment ready (internet, screen sharing, audio)
-- [ ] Code repository URL shared in chat
-- [ ] AI coding assistants confirmed working
+**Duration:** 60 minutes
+**Format:** Hands-on workshop with live coding
+**Goal:** Participants leave with working code and hackathon project ideas
+
+This guide is for **facilitators** running a vibe coding workshop. It links to detailed guides rather than duplicating content.
 
 ---
 
-## 0:00-0:10 | Part 1: Introduction & Setup
+## Pre-Session Checklist
 
-### 0:00-0:03 | Welcome & Vibe Coding Introduction
-**Instructor Actions:**
-- Welcome everyone, introduce yourself
+- [ ] Participants received pre-event email with [registration link](https://my.geotab.com/registration.html)
+- [ ] Test environment ready (internet, screen sharing, audio)
+- [ ] Repository URL ready to share: `github.com/fhoffa/geotab-vibe-guide`
+- [ ] Backup demo account credentials ready (in case participants have issues)
+- [ ] Reviewed the detailed guides you'll reference
+
+---
+
+## 0:00-0:05 | Introduction & Quick Setup (5 min)
+
+### 0:00-0:02 | Welcome & Vibe Coding Intro
+
+**Say:**
 - "Today we're learning VIBE CODING - using AI to build real applications, fast"
-- Show the end goal: a working fleet dashboard or AI query tool
-- Quick poll: "Who has used AI coding assistants before?"
+- "No need to memorize API docs - AI helps you explore"
+- "By the end, you'll have working code connecting to real fleet data"
 
-**Key Messages:**
-- Vibe coding = conversation with AI to build real software
-- No need to memorize API docs - let AI help you explore
-- Focus on what you want to build, not syntax
+**Show:** Demo of finished dashboard (30 seconds)
 
-**Screen:** Title slide → Demo of finished app
+**Quick poll:** "Who has used AI coding assistants before?" (hands/chat)
 
-### 0:03-0:10 | Create Your Geotab Account
-**Instructor Actions:**
-- Share screen: https://my.geotab.com/registration.html
-- Walk through registration form field by field
-- Emphasize: save your credentials (database name, username, password, server)
-- Show successful login and demo dashboard
+### 0:02-0:05 | Account Setup (Fast Track)
 
-**Participant Actions:**
-- Fill out registration form
-- Confirm email (if required)
-- Log in and see demo data
-- Write down credentials
+**Two paths - pick based on audience:**
 
-**Screen:** Live registration walkthrough
+**Path A: Pre-created accounts (fastest)**
+- Share pre-created demo credentials in chat
+- Everyone uses same account for learning
+- "We'll use a shared demo account to save time"
 
-**Troubleshooting Corner:**
-- "Not getting email?" → Check spam folder
-- "Form not loading?" → Try different browser
-- "Password requirements?" → At least 8 chars, number, special char
+**Path B: Self-registration (if time permits)**
+- Share: https://my.geotab.com/registration.html
+- "Create your account now - you have 3 minutes"
+- Walk through quickly, don't wait for everyone
 
-**Checkpoint:** "Thumbs up if you're logged into MyGeotab!" (aim for 90%+)
+**Checkpoint:** "Thumbs up if you have credentials ready!" (aim for 90%+)
+
+> **Detailed setup:** [CREDENTIALS.md](./CREDENTIALS.md)
 
 ---
 
-## 0:10-0:25 | Part 2: Your First API Call - Vibe Style
+## 0:05-0:18 | First API Experience (13 min)
 
-### 0:10-0:13 | Understanding Geotab's API
-**Instructor Actions:**
-- Quick tour: https://geotab.github.io/sdk/software/api/reference/
-- Explain: JSON-RPC format (simpler than it sounds!)
-- Show API call structure: method, params, credentials
-- "Don't worry about memorizing this - AI will help us"
+### 0:05-0:07 | API Overview (2 min)
 
-**Key Concepts:**
+**Quick explanation:**
+- "Geotab's API uses JSON-RPC - simpler than it sounds"
+- "You authenticate once, then make requests for data"
+- "Common data types: Devices (vehicles), Trips, GPS locations, Diagnostics"
+
+**Show:** API reference briefly (don't linger): https://geotab.github.io/sdk/software/api/reference/
+
+### 0:07-0:18 | Live Coding: Instant Start (11 min)
+
+**Choose your tool** (pick ONE based on audience):
+
+#### Option A: Claude Web (Recommended for beginners)
+Share this prompt template:
 ```
-API Call Structure:
-{
-  "method": "Get",
-  "params": {
-    "typeName": "Device",
-    "credentials": {...}
-  }
-}
+I want to explore the Geotab API.
+
+Database: [demo_database]
+Username: [demo_email]
+Password: [demo_password]
+Server: my.geotab.com
+
+Connect and show me what vehicles are in this fleet.
 ```
 
-**Screen:** API documentation → JSON example
+**Demo live:** Paste credentials, watch Claude connect and fetch data in real-time.
 
-### 0:13-0:25 | Vibe Code Your First Connection
-**Instructor Actions:**
-- Open AI coding assistant (Claude Code, Copilot, etc.)
-- "Let's ask AI to help us connect to Geotab"
-- Type prompt: "Create a Node.js script to authenticate with Geotab API"
-- Review generated code together
-- Run the script
-- Modify prompt: "Now fetch all vehicles and print their names"
-- Run and show results
+> **Full guide:** [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md)
 
-**Participant Actions:**
-- Open their coding environment
-- Follow along with prompts
-- Run authentication script
+#### Option B: Local Python (For developers)
+```python
+from dotenv import load_dotenv
+import os, requests
+load_dotenv()
+
+url = f"https://{os.getenv('GEOTAB_SERVER')}/apiv1"
+auth = requests.post(url, json={"method": "Authenticate", "params": {
+    "database": os.getenv('GEOTAB_DATABASE'),
+    "userName": os.getenv('GEOTAB_USERNAME'),
+    "password": os.getenv('GEOTAB_PASSWORD')
+}})
+creds = auth.json()["result"]["credentials"]
+
+# Fetch devices
+resp = requests.post(url, json={"method": "Get", "params": {
+    "typeName": "Device", "credentials": creds
+}})
+print(f"Found {len(resp.json()['result'])} vehicles")
+```
+
+**Participant actions:**
+- Follow along with the chosen approach
 - Fetch vehicle list
-- Experiment with modifications
-
-**Example Prompts to Try:**
-```
-1. "Create a Python script to authenticate with Geotab API using these credentials: [paste]"
-
-2. "Using the Geotab SDK for Node.js, fetch all devices and print their names and serial numbers"
-
-3. "Get the current GPS location for all vehicles in my fleet"
-
-4. "Retrieve trips from the last 24 hours for vehicle ID: [id]"
-```
-
-**Screen:** Split screen - AI assistant + terminal
-
-**Live Coding Tips:**
-- Talk through what AI generates
-- Point out key parts: credentials, API endpoint, method name
-- Show how to ask AI to explain: "What does this function do?"
-- Demonstrate iteration: "Make this output prettier"
+- Try: "Show me recent trips for one vehicle"
 
 **Checkpoint:** "Who has successfully fetched vehicle data?" (aim for 80%+)
 
-**Catch-up Code:** Share a working authentication snippet in chat for those behind
+**Catch-up:** Share working code snippet in chat for those behind.
 
 ---
 
-## 0:25-0:40 | Part 3: Exploring Real-World Data
+## 0:18-0:30 | Building Something Visual (12 min)
 
-### 0:25-0:33 | Deep Dive into Telematics Data
-**Instructor Actions:**
-- "Let's explore what data Geotab actually tracks"
-- Show different data types: Device, Trip, StatusData, LogRecord
-- Demonstrate a few API calls to get:
-  - Vehicle diagnostics (fuel level, engine RPM)
-  - GPS coordinates and speed
-  - Trip history with distance and duration
-  - Fault codes and alerts
+### Choose Your Path
 
-**Key API Entities:**
-```
-Device       → Vehicles and assets
-Trip         → Journey from ignition on to off
-StatusData   → Real-time diagnostics (fuel, speed, etc.)
-LogRecord    → GPS breadcrumbs
-FaultData    → Engine fault codes
-DriverChange → Who's driving
-```
+Present three options - let participants pick based on comfort level:
 
-**Example Vibe Prompts:**
+### Path A: No-Code Add-In (Google Gem)
+**Best for:** Non-coders, fastest results
+
+"Want a custom page in MyGeotab without writing code?"
+
+**Demo:** Open [Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO)
+
+**Prompt:**
 ```
-"Get the latest fuel level for all vehicles"
-"Show me all trips longer than 50 miles from yesterday"
-"Find any vehicles with active fault codes"
-"Get GPS coordinates for vehicle X over the last hour"
+Create an Add-In that shows:
+- Total number of vehicles
+- Total number of drivers
+- A refresh button
+Use a clean card layout.
 ```
 
-**Screen:** API responses → Real data visualization
+Copy JSON → Paste in MyGeotab → Done.
 
-### 0:33-0:40 | Build a Data Dashboard
-**Instructor Actions:**
-- "Let's build something visual in the next 7 minutes"
-- Prompt AI: "Create a simple HTML dashboard showing vehicle locations on a map using Leaflet"
-- Or: "Build a CLI tool with colored output showing vehicle health scores"
-- Run the generated code
-- Add a feature live: "Add vehicle names to the map markers"
+> **Full guide:** [GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md)
 
-**Participant Actions:**
-- Choose: web dashboard or CLI tool
-- Prompt AI to generate their version
-- Customize with their own ideas
-- Share screenshots in chat
+### Path B: Visual IDE (Antigravity)
+**Best for:** Developers who want a visual app
 
-**Example Projects:**
+"Let's build an interactive map dashboard."
+
+**Steps:**
+1. Open Antigravity IDE
+2. Prompt: "Create a Streamlit app that shows my Geotab vehicles on a map"
+3. Run and see results
+
+> **Full guide:** [ANTIGRAVITY_QUICKSTART.md](./ANTIGRAVITY_QUICKSTART.md)
+
+### Path C: CLI Dashboard (Code-focused)
+**Best for:** Terminal lovers
+
+**Prompt AI:**
 ```
-Option A: Web Map Dashboard
-- Vehicle locations plotted on Leaflet/Mapbox
-- Click markers for vehicle details
-- Color-code by status (moving, idle, parked)
-
-Option B: CLI Health Monitor
-- Table format with vehicle names
-- Health scores (green/yellow/red)
-- Latest diagnostic data
-- Refresh every 30 seconds
-
-Option C: Trip Report Generator
-- List of trips from today
-- Total distance, fuel used
-- Export to CSV
+Create a CLI dashboard that displays:
+- Vehicle names in a table
+- Current status (moving/stopped)
+- Last GPS coordinates
+Refresh every 30 seconds with colored output.
 ```
 
-**Screen:** Live dashboard building with AI
+### Live Demo (5 min)
+
+Pick ONE path and demo it live. Show:
+1. The prompt you use
+2. AI generating code/config
+3. Running/deploying the result
+4. Adding one feature: "Now add vehicle names to the markers"
 
 **Checkpoint:** "Share a screenshot of your dashboard!" (aim for 70%+)
 
 ---
 
-## 0:40-0:52 | Part 4: AI-Powered Insights with Geotab Ace API
+## 0:30-0:42 | AI-Powered Insights: Ace API (12 min)
 
-### 0:40-0:43 | Introduction to Geotab Ace API
-**Instructor Actions:**
-- "Now let's add AI intelligence to our fleet data"
-- Explain Geotab Ace: AI that understands your fleet
-- Use cases: natural language queries, predictive insights, recommendations
-- Show Ace API documentation
+### 0:30-0:33 | What is Geotab Ace? (3 min)
 
-**Key Capabilities:**
-- Natural language questions → structured data queries
-- Predictive maintenance forecasting
-- Route optimization suggestions
-- Driver behavior analysis
-- Anomaly detection
+**Explain:**
+- "Ace is AI that understands your fleet data"
+- "Ask questions in natural language, get structured answers"
+- "It translates your questions into database queries"
 
-**Screen:** Ace API overview → Use case examples
+**Use cases:**
+- "Which vehicles need maintenance soon?"
+- "What's my fleet's fuel consumption trend?"
+- "Who are my safest drivers?"
 
-### 0:43-0:52 | Build an AI Fleet Chatbot
-**Instructor Actions:**
-- Prompt AI: "Create a chatbot that uses Geotab Ace API to answer fleet questions"
-- Show authentication with Ace
-- Make first query: "Which vehicles are due for maintenance?"
-- Add another: "What's the most efficient route for deliveries today?"
-- Combine with my.geotab.com data for richer responses
+### 0:33-0:42 | Build an AI Query Tool (9 min)
 
-**Participant Actions:**
-- Set up Ace API credentials
-- Create chatbot or query tool
-- Test with different questions
-- Combine Ace insights with raw API data
-
-**Example Questions to Ask Ace:**
+**Prompt AI:**
 ```
-"Which drivers have the best safety scores?"
-"Predict which vehicles will need maintenance in the next 30 days"
-"What's the total fuel consumption this week vs last week?"
-"Which routes have the most idle time?"
-"How can I reduce my fleet's carbon footprint?"
+Create a tool that uses Geotab Ace API to answer fleet questions.
+It should:
+1. Accept a natural language question
+2. Send it to Ace API
+3. Display the response
+
+Example questions to support:
+- "Which drivers have the best safety scores?"
+- "What's my total fuel consumption this week?"
 ```
 
-**Advanced Prompt:**
-```
-"Create a Slack bot that accepts natural language fleet questions,
-queries Geotab Ace API, fetches supporting data from my.geotab.com API,
-and returns formatted insights with charts"
-```
+**Reference implementation:** [geotab_ace.py](https://github.com/fhoffa/geotab-ace-mcp-demo/blob/main/geotab_ace.py)
 
-**Screen:** Live chatbot demo with real queries
+**Live demo:** Ask a real question, show the response.
 
-**Checkpoint:** "Who got Ace API working?" (aim for 60%+)
+**Checkpoint:** "Who got Ace working?" (aim for 60%+)
 
-**Note:** If Ace API credentials are complex, have a shared demo instance ready
+**Note:** If Ace credentials are complex, have a shared demo ready.
 
 ---
 
-## 0:52-1:00 | Part 5: Hackathon Ideas & Wrap-up
+## 0:42-0:50 | Going Agentic (8 min)
 
-### 0:52-0:55 | Hackathon Project Ideas Speed Round
-**Instructor Actions:**
-- Rapid-fire project ideas (2-3 examples per category)
-- Show quick mockups or wireframes
-- "You can build any of these in 4-8 hours with vibe coding"
-- Point to full ideas document
+### 0:42-0:45 | What Are Agentic Systems? (3 min)
 
-**Present Top 10 Ideas:**
-1. **EcoFleet Optimizer** - Carbon footprint tracker with reduction recommendations
+**Explain the shift:**
+
+| Traditional | Agentic |
+|-------------|---------|
+| You check dashboards | System monitors automatically |
+| You notice problems | System detects and alerts |
+| You take action | System acts (alerts, tickets, API calls) |
+
+**The loop:** `MONITOR → DETECT → DECIDE → ACT → repeat`
+
+**Quick examples:**
+- Speeding alert → Slack message
+- Fault code detected → Create maintenance ticket
+- Vehicle near customer → Send ETA notification
+
+### 0:45-0:50 | When to Go Agentic (5 min)
+
+**Built-in Geotab features handle:**
+- Basic rules and exceptions
+- Email notifications
+- Zone entry/exit alerts
+
+**Build external agents when you need:**
+- Different destinations (Slack, Teams, SMS)
+- Multi-step workflows (fault → find shop → create ticket → alert driver)
+- AI-powered decisions
+- External integrations (ServiceNow, Jira, Salesforce)
+
+**Show one prompt:**
+```
+Build an n8n workflow that:
+1. Polls Geotab every 5 minutes for vehicle speeds
+2. Filters for speed > 75 mph
+3. Sends Slack alert to #fleet-alerts
+4. Tracks alerts to avoid duplicates
+```
+
+> **Full guide:** [AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md)
+> **Step-by-step:** [AGENTIC_QUICKSTART_N8N.md](./AGENTIC_QUICKSTART_N8N.md)
+
+---
+
+## 0:50-1:00 | Hackathon Ideas & Wrap-up (10 min)
+
+### 0:50-0:55 | Project Ideas Speed Round (5 min)
+
+**Rapid-fire - 30 seconds each:**
+
+1. **EcoFleet Optimizer** - Carbon footprint tracker with reduction tips
 2. **SafeDrive Coach** - Driver safety scorecard with gamification
-3. **PredictMaint AI** - Predictive maintenance alerts before breakdowns
-4. **RouteGenius** - AI-powered route optimization
-5. **FleetPulse Dashboard** - Real-time fleet health monitoring
-6. **IdleKiller** - Idle time tracking and reduction challenges
-7. **GeotabGPT** - Natural language fleet analytics chatbot
-8. **EVReady Planner** - Fleet electrification ROI calculator
-9. **ComplianceGuard** - HOS and safety compliance tracker
-10. **DriverConnect** - Driver communication and feedback app
+3. **PredictMaint AI** - Predictive maintenance before breakdowns
+4. **FleetPulse Dashboard** - Real-time fleet health monitoring
+5. **GeotabGPT** - Natural language fleet chatbot
 
-**Screen:** Idea gallery with screenshots
+**Categories to explore:**
+- Fleet optimization (routes, fuel, idle time)
+- Safety & compliance (HOS, driver behavior)
+- Environmental impact (carbon, EV planning)
+- Integrations (Slack, CRM, ticketing systems)
+- Developer tools (API explorers, SDKs)
 
-### 0:55-0:58 | Live Speed Coding Demo
-**Instructor Actions:**
-- "Watch me build a carbon footprint calculator in 3 minutes"
-- Prompt: "Build a web app that calculates fleet CO2 emissions from Geotab trip data"
-- Let AI generate
-- Run it
-- Add one feature: "Add a chart showing emissions by vehicle"
-- Run again
-- "That's vibe coding - idea to working prototype in minutes"
+> **Full list:** [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md)
 
-**Screen:** Full-screen coding session
+### 0:55-0:58 | Speed Coding Demo (3 min)
 
-### 0:58-1:00 | Wrap-up & Next Steps
-**Instructor Actions:**
-- Recap what we built today
-- Share resources:
-  - Code repository with all examples
-  - API documentation links
-  - Hackathon details and timeline
-  - Discord/Slack community invite
-- Announce prizes
-- "Q&A time - drop questions in chat"
-- Thank participants
+**Live demo:** "Watch me build a carbon footprint calculator in 3 minutes"
 
-**Key Resources to Share:**
 ```
-📚 Geotab SDK Documentation: https://geotab.github.io/sdk/
-💻 Code Examples Repository: [your-repo-url]
-💬 Community Discord: [invite-link]
-🏆 Hackathon Submission Form: [form-url]
-📅 Hackathon Timeline: [schedule]
-🎯 Judging Criteria: [rubric]
+Build a web app that:
+1. Fetches all trips from Geotab
+2. Calculates estimated CO2 emissions
+3. Shows a chart by vehicle
 ```
 
-**Final Messages:**
-- "Keep vibing - use AI to explore more"
-- "Your demo account is active for [X days]"
+Run it. Add one feature. "That's vibe coding."
+
+### 0:58-1:00 | Wrap-up & Resources (2 min)
+
+**Share in chat:**
+```
+📚 SDK Documentation: https://geotab.github.io/sdk/
+💻 This Repository: github.com/fhoffa/geotab-vibe-guide
+🚀 Instant Start: guides/INSTANT_START_WITH_CLAUDE.md
+🤖 Agentic Guide: guides/AGENTIC_OVERVIEW.md
+💡 Hackathon Ideas: guides/HACKATHON_IDEAS.md
+```
+
+**Final messages:**
+- "Your demo account is active - keep experimenting"
+- "Use AI to explore more APIs"
 - "Can't wait to see what you build!"
-- "Recording will be available in 24 hours"
-
-**Screen:** Resources slide
-
----
-
-## Post-Session (After 1:00)
-- [ ] Share recording link
-- [ ] Send follow-up email with resources
-- [ ] Post code examples to repository
-- [ ] Open Discord/Slack for ongoing support
-- [ ] Begin monitoring hackathon submissions
 
 ---
 
 ## Instructor Backup Plans
 
-### If Running Behind (5+ minutes)
-- **Skip:** Detailed API documentation tour (just share link)
-- **Condense:** Multiple dashboard examples → pick one
-- **Fast-forward:** Use pre-built code snippets instead of live generation
+### Running Behind?
+- **Skip:** Detailed API docs tour (just share link)
+- **Condense:** Pick one dashboard path instead of showing all three
+- **Fast-forward:** Use pre-built code snippets
 
-### If Running Ahead (5+ minutes)
+### Running Ahead?
 - **Add:** More Q&A time
-- **Expand:** Show advanced Ace API capabilities
-- **Bonus:** Demonstrate error handling and production tips
-- **Interactive:** Take audience suggestions for features to add
+- **Expand:** Show multiple dashboard paths
+- **Bonus:** Live feature requests from audience
 
-### If Technical Issues
-- **Demo Account Issues:** Use instructor's backup account, share API key
-- **Participant Coding Issues:** Share working code snippets in chat
-- **API Down:** Have recorded API responses to simulate (mention it's cached)
-- **Ace API Unavailable:** Focus more on my.geotab.com API, show Ace in recording
+### Technical Issues?
+| Problem | Solution |
+|---------|----------|
+| Account creation failing | Use shared backup credentials |
+| API not responding | Show cached responses, mention it's cached |
+| Participant stuck | Share working code in chat immediately |
+| Ace API unavailable | Focus on my.geotab.com API, show Ace in recording |
 
-### If Audience Skill Mismatch
-- **Too Advanced:** Speed up basics, add complexity to examples
-- **Too Beginner:** Slow down, explain more fundamentals, use simpler prompts
-- **Mixed Levels:** Create "bonus challenges" for advanced participants
+### Audience Skill Mismatch?
+- **Too advanced:** Speed up basics, add complexity
+- **Too beginner:** Slow down, use simpler prompts, more demos
+- **Mixed:** Create "bonus challenges" for advanced participants
 
 ---
 
-## Energy & Engagement Tactics
+## Engagement Tactics
 
 ### Keep It Interactive
 - Polls every 10-15 minutes
 - "Share your progress" moments
-- Quick competitions: "First to fetch trip data wins!"
-- Encourage questions in chat throughout
+- Quick competitions: "First to fetch trips wins!"
+- Encourage chat questions throughout
 
 ### Celebrate Wins
-- Call out participants who share cool results
-- Screenshot and show interesting approaches
-- "That's a great idea for a hackathon project!"
-- Create excitement around what's possible
+- Call out participants sharing cool results
+- Screenshot and display interesting approaches
+- "That's a great hackathon idea!"
 
 ### Handle Frustration
 - "Errors are part of coding - let's debug together"
-- "AI sometimes gets it wrong - that's okay, ask differently"
-- "If you're stuck, we have working code in the repo"
-- Normalize struggle as part of learning
-
-### Maintain Momentum
-- Use timers for exercises
-- "You have 5 minutes to get this working"
-- Background music during coding time (optional)
-- Countdowns to build urgency: "3... 2... 1... show time!"
+- "AI sometimes gets it wrong - ask differently"
+- "Working code is in the repo if you're stuck"
 
 ---
 
-## Success Indicators During Session
+## Success Indicators
 
-**Green Flags (Going Well):**
-- ✅ 80%+ participants completing checkpoints
-- ✅ Active chat with questions and screenshots
-- ✅ Variety in approaches (not everyone copying exactly)
-- ✅ Excitement/surprise reactions to demos
-- ✅ Participants helping each other in chat
+**Green Flags:**
+- 80%+ completing checkpoints
+- Active chat with questions and screenshots
+- Variety in approaches (not everyone copying exactly)
+- Participants helping each other
 
 **Red Flags (Adjust!):**
-- ⚠️ Less than 50% completing checkpoints
-- ⚠️ Silent chat (no engagement)
-- ⚠️ Repeated same questions (concept not clear)
-- ⚠️ Long pauses where nothing happens
-- ⚠️ Participants leaving/disconnecting
+- Less than 50% completing checkpoints
+- Silent chat
+- Same questions repeated (concept unclear)
+- Participants leaving
 
-**Adjustment Actions:**
+**Adjustments:**
 - Slow down and re-explain
 - Share working code immediately
-- Take impromptu questions
 - Switch to more demos, less hands-on
-- Pair participants for problem-solving
+- Take impromptu questions
 
 ---
 
-*This timing is approximate and should be adjusted based on audience engagement and technical proficiency.*
+## Quick Links for Facilitators
+
+| Topic | Guide |
+|-------|-------|
+| Credentials & Setup | [CREDENTIALS.md](./CREDENTIALS.md) |
+| Instant Start (Claude) | [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md) |
+| Antigravity IDE | [ANTIGRAVITY_QUICKSTART.md](./ANTIGRAVITY_QUICKSTART.md) |
+| No-Code Add-Ins | [GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) |
+| Agentic Systems | [AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md) |
+| Hackathon Ideas | [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md) |
+| API Reference | [GEOTAB_API_REFERENCE.md](./GEOTAB_API_REFERENCE.md) |
+
+---
+
+*Timing is approximate. Adjust based on audience engagement and skill level.*
