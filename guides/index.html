@@ -1,11 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Geotab Vibe Coding Guides</title>
     <style>
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
             line-height: 1.6;
@@ -15,21 +19,79 @@
             color: #24292f;
             background: #fff;
         }
-        h1 { border-bottom: 1px solid #d0d7de; padding-bottom: 8px; }
-        h2 { margin-top: 32px; border-bottom: 1px solid #d0d7de; padding-bottom: 8px; }
-        h3 { margin-top: 24px; }
-        a { color: #0969da; text-decoration: none; }
-        a:hover { text-decoration: underline; }
-        table { border-collapse: collapse; width: 100%; margin: 16px 0; }
-        th, td { border: 1px solid #d0d7de; padding: 8px 12px; text-align: left; }
-        th { background: #f6f8fa; }
-        ul { padding-left: 24px; }
-        li { margin: 8px 0; }
-        .note { background: #fff8c5; border: 1px solid #d4a72c; border-radius: 6px; padding: 12px 16px; margin: 16px 0; }
-        hr { border: none; border-top: 1px solid #d0d7de; margin: 24px 0; }
-        code { background: #f6f8fa; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+
+        h1 {
+            border-bottom: 1px solid #d0d7de;
+            padding-bottom: 8px;
+        }
+
+        h2 {
+            margin-top: 32px;
+            border-bottom: 1px solid #d0d7de;
+            padding-bottom: 8px;
+        }
+
+        h3 {
+            margin-top: 24px;
+        }
+
+        a {
+            color: #0969da;
+            text-decoration: none;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 16px 0;
+        }
+
+        th,
+        td {
+            border: 1px solid #d0d7de;
+            padding: 8px 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f6f8fa;
+        }
+
+        ul {
+            padding-left: 24px;
+        }
+
+        li {
+            margin: 8px 0;
+        }
+
+        .note {
+            background: #fff8c5;
+            border: 1px solid #d4a72c;
+            border-radius: 6px;
+            padding: 12px 16px;
+            margin: 16px 0;
+        }
+
+        hr {
+            border: none;
+            border-top: 1px solid #d0d7de;
+            margin: 24px 0;
+        }
+
+        code {
+            background: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
     </style>
 </head>
+
 <body>
     <h1>Geotab Vibe Coding Guides</h1>
     <p>Welcome! This folder contains guides to help you build with Geotab APIs using AI-assisted "vibe coding."</p>
@@ -40,14 +102,51 @@
 
     <h2>Where to Start</h2>
     <table>
-        <tr><th>Your situation</th><th>Start here</th></tr>
-        <tr><td>New to coding/APIs</td><td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/BEGINNER_GLOSSARY.md">BEGINNER_GLOSSARY.md</a></td></tr>
-        <tr><td>Want to build NOW (easiest!)</td><td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_USER_GUIDE.md">GOOGLE_GEM_USER_GUIDE.md</a></td></tr>
-        <tr><td>Using Claude</td><td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/INSTANT_START_WITH_CLAUDE.md">INSTANT_START_WITH_CLAUDE.md</a></td></tr>
-        <tr><td>Using other AI tools</td><td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/API_REFERENCE_FOR_AI.md">API_REFERENCE_FOR_AI.md</a></td></tr>
-        <tr><td>Want automated monitoring/alerts</td><td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/AGENTIC_OVERVIEW.md">AGENTIC_OVERVIEW.md</a></td></tr>
-        <tr><td>At a hackathon</td><td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/HACKATHON_IDEAS.md">HACKATHON_IDEAS.md</a></td></tr>
-        <tr><td>Teaching a workshop</td><td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/slides/README.md">slides/README.md</a></td></tr>
+        <tr>
+            <th>Your situation</th>
+            <th>Start here</th>
+        </tr>
+        <tr>
+            <td>Want to build NOW (easiest!)</td>
+            <td><a
+                    href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_USER_GUIDE.md">GOOGLE_GEM_USER_GUIDE.md</a>
+            </td>
+        </tr>
+        <tr>
+            <td>New to coding/APIs</td>
+            <td><a
+                    href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/BEGINNER_GLOSSARY.md">BEGINNER_GLOSSARY.md</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Using Claude</td>
+            <td><a
+                    href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/INSTANT_START_WITH_CLAUDE.md">INSTANT_START_WITH_CLAUDE.md</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Using other AI tools</td>
+            <td><a
+                    href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/API_REFERENCE_FOR_AI.md">API_REFERENCE_FOR_AI.md</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Want automated monitoring/alerts</td>
+            <td><a
+                    href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/AGENTIC_OVERVIEW.md">AGENTIC_OVERVIEW.md</a>
+            </td>
+        </tr>
+        <tr>
+            <td>At a hackathon</td>
+            <td><a
+                    href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/HACKATHON_IDEAS.md">HACKATHON_IDEAS.md</a>
+            </td>
+        </tr>
+        <tr>
+            <td>Teaching a workshop</td>
+            <td><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/slides/README.md">slides/README.md</a>
+            </td>
+        </tr>
     </table>
 
     <hr>
@@ -56,59 +155,102 @@
 
     <h3>Getting Started</h3>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_USER_GUIDE.md"><strong>GOOGLE_GEM_USER_GUIDE.md</strong></a> - Easiest path! Describe what you want, paste JSON, done. No coding required.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/INSTANT_START_WITH_CLAUDE.md"><strong>INSTANT_START_WITH_CLAUDE.md</strong></a> - Zero to working code in 60 seconds using Claude. Includes network egress setup.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/BEGINNER_GLOSSARY.md"><strong>BEGINNER_GLOSSARY.md</strong></a> - New to coding? Start here for plain-English explanations of APIs, terminals, and more.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/CREDENTIALS.md"><strong>CREDENTIALS.md</strong></a> - How to set up your <code>.env</code> file with Geotab API credentials.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/CLAUDE_PROMPTS.md"><strong>CLAUDE_PROMPTS.md</strong></a> - Copy-paste prompts for common Geotab tasks.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_USER_GUIDE.md"><strong>GOOGLE_GEM_USER_GUIDE.md</strong></a>
+            - Easiest path! Describe (or draw) what you want, paste JSON, done. No coding required.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/INSTANT_START_WITH_CLAUDE.md"><strong>INSTANT_START_WITH_CLAUDE.md</strong></a>
+            - Zero to working code in 60 seconds using Claude. Includes network egress setup.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/BEGINNER_GLOSSARY.md"><strong>BEGINNER_GLOSSARY.md</strong></a>
+            - New to coding? Start here for plain-English explanations of APIs, terminals, and more.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/CREDENTIALS.md"><strong>CREDENTIALS.md</strong></a>
+            - How to set up your <code>.env</code> file with Geotab API credentials.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/CLAUDE_PROMPTS.md"><strong>CLAUDE_PROMPTS.md</strong></a>
+            - Copy-paste prompts for common Geotab tasks.</li>
     </ul>
 
     <h3>API References</h3>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/API_REFERENCE_FOR_AI.md"><strong>API_REFERENCE_FOR_AI.md</strong></a> - Complete guide for any AI coding tool (ChatGPT, Copilot, Cursor, etc.).</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GEOTAB_API_REFERENCE.md"><strong>GEOTAB_API_REFERENCE.md</strong></a> - Quick reference card for authentication and common API patterns.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/DEMO_DATABASE_REFERENCE.md"><strong>DEMO_DATABASE_REFERENCE.md</strong></a> - Complete entity schemas and sample data from demo databases.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/API_REFERENCE_FOR_AI.md"><strong>API_REFERENCE_FOR_AI.md</strong></a>
+            - Complete guide for any AI coding tool (ChatGPT, Copilot, Cursor, etc.).</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GEOTAB_API_REFERENCE.md"><strong>GEOTAB_API_REFERENCE.md</strong></a>
+            - Quick reference card for authentication and common API patterns.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/DEMO_DATABASE_REFERENCE.md"><strong>DEMO_DATABASE_REFERENCE.md</strong></a>
+            - Complete entity schemas and sample data from demo databases.</li>
     </ul>
 
     <h3>Building Add-Ins</h3>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GEOTAB_ADDINS.md"><strong>GEOTAB_ADDINS.md</strong></a> - Build custom pages that run inside MyGeotab.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/TRANSFORM_ADDIN_ZENITH.md"><strong>TRANSFORM_ADDIN_ZENITH.md</strong></a> - Should you transform to Zenith? Advantages, drawbacks, and how-to.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GEOTAB_ADDINS.md"><strong>GEOTAB_ADDINS.md</strong></a>
+            - Build custom pages that run inside MyGeotab.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/TRANSFORM_ADDIN_ZENITH.md"><strong>TRANSFORM_ADDIN_ZENITH.md</strong></a>
+            - Should you transform to Zenith? Advantages, drawbacks, and how-to.</li>
     </ul>
 
     <h3>Google Gems for Add-Ins</h3>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_USER_GUIDE.md"><strong>GOOGLE_GEM_USER_GUIDE.md</strong></a> - Use the Geotab Add-In Architect Gem to generate Add-Ins without coding.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_CREATOR_GUIDE.md"><strong>GOOGLE_GEM_CREATOR_GUIDE.md</strong></a> - Create your own Google Gem that generates Geotab Add-Ins.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_USER_GUIDE.md"><strong>GOOGLE_GEM_USER_GUIDE.md</strong></a>
+            - Use the Geotab Add-In Architect Gem to generate Add-Ins without coding.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GOOGLE_GEM_CREATOR_GUIDE.md"><strong>GOOGLE_GEM_CREATOR_GUIDE.md</strong></a>
+            - Create your own Google Gem that generates Geotab Add-Ins.</li>
     </ul>
 
     <h3>Agentic Systems (Automation &amp; Monitoring)</h3>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/AGENTIC_OVERVIEW.md"><strong>AGENTIC_OVERVIEW.md</strong></a> - What are agentic systems? When do you need one? Framework comparison.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/AGENTIC_QUICKSTART_N8N.md"><strong>AGENTIC_QUICKSTART_N8N.md</strong></a> - Build your first fleet monitoring agent with n8n (visual, no code).</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/AGENTIC_OVERVIEW.md"><strong>AGENTIC_OVERVIEW.md</strong></a>
+            - What are agentic systems? When do you need one? Framework comparison.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/AGENTIC_QUICKSTART_N8N.md"><strong>AGENTIC_QUICKSTART_N8N.md</strong></a>
+            - Build your first fleet monitoring agent with n8n (visual, no code).</li>
     </ul>
 
     <h3>Advanced Topics</h3>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/ADVANCED_INTEGRATIONS.md"><strong>ADVANCED_INTEGRATIONS.md</strong></a> - Voice interfaces, AI integrations, and automation patterns.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/CREATING_AGENT_SKILLS.md"><strong>CREATING_AGENT_SKILLS.md</strong></a> - Package your knowledge as reusable AI skills.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/ANTIGRAVITY_QUICKSTART.md"><strong>ANTIGRAVITY_QUICKSTART.md</strong></a> - Build dashboards using Google Antigravity IDE.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/ADVANCED_INTEGRATIONS.md"><strong>ADVANCED_INTEGRATIONS.md</strong></a>
+            - Voice interfaces, AI integrations, and automation patterns.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/CREATING_AGENT_SKILLS.md"><strong>CREATING_AGENT_SKILLS.md</strong></a>
+            - Package your knowledge as reusable AI skills.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/ANTIGRAVITY_QUICKSTART.md"><strong>ANTIGRAVITY_QUICKSTART.md</strong></a>
+            - Build dashboards using Google Antigravity IDE.</li>
     </ul>
 
     <h3>Hackathons &amp; Workshops</h3>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/HACKATHON_IDEAS.md"><strong>HACKATHON_IDEAS.md</strong></a> - Project ideas with difficulty levels, APIs to use, and starter prompts.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/slides/README.md"><strong>slides/README.md</strong></a> - Slides and facilitator guide for running a vibe coding workshop.</li>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/TUTORIAL_DESIGN.md"><strong>TUTORIAL_DESIGN.md</strong></a> - Design document for the tutorial structure.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/HACKATHON_IDEAS.md"><strong>HACKATHON_IDEAS.md</strong></a>
+            - Project ideas with difficulty levels, APIs to use, and starter prompts.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/slides/README.md"><strong>slides/README.md</strong></a>
+            - Slides and facilitator guide for running a vibe coding workshop.</li>
+        <li><a
+                href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/TUTORIAL_DESIGN.md"><strong>TUTORIAL_DESIGN.md</strong></a>
+            - Design document for the tutorial structure.</li>
     </ul>
 
     <hr>
 
     <h2>Quick Links</h2>
     <ul>
-        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/VIBE_CODING_CONTEXT.md">Main Vibe Coding Guide</a> - The primary reference for vibe coding with Geotab</li>
-        <li><a href="https://my.geotab.com/registration.html">Create a demo account</a> - Get started with a free test database (click <strong>"Create a Demo Database"</strong>, not "I'm a New Customer")</li>
+        <li><a href="https://github.com/fhoffa/geotab-vibe-guide/blob/main/VIBE_CODING_CONTEXT.md">Main Vibe Coding
+                Guide</a> - The primary reference for vibe coding with Geotab</li>
+        <li><a href="https://my.geotab.com/registration.html">Create a demo account</a> - Get started with a free test
+            database (click <strong>"Create a Demo Database"</strong>, not "I'm a New Customer")</li>
         <li><a href="https://github.com/fhoffa/geotab-vibe-guide">Back to repository</a></li>
     </ul>
 </body>
+
 </html>

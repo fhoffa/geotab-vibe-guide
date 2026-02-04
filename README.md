@@ -15,7 +15,7 @@ This repository is a "Vibe Coding" starter kit. You don't need to be an expert c
 ### Path A: Build a MyGeotab Add-In (Easiest!)
 **Want a custom page that lives INSIDE MyGeotab? This is the fastest way.**
 
-[**START WITH THE GOOGLE GEM**](./guides/GOOGLE_GEM_USER_GUIDE.md) - Describe what you want → Get JSON → Paste into MyGeotab → Done.
+[**START WITH THE GOOGLE GEM**](./guides/GOOGLE_GEM_USER_GUIDE.md) - Describe (or draw) what you want → Get JSON → Paste into MyGeotab → Done.
 
 No coding. No hosting. No technical setup. Just conversation.
 
@@ -57,7 +57,7 @@ Examples: Speeding alerts to Slack, maintenance ticket creation, geofence notifi
 
 ## 📂 Repository Structure
 
-*   [**`GOOGLE_GEM_USER_GUIDE.md`**](./guides/GOOGLE_GEM_USER_GUIDE.md): **Start here!** Build Add-Ins by describing what you want.
+*   [**`GOOGLE_GEM_USER_GUIDE.md`**](./guides/GOOGLE_GEM_USER_GUIDE.md): **Start here!** Build Add-Ins by describing (or drawing) what you want.
 *   [**`BEGINNER_GLOSSARY.md`**](./guides/BEGINNER_GLOSSARY.md): New to coding? This explains all terms.
 *   [**`CLAUDE_PROMPTS.md`**](./guides/CLAUDE_PROMPTS.md): Ready-made prompts to build apps with Claude.
 *   [**`examples/`**](./examples/): Task-based challenges. Use AI to solve them!
@@ -97,5 +97,5 @@ Vibe coding is about **flow**. Instead of fighting with syntax and documentation
 
 ---
 
-**Ready? [Start with the Google Gem](./guides/GOOGLE_GEM_USER_GUIDE.md) and build your first Add-In!**
+**Ready? [Start with the Google Gem](./guides/GOOGLE_GEM_USER_GUIDE.md) and build your first Add-In by describing (or drawing) what you want!**
 

@@ -368,7 +368,7 @@ Search for: `[geotab]` + your error message
 ### Tutorial-Specific
 - **Hackathon Discord**: [link to be added]
 - **Office Hours**: [schedule to be added]
-- **FAQ**: See TUTORIAL_DESIGN.md
+- **FAQ**: See [TUTORIAL_DESIGN.md](./guides/TUTORIAL_DESIGN.md)
 
 ### General Developer Communities
 - **/r/coding**: https://www.reddit.com/r/coding/
@@ -394,10 +394,9 @@ Search for: `[geotab]` + your error message
 ## 📄 Cheat Sheets
 
 Quick reference documents in this repository:
-- [CLAUDE_PROMPTS.md](./guides/CLAUDE_PROMPTS.md) - AI prompts for common tasks
-- [ADVANCED_INTEGRATIONS.md](./guides/ADVANCED_INTEGRATIONS.md) - MCP servers, voice interfaces, AI content generation
-- [API_QUICKREF.md](./API_QUICKREF.md) - Top 20 Geotab API calls *(to be created)*
-- [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) - Common issues and fixes *(to be created)*
+- [API_REFERENCE_FOR_AI.md](./guides/API_REFERENCE_FOR_AI.md) - Complete API patterns for AI tools
+- [GEOTAB_API_REFERENCE.md](./guides/GEOTAB_API_REFERENCE.md) - Top Geotab API calls card
+- [CREDENTIALS.md](./guides/CREDENTIALS.md) - Common issues and fixes
 
 ---
 

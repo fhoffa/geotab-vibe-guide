@@ -67,13 +67,13 @@ You'll leave with: Working code + Project ideas
 VIBE CODING = AI-Assisted Development
 
 Traditional: Read docs → Write code → Debug → Repeat
-Vibe: Describe what you want → AI writes code → Iterate
+Vibe: Describe (or draw) what you want → AI writes code → Iterate
 
 "The goal is working software, not memorizing APIs"
 ```
 
 **Facilitator Notes:**
-- "Vibe coding means describing what you want and letting AI help"
+- "Vibe coding means describing (or drawing) what you want and letting AI help"
 - "You still need to understand the code - AI is your co-pilot, not autopilot"
 - Show 30-second demo of finished dashboard (optional)
 
@@ -238,7 +238,7 @@ Admin → System Settings → Add-Ins → New → Paste
 **Facilitator Notes:**
 - **If demoing this path:** Open Gem, show prompt, get JSON
 - Show pasting into MyGeotab (or screenshot if time-limited)
-- "No hosting, no code - just describe what you want"
+- "No hosting, no code - just describe (or draw) what you want"
 
 > **Full guide:** [GOOGLE_GEM_USER_GUIDE.md](../guides/GOOGLE_GEM_USER_GUIDE.md)
 
@@ -511,7 +511,7 @@ WATCH: 3-MINUTE BUILD
 - **LIVE DEMO:** Build something in 3 minutes
 - Paste prompt, run code, show result
 - Add one feature: "Now add a date filter"
-- "That's vibe coding - describe, generate, iterate"
+- "That's vibe coding - describe (or draw), generate, iterate"
 
 ---
 
