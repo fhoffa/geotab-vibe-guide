@@ -220,6 +220,48 @@ api.call("Set", {
 - FuelTransaction
 - StatusData
 
+### Advanced Get Parameters
+
+The `Get` method supports additional parameters for efficient queries:
+
+| Parameter | Description | Status |
+|-----------|-------------|--------|
+| `resultsLimit` | Maximum entities to return (max 5000) | Stable |
+| `search` | Filter by property values | Stable |
+| `sort` | Sort results by property | Beta |
+| `propertySelector` | Limit which properties returned | Beta |
+
+**Limit Results:**
+api.call("Get", {
+    typeName: "Device",
+    resultsLimit: 10  // Only return first 10 devices
+}, callback, errorCallback);
+
+**Count Entities Efficiently (use GetCountOf instead of Get):**
+api.call("GetCountOf", { typeName: "Device" }, function(count) {
+    console.log("Total devices: " + count);
+});
+
+**Sort Results (Beta):**
+api.call("Get", {
+    typeName: "Trip",
+    search: { fromDate: fromDate.toISOString(), toDate: toDate.toISOString() },
+    sort: { sortBy: "distance", sortDirection: "desc" },
+    resultsLimit: 10
+}, callback, errorCallback);
+
+**Property Selector (Beta) - reduce data transfer:**
+api.call("Get", {
+    typeName: "Trip",
+    search: { fromDate: fromDate.toISOString(), toDate: toDate.toISOString() },
+    propertySelector: {
+        fields: ["device", "distance", "stop"],
+        isIncluded: true  // Only return these fields
+    }
+}, callback, errorCallback);
+
+**IMPORTANT:** Distance from the API is in meters. Convert: `(meters / 1000) * 0.621371 = miles`
+
 ## Geotab Ace (AI-Powered Analysis)
 
 Ace is Geotab's AI that answers complex fleet questions in natural language. It works from Add-Ins but requires async polling.
