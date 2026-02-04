@@ -23,6 +23,40 @@ Custom pages that integrate directly into MyGeotab. They can display dashboards,
 
 **Recommended Hosting: GitHub Pages** - Free, simple static hosting with proper CORS support. Just push files and enable Pages in repo settings.
 
+### Quick Reference: Embedded Add-In Format
+
+> ⚠️ **CRITICAL:** Embedded Add-Ins use a specific JSON structure. Getting this wrong causes "Page Not Found" errors.
+
+```json
+{
+  "name": "My Add In",
+  "supportEmail": "https://github.com/your-repo",
+  "version": "1.0",
+  "items": [{
+    "url": "page.html",
+    "path": "ActivityLink",
+    "menuName": { "en": "My Add-In" }
+  }],
+  "files": {
+    "page.html": "<!DOCTYPE html><html>...</html>"
+  }
+}
+```
+
+**Common Mistake - WRONG format:**
+```json
+❌ "pages": [{ "html": "..." }]
+❌ "items": [{ "html": "..." }]
+❌ "content": "..."
+```
+
+**Correct format:**
+```json
+✅ "files": { "page.html": "<!DOCTYPE html>..." }
+```
+
+See [Embedded Add-Ins](#embedded-add-ins-no-hosting) section for complete details.
+
 Other options: Netlify, Vercel, Firebase Hosting (all have CORS support).
 
 <!-- TODO: Explore Replit server-side capabilities for dynamic add-ins (API proxies, data processing) -->
@@ -222,6 +256,45 @@ api.getSession(function(session) {
     console.log("Database:", session.database);
 });
 ```
+
+## Using Geotab Ace in Add-Ins
+
+Add-Ins can use Geotab Ace for AI-powered natural language queries. **Ace uses the same API connection** - no separate authentication needed.
+
+| Direct API | Ace AI |
+|-----------|--------|
+| ~400ms response | ~30-90 seconds |
+| Real-time data | 2-24 hours behind |
+| Structured queries | Natural language |
+| Best for: live data, writes | Best for: trends, insights |
+
+### Quick Example
+
+```javascript
+// Ace uses the SAME api object - no separate auth
+askAce(api, "Which vehicles drove the most last month?", function(result) {
+    console.log("Data:", result.data);       // Array of rows
+    console.log("Reasoning:", result.reasoning); // AI explanation
+}, function(error) {
+    console.error("Error:", error);
+});
+```
+
+### Good Ace Questions
+
+- "Which drivers have the best safety scores this month?"
+- "What's the fuel consumption trend for vehicle X?"
+- "Find vehicles that might need maintenance soon"
+- "Compare performance across my fleet regions"
+
+### When NOT to Use Ace
+
+- Displaying current vehicle positions (use DeviceStatusInfo)
+- Showing today's trips (use Get Trip with date filter)
+- Creating/updating entities (use Add/Set)
+- Any UI that needs instant response
+
+> **Full Ace documentation:** See the [geotab-ace skill](../geotab-ace/SKILL.md) for complete patterns, response parsing, rate limiting, and code examples.
 
 ## Navigating to MyGeotab Pages
 
@@ -480,7 +553,11 @@ See [references/TROUBLESHOOTING.md](references/TROUBLESHOOTING.md) for complete 
 
 ## Embedded Add-Ins (No Hosting)
 
-For quick prototypes without hosting:
+For quick prototypes without hosting.
+
+> ⚠️ **CRITICAL:** The JSON structure must be EXACTLY as shown below. Common mistakes cause "Page Not Found" errors.
+
+### Correct Format
 
 ```json
 {
@@ -498,11 +575,22 @@ For quick prototypes without hosting:
 }
 ```
 
-**Embedded Rules:**
-- Use `style=""` on elements (not `<style>` tags)
-- Single quotes for HTML attributes
+### Common Format Mistakes
+
+| ❌ WRONG | ✅ CORRECT |
+|----------|-----------|
+| `"pages": [{"html": "..."}]` | `"files": {"page.html": "..."}` |
+| `"items": [{"html": "..."}]` | `"files": {"page.html": "..."}` |
+| `"content": "..."` | `"files": {"page.html": "..."}` |
+| `"path": "ActivityLink/"` (trailing slash) | `"path": "ActivityLink"` (no trailing slash) |
+
+### Embedded Rules
+
+- Use `style=""` on elements (not `<style>` tags - they get stripped!)
+- Single quotes for HTML attributes inside JSON strings
 - Escape double quotes: `\"`
-- No external file references
+- No external file references (everything inline)
+- `url` in items matches filename in `files` object
 - Path without trailing slash: `"ActivityLink"` (not `"ActivityLink/"`)
 
 See [references/EMBEDDED.md](references/EMBEDDED.md) for complete embedded add-in guide.

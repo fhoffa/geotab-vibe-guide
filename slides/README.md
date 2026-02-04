@@ -365,6 +365,38 @@ Support questions like:
 
 ---
 
+### Slide 14.5: Level Up with MCP (0:38)
+
+**On Screen:**
+```
+MCP: CONVERSATIONAL FLEET CONTROL
+
+Model Context Protocol lets Claude talk to your fleet directly.
+
+Instead of writing code:
+  You: "How many vehicles had trips today?"
+  Claude: *queries your fleet* "47 vehicles completed 312 trips..."
+
+Setup (advanced):
+1. Clone: github.com/fhoffa/geotab-ace-mcp-demo
+2. Configure credentials
+3. Add to Claude Desktop
+4. Ask questions naturally!
+
+[Demo video: youtube.com/watch?v=-eID1rXS1p8]
+```
+
+**Facilitator Notes:**
+- "MCP is for developers who want Claude to have direct fleet access"
+- "Build your own now - official Geotab MCP coming later"
+- Show 30-second clip from demo video if time permits
+- "This is advanced - great hackathon project for experienced developers"
+- Don't demo live unless pre-configured - just show the concept
+
+> **Full guide:** [CUSTOM_MCP_GUIDE.md](../guides/CUSTOM_MCP_GUIDE.md)
+
+---
+
 ### Slide 15: Going Agentic (0:42)
 
 **On Screen:**
@@ -681,6 +713,7 @@ External:
 | Instant Start | [INSTANT_START_WITH_CLAUDE.md](../guides/INSTANT_START_WITH_CLAUDE.md) |
 | Antigravity IDE | [ANTIGRAVITY_QUICKSTART.md](../guides/ANTIGRAVITY_QUICKSTART.md) |
 | No-Code Add-Ins | [GOOGLE_GEM_USER_GUIDE.md](../guides/GOOGLE_GEM_USER_GUIDE.md) |
+| MCP Server Setup | [CUSTOM_MCP_GUIDE.md](../guides/CUSTOM_MCP_GUIDE.md) |
 | Agentic Systems | [AGENTIC_OVERVIEW.md](../guides/AGENTIC_OVERVIEW.md) |
 | Hackathon Ideas | [HACKATHON_IDEAS.md](../guides/HACKATHON_IDEAS.md) |
 | API Reference | [GEOTAB_API_REFERENCE.md](../guides/GEOTAB_API_REFERENCE.md) |

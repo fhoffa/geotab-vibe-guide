@@ -505,7 +505,7 @@ and help me [task the skill covers].
 ### Innovation Skills (Bonus Points)
 - [ ] `geotab-voice-commands` - Voice-controlled fleet queries
 - [ ] `geotab-ai-insights` - Integrating LLMs with fleet data
-- [ ] `geotab-mcp-server` - Building Model Context Protocol servers
+- [ ] `geotab-custom-mcp` - Building Model Context Protocol servers
 - [ ] `geotab-webhook-automation` - Event-driven fleet automations
 
 **Remember:** Even creating 2-3 solid skills is hackathon-worthy! Quality over quantity.

@@ -220,6 +220,172 @@ api.call("Set", {
 - FuelTransaction
 - StatusData
 
+## Geotab Ace (AI-Powered Analysis)
+
+Ace is Geotab's AI that answers complex fleet questions in natural language. It works from Add-Ins but requires async polling.
+
+**⚠️ Data Latency Warning:** Ace queries historical data that may be 2-24+ hours old. For real-time data (current locations, live status), use direct API calls like `Get` with `DeviceStatusInfo`. Ace is best for analysis, trends, and historical insights.
+
+### When to Use Ace vs Direct API
+
+**Performance (real test data):** Direct API ~400ms vs Ace ~70 seconds (175x difference)
+
+| Use Ace For | Use Direct API For |
+|-------------|-------------------|
+| "Top 5 vehicles by fuel consumption" | Current vehicle locations |
+| "Drivers with most harsh braking this month" | Live speed/status |
+| "Fleet efficiency trends" | Real-time device info |
+| Complex analysis questions | Simple data lookups |
+
+> **Live demo:** The `ace-vs-api-comparison` Add-In shows this difference in real-time.
+
+### Ace API Pattern (Verified Working)
+
+**Function names** (these are exact - don't guess!):
+- `create-chat` - Start a new chat session
+- `send-prompt` - Send a question to Ace
+- `get-message-group` - Poll for results (NOT `get-status`!)
+
+**Field naming**: Uses underscores (`chat_id`), not camelCase (`chatId`)
+
+### Complete Ace Implementation
+
+```javascript
+// Helper to extract data from Ace response
+function getAceData(response) {
+    if (response && response.apiResult && response.apiResult.results) {
+        return response.apiResult.results[0] || {};
+    }
+    return response || {};
+}
+
+// Step 1: Create a chat session
+function askAce(api, question, onComplete, onError) {
+    api.call("GetAceResults", {
+        serviceName: "dna-planet-orchestration",
+        functionName: "create-chat",
+        functionParameters: {}
+    }, function(response) {
+        var data = getAceData(response);
+        var chatId = data.chat_id;
+        if (!chatId) {
+            onError("Failed to create chat");
+            return;
+        }
+
+        // Step 2: Send the question
+        api.call("GetAceResults", {
+            serviceName: "dna-planet-orchestration",
+            functionName: "send-prompt",
+            functionParameters: {
+                chat_id: chatId,
+                prompt: question
+            }
+        }, function(promptResponse) {
+            var promptData = getAceData(promptResponse);
+            // Handle both response formats: flat message_group_id or nested message_group.id
+            var messageGroupId = promptData.message_group_id ||
+                                 ((promptData.message_group || {}).id);
+            if (!messageGroupId) {
+                onError("Failed to send prompt");
+                return;
+            }
+
+            // Step 3: Poll for results (wait 10s before first poll)
+            setTimeout(function() {
+                pollForResults(api, chatId, messageGroupId, onComplete, onError);
+            }, 10000);
+        }, onError);
+    }, onError);
+}
+
+// Poll every 8 seconds until DONE
+function pollForResults(api, chatId, messageGroupId, onComplete, onError) {
+    api.call("GetAceResults", {
+        serviceName: "dna-planet-orchestration",
+        functionName: "get-message-group",  // NOT "get-status"!
+        functionParameters: {
+            chat_id: chatId,
+            message_group_id: messageGroupId
+        }
+    }, function(response) {
+        var data = getAceData(response);
+        var msgGroup = data.message_group || {};
+        var status = msgGroup.status ? msgGroup.status.status : "UNKNOWN";
+
+        if (status === "DONE") {
+            // Extract answer from messages
+            var messages = msgGroup.messages || {};
+            var answerData = null;
+            var reasoning = null;
+
+            Object.keys(messages).forEach(function(key) {
+                var msg = messages[key];
+                if (msg.preview_array) {
+                    answerData = msg.preview_array;  // The actual data
+                }
+                if (msg.reasoning) {
+                    reasoning = msg.reasoning;  // Ace's explanation
+                }
+            });
+
+            onComplete({
+                data: answerData,
+                reasoning: reasoning
+            });
+        } else if (status === "FAILED") {
+            onError("Ace query failed");
+        } else {
+            // Still processing - poll again in 8 seconds
+            setTimeout(function() {
+                pollForResults(api, chatId, messageGroupId, onComplete, onError);
+            }, 8000);
+        }
+    }, onError);
+}
+```
+
+### Using Ace in Your Add-In
+
+```javascript
+// In your initialize or focus function:
+askAce(api, "What are my top 3 vehicles by distance this month?",
+    function(result) {
+        console.log("Data:", result.data);
+        console.log("Reasoning:", result.reasoning);
+        // result.data is an array of objects with the answer
+        // result.reasoning explains how Ace arrived at the answer
+    },
+    function(error) {
+        console.error("Ace error:", error);
+    }
+);
+```
+
+### Ace Response Structure
+
+```javascript
+// result.data (preview_array) - example for "top vehicles by distance":
+[
+    { "Vehicle": "Demo-42", "Distance (mi)": 2221 },
+    { "Vehicle": "Demo-41", "Distance (mi)": 2150 },
+    { "Vehicle": "Demo-45", "Distance (mi)": 2082 }
+]
+
+// result.reasoning - Ace's explanation:
+"I analyzed trip data for the current month and ranked vehicles by total distance traveled..."
+```
+
+### Critical Ace Mistakes to Avoid
+
+| Mistake | Problem | Solution |
+|---------|---------|----------|
+| Using `get-status` | 404 errors | Use `get-message-group` |
+| Using `chatId` | Undefined values | Use `chat_id` (underscore) |
+| Polling immediately | Rate limits (429) | Wait 10s before first poll |
+| Polling too fast | Rate limits | Poll every 8 seconds |
+| Expecting real-time data | Stale results | Ace data is 2-24h old |
+
 ## Navigating to MyGeotab Pages (Clickable Links)
 
 Add-Ins run inside MyGeotab's iframe. To make items clickable and navigate the parent MyGeotab window to a specific page, use `window.parent.location.hash`.

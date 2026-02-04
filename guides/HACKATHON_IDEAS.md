@@ -583,6 +583,16 @@ using GPT-4."
 ### Idea 8.3: Fleet MCP Server - Conversational Fleet Control
 **Concept:** Build a Model Context Protocol (MCP) server that lets AI assistants interact with Geotab fleets conversationally, with write-back capabilities.
 
+> **Start here:** [MCP Server Guide](./CUSTOM_MCP_GUIDE.md)
+>
+> [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
+
+**Why Build Your Own MCP?**
+- Official Geotab MCP is coming, but you can start today
+- Custom MCP can include features official won't have
+- Great way to learn MCP architecture
+- Tailored to your specific workflow needs
+
 **Key Features:**
 - Natural language queries processed without writing code
 - Multi-account fleet access in single conversations
@@ -599,6 +609,12 @@ using GPT-4."
 
 **Difficulty:** ⭐⭐⭐⭐ Advanced
 
+**Prerequisites:**
+- Python 3.10+
+- uv package manager
+- Claude Desktop
+- Familiarity with async Python
+
 **Vibe Prompts to Start:**
 ```
 "Fork the geotab-ace-mcp-demo repository and add write capabilities:
@@ -612,6 +628,9 @@ with appropriate conditions and actions."
 "Build an MCP server tool that automatically creates geofences based on
 common stop locations: 'Find all locations where vehicles stop for more
 than 30 minutes and create zones around them'."
+
+"Add a Slack integration tool to the MCP server that posts fleet alerts
+to a channel when Claude detects anomalies in the data."
 ```
 
 **Bonus Features:**
@@ -620,9 +639,11 @@ than 30 minutes and create zones around them'."
 - Audit logging of all changes made via AI
 - Integration with Slack, Discord, or MS Teams
 - Rollback capability ("undo my last change")
+- Voice integration (combine with FleetVoice idea)
 
 **Resources:**
 - [geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo)
+- [MCP Server Guide](./CUSTOM_MCP_GUIDE.md)
 - [MCP Specification](https://modelcontextprotocol.io/)
 
 ---
@@ -833,6 +854,141 @@ for each city boundary."
 - ✅ Test with real Geotab demo data
 - ✅ Have a backup plan if live demo fails
 - ✅ Show your personality and passion
+
+---
+
+## 🔌 MCP Power-Ups: Beyond Official MCP
+
+**Build capabilities the official Geotab MCP won't have.** The official MCP endpoint will have API + Ace access, but runs in the cloud. Your custom MCP runs locally with unique advantages.
+
+### Current State
+
+| MCP Option | What It Has | What It Lacks |
+|------------|-------------|---------------|
+| **Official (coming)** | API + Ace, read/write, cloud-hosted | Local processing, custom tools/skills |
+| **Felipe's demo** | Ace queries, DuckDB caching | Direct API calls (you can add!) |
+| **Your hackathon project** | Whatever you build! | Nothing - sky's the limit |
+
+### Unique Capabilities to Build
+
+| Capability | Why Build It | Hackathon Project |
+|------------|--------------|-------------------|
+| **Direct API + Ace** | Felipe's demo is Ace-only | Add direct API calls for real-time data |
+| **DuckDB Local Caching** | Official = cloud-only | Cache datasets locally, run SQL offline |
+| **Custom Skills/Tools** | Build specialized methods | Fuel theft detection, parking optimization, carbon tracking |
+| **MCP Composability** | Combine multiple MCP servers | Geotab + Google Maps + Slack working together |
+| **Custom Frameworks** | Your analysis patterns | Safety scoring algorithms, route optimization |
+| **Offline Mode** | Query cached data without internet | Field workers with spotty connectivity |
+
+### MCP Composability
+
+**Multiple MCP servers can work together** in the same conversation:
+
+```
+You: "Find my 5 vehicles with most idle time last week,
+      then find the nearest charging stations to their usual locations,
+      and post a summary to Slack."
+
+Claude uses:
+  → Geotab MCP: Query idle time data
+  → Google Maps MCP: Find charging stations
+  → Slack MCP: Post the summary
+```
+
+**Hackathon idea:** Build a Geotab MCP that's designed to work alongside other MCPs. Expose clean tools that compose well.
+
+### Example: Add Direct API to Felipe's Demo
+
+```
+"Fork geotab-ace-mcp-demo and add direct API tools alongside Ace:
+- geotab_get_vehicle_location(vehicle_id) → real-time position (<1s)
+- geotab_get_trips(vehicle_id, date) → trip list
+- geotab_create_zone(name, lat, lon, radius) → write operation
+
+Keep Ace for complex questions, use direct API for real-time + writes."
+```
+
+### Example: Multi-MCP Workflow
+
+```
+"Build a fleet operations assistant that combines:
+1. Geotab MCP for fleet data
+2. Weather API MCP for conditions
+3. Calendar MCP for scheduling
+
+Enable queries like: 'Which vehicles are near areas with
+severe weather warnings? Reschedule their deliveries.'"
+```
+
+### Why This Matters
+
+- Official MCP: Great for standard queries, but one-size-fits-all
+- Your MCP: Local processing, custom tools, works with other MCPs
+- Composability: The whole is greater than the sum of parts
+
+> **Guide:** [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) | **Skill:** [geotab-custom-mcp](../skills/geotab-custom-mcp/SKILL.md)
+
+---
+
+## 🧠 Build Reusable Skills
+
+**Create AI skills others can use.** Skills are packaged knowledge that any AI assistant can leverage. Building a skill is a great hackathon project because it's reusable and demonstrates deep understanding.
+
+### What is a Skill?
+
+A skill is a structured document (SKILL.md) that teaches AI assistants how to accomplish specific tasks. See [skills/](../skills/) for examples.
+
+### High-Value Skills to Build
+
+| Skill | Why It's Needed | Difficulty |
+|-------|-----------------|------------|
+| **geotab-trip-analysis** | Most common use case, no skill exists yet | ⭐⭐ |
+| **geotab-safety-scoring** | Critical for fleet safety, complex calculations | ⭐⭐⭐ |
+| **geotab-fuel-theft-detection** | Real money savings, pattern detection | ⭐⭐⭐ |
+| **geotab-parking-optimization** | Find best spots from historical data | ⭐⭐⭐ |
+| **geotab-predictive-maintenance** | High value, requires ML patterns | ⭐⭐⭐⭐ |
+| **geotab-carbon-tracking** | Growing demand, ESG reporting | ⭐⭐ |
+| **geotab-driver-coaching** | Combines safety + communication | ⭐⭐⭐ |
+
+### Specialized Skill Ideas
+
+**Fuel Theft Detection:**
+```
+"Create a skill that detects fuel theft by analyzing:
+- Sudden fuel level drops without corresponding distance
+- Fuel transactions that don't match vehicle location
+- Unusual refueling patterns (time, location, amount)
+- Comparison against expected consumption rates"
+```
+
+**Parking Spot Optimization:**
+```
+"Create a skill that finds optimal parking from historical data:
+- Analyze where vehicles commonly stop and for how long
+- Identify patterns by time of day, day of week
+- Score locations by availability, safety, proximity to destinations
+- Recommend best parking spots for delivery routes"
+```
+
+### Skill Building Prompt
+
+```
+"Create a SKILL.md file for [skill name] that teaches AI assistants how to:
+- [specific capability 1]
+- [specific capability 2]
+
+Include code patterns, common mistakes to avoid, and example use cases.
+Follow the format in skills/geotab-api-quickstart/SKILL.md"
+```
+
+### Why Judges Love Skill Projects
+
+- **Reusable:** Your work helps everyone, not just your project
+- **Deep expertise:** Shows you truly understand the domain
+- **Documentation:** Proves you can communicate technical concepts
+- **Community impact:** Skills become part of the ecosystem
+
+> **See planned skills:** [skills/SKILLS_TODO.md](../skills/SKILLS_TODO.md) | **Skill format:** [CREATING_AGENT_SKILLS.md](./CREATING_AGENT_SKILLS.md)
 
 ---
 

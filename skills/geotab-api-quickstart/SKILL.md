@@ -312,8 +312,9 @@ trips = api.get('Trip',
 
 ## Next Steps
 
+- **AI-powered queries:** Use natural language with the [geotab-ace skill](../geotab-ace/SKILL.md)
 - **Build a dashboard:** Use Streamlit with this data
-- **Create an Add-In:** See the `geotab-addins` skill
+- **Create an Add-In:** See the [geotab-addins skill](../geotab-addins/SKILL.md)
 - **Analyze trips:** See [references/TRIP_ANALYSIS.md](references/TRIP_ANALYSIS.md)
 - **Understand demo data:** See [Demo Database Reference](../../guides/DEMO_DATABASE_REFERENCE.md) for complete entity schemas and sample values
 

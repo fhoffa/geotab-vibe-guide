@@ -49,6 +49,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 ### Advanced Topics
 
+- **[CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)** - Build an MCP server for conversational fleet access via Claude Desktop.
 - **[ADVANCED_INTEGRATIONS.md](./ADVANCED_INTEGRATIONS.md)** - Voice interfaces, AI integrations, and automation patterns.
 - **[CREATING_AGENT_SKILLS.md](./CREATING_AGENT_SKILLS.md)** - Package your knowledge as reusable AI skills.
 - **[ANTIGRAVITY_QUICKSTART.md](./ANTIGRAVITY_QUICKSTART.md)** - Build dashboards using Google Antigravity IDE.

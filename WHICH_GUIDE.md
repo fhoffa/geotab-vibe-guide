@@ -18,6 +18,7 @@ Quick navigation to the right resource for your needs.
 | Running workshop | [slides/README.md](./slides/README.md) | Slides + facilitator notes |
 | Need project ideas | [HACKATHON_IDEAS.md](./guides/HACKATHON_IDEAS.md) | 20+ hackathon projects |
 | Advanced integrations | [ADVANCED_INTEGRATIONS.md](./guides/ADVANCED_INTEGRATIONS.md) | MCP servers, voice interfaces, AI content generation |
+| **Building MCP server** | [CUSTOM_MCP_GUIDE.md](./guides/CUSTOM_MCP_GUIDE.md) | **Conversational fleet access via Claude Desktop** |
 | Writing prompts | [CLAUDE_PROMPTS.md](./guides/CLAUDE_PROMPTS.md) | AI prompt templates |
 
 ## For AI Coding Tools

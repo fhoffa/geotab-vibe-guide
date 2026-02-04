@@ -390,6 +390,67 @@ The styling isn't working. Can you make sure all CSS is inline using style="" at
 
 ---
 
+## Using Geotab Ace for Complex Questions
+
+The Gem uses the direct Geotab API, which is great for displaying data. For **complex analytical questions**, tell the Gem to use Geotab Ace instead.
+
+**When to ask for Ace:**
+- Questions requiring AI analysis: "Which drivers need coaching?"
+- Trend analysis: "What's my fuel efficiency trend?"
+- Recommendations: "How can I reduce costs?"
+
+**Key things to tell the Gem about Ace:**
+- Ace uses the same API connection (no separate auth)
+- Ace takes 30-60 seconds - needs a loading indicator
+- Reference implementation: `github.com/fhoffa/geotab-ace-mcp-demo/blob/main/geotab_ace.py`
+
+**The Wait-and-Poll Pattern (important!):**
+Ace is async - you can't just make one call. Tell the Gem:
+1. **create-chat** → get `chat_id` (underscore, not camelCase)
+2. **send-prompt** with `chat_id` and `prompt` → get `message_group.id`
+3. Wait 10 seconds, then **poll get-message-group** every 8 seconds until `status.status === "DONE"`
+4. Extract answer from `message_group.messages[id].preview_array` (data) and `.reasoning` (explanation)
+
+This is different from regular API calls which return immediately.
+
+> ✅ **Verified:** Ace works from embedded Add-Ins (tested Feb 2026). See skill for working code.
+
+**Important: Ace Data Latency**
+- Ace data runs **behind** real-time API - don't expect the very latest records
+- New demo accounts: wait **~1 day** before Ace has data to answer questions
+- For real-time data, the Add-In should use direct API calls instead
+
+**Example prompts for Ace Add-Ins:**
+
+```
+Create an Add-In with a text input where I can ask questions about my fleet.
+Use Geotab Ace API (GetAceResults with serviceName "dna-planet-orchestration")
+to process the question. Follow the async pattern:
+create-chat → send-prompt → wait 10s → poll get-message-group every 8s until DONE.
+The answer is in message_group.messages[id].preview_array (data) and .reasoning (text).
+Include a loading spinner since Ace takes 30-60 seconds.
+```
+
+```
+Build a "Fleet Insights" Add-In that has preset buttons for common questions:
+- "Which drivers need safety coaching?"
+- "What's our fuel efficiency trend this month?"
+- "Which vehicles might need maintenance soon?"
+When clicked, send the question to Geotab Ace and display the AI response.
+```
+
+```
+Create an Add-In that combines regular API data with Ace insights.
+Show a table of vehicles from the API, and add an "Ask Ace" button
+that sends "What can you tell me about this fleet?" to get AI analysis.
+```
+
+**Note:** Ace queries take longer (10-60 seconds) but provide AI-powered insights that would otherwise require complex code.
+
+> **When to use Ace vs direct API:** [ADVANCED_INTEGRATIONS.md](./ADVANCED_INTEGRATIONS.md#geotab-ace-when-to-use-ai-vs-direct-api)
+
+---
+
 ## Quick Reference: Common Data Types
 
 When describing what data you want, use these terms:

@@ -252,28 +252,56 @@ Analyze electric vehicle data (battery health, charging, range).
 
 ---
 
-### 💡 geotab-mcp-server
-**Priority:** MEDIUM - Cutting edge integration
+### ✅ geotab-custom-mcp
+Build Model Context Protocol servers for conversational fleet access.
+- **Location:** `skills/geotab-custom-mcp/SKILL.md`
+- **Description:** Build and extend MCP servers for Claude Desktop integration
+- **Use Cases:** Conversational fleet queries, custom tools, multi-account access
+- **Resources:** [MCP Guide](../guides/CUSTOM_MCP_GUIDE.md), [Demo Repo](https://github.com/fhoffa/geotab-ace-mcp-demo)
 
-Build Model Context Protocol servers for Geotab.
+---
+
+### 💡 geotab-fuel-theft-detection
+**Priority:** HIGH - Direct cost savings
+
+Detect fuel theft through data pattern analysis.
 
 **What it should teach:**
-- MCP specification basics
-- Creating Geotab MCP tools
-- Multi-account support
-- Read and write operations
-- Caching strategies with DuckDB
-- Security and privacy considerations
+- Analyzing fuel level data (StatusData with fuel diagnostics)
+- Detecting sudden drops without corresponding distance
+- Cross-referencing FuelTransaction locations with vehicle GPS
+- Identifying unusual refueling patterns (time, location, amount)
+- Calculating expected vs actual consumption rates
+- Alert thresholds and false positive reduction
 
 **Use Cases:**
-- "Build a conversational fleet interface"
-- "Create Geotab tools for AI assistants"
-- "Enable natural language fleet control"
+- "Detect potential fuel theft incidents"
+- "Flag suspicious fuel transactions"
+- "Calculate fuel loss over time"
 
-**Resources:**
-- Fork from: https://github.com/fhoffa/geotab-ace-mcp-demo
+**Estimated Effort:** 4-5 hours
 
-**Estimated Effort:** 6-8 hours
+---
+
+### 💡 geotab-parking-optimization
+**Priority:** MEDIUM - Operational efficiency
+
+Find optimal parking spots from historical fleet data.
+
+**What it should teach:**
+- Analyzing LogRecord stop patterns
+- Clustering common stop locations
+- Time-of-day and day-of-week patterns
+- Scoring locations (frequency, duration, safety)
+- Integration with Zone data
+- Route-based parking recommendations
+
+**Use Cases:**
+- "Find best parking spots for delivery routes"
+- "Identify common stop patterns"
+- "Recommend parking based on historical success"
+
+**Estimated Effort:** 4-5 hours
 
 ---
 
@@ -383,7 +411,7 @@ Use LLMs to generate insights from fleet data.
 **Goal:** Enable advanced integrations
 
 ### Phase 3: Innovation (Future)
-9. 💡 geotab-mcp-server
+9. 💡 geotab-custom-mcp
 10. 💡 geotab-ev-analysis
 11. 💡 geotab-ai-insights
 12. 💡 geotab-voice-interface

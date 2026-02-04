@@ -43,6 +43,7 @@ n8n is a visual workflow builder. Workflows consist of **nodes** connected toget
 ### Step 1: Authenticate
 
 **HTTP Request node:**
+{% raw %}
 ```
 Method: POST
 URL: https://my.geotab.com/apiv1
@@ -56,10 +57,12 @@ Body (JSON):
   }
 }
 ```
+{% endraw %}
 
 ### Step 2: Fetch Data
 
 **HTTP Request node (after Authenticate):**
+{% raw %}
 ```
 Method: POST
 URL: https://my.geotab.com/apiv1
@@ -76,6 +79,7 @@ Body (JSON):
   }
 }
 ```
+{% endraw %}
 
 ### Common TypeNames
 
@@ -103,16 +107,20 @@ Schedule (15 min)
 ```
 
 **Filter node condition:**
+{% raw %}
 ```
 {{ $json.result.speedingDuration > 30 }}
 ```
+{% endraw %}
 
 **Slack message:**
+{% raw %}
 ```
 🚨 *Speeding Alert*
 *Vehicle:* {{ $json.result.device.name }}
 *Duration:* {{ $json.result.speedingDuration }} seconds
 ```
+{% endraw %}
 
 ### Pattern: Fault Code Alert
 
@@ -169,7 +177,7 @@ return [{
    - `GEOTAB_USERNAME`
    - `GEOTAB_PASSWORD`
 
-Reference in nodes: `{{ $vars.GEOTAB_DATABASE }}`
+Reference in nodes: {% raw %}`{{ $vars.GEOTAB_DATABASE }}`{% endraw %}
 
 ## Alert Destinations
 

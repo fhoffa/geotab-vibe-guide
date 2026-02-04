@@ -8,6 +8,10 @@ Beyond traditional REST API integrations, there are exciting new ways to work wi
 
 **MCP servers** enable AI assistants like Claude to interact with your fleet data conversationally, without writing explicit API calls. Instead of coding requests, you can simply ask questions in natural language.
 
+> **Full Guide:** [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)
+>
+> [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
+
 **Example MCP Server**: [geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo)
 
 This experimental server bridges Claude Desktop with Geotab's ACE AI service, providing:
@@ -18,6 +22,15 @@ This experimental server bridges Claude Desktop with Geotab's ACE AI service, pr
 - **Multi-Account Access**: Query multiple Geotab databases in a single conversation
 - **Intelligent Caching**: Large datasets are stored in DuckDB for SQL analysis rather than overwhelming the AI
 - **Privacy Protection**: Automatically redacts sensitive driver information
+
+### Why Build Your Own MCP?
+
+| Reason | Details |
+|--------|---------|
+| **Available Now** | Official Geotab MCP is coming, but you can start today |
+| **More Powerful** | Custom MCP can include write operations, custom tools |
+| **Tailored** | Add integrations specific to your workflow (Slack, email, etc.) |
+| **Learning** | Great way to understand MCP architecture |
 
 ### Hackathon Ideas with MCP
 
@@ -30,9 +43,71 @@ This experimental server bridges Claude Desktop with Geotab's ACE AI service, pr
 ### Getting Started with MCP Development
 
 1. Clone the [geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) repository
-2. Study the MCP protocol specification
-3. Extend with custom tools for write operations (create groups, rules, etc.)
-4. Deploy as a service accessible to multiple AI assistants
+2. Configure credentials and test connection
+3. Add to Claude Desktop configuration
+4. Extend with custom tools for write operations (create groups, rules, etc.)
+
+**Prerequisites:** Python 3.10+, uv package manager, Claude Desktop
+
+---
+
+## Geotab Ace: When to Use AI vs Direct API
+
+Understanding when to use Geotab Ace versus the direct API is crucial for building efficient applications.
+
+### Use Geotab Ace When:
+
+| Scenario | Example | Why Ace |
+|----------|---------|---------|
+| **Complex aggregations** | "Fleet fuel efficiency trend over 6 months" | Would require multiple API calls + calculations |
+| **Natural language insights** | "Which drivers need coaching?" | AI-powered analysis |
+| **Pattern recognition** | "Most common stop locations" | Complex analysis |
+| **Recommendations** | "How can I reduce fuel costs?" | AI-generated suggestions |
+| **Cross-entity analysis** | "Compare safety scores with trip distances" | Joins multiple data types |
+
+### Use Direct API When:
+
+| Scenario | Example | Why Direct API |
+|----------|---------|----------------|
+| **Real-time data** | Current vehicle location | Sub-second response needed |
+| **Simple lookups** | "Get vehicle by ID" | Faster, deterministic |
+| **Write operations** | Create zone, update device | Ace is read-only |
+| **High-frequency polling** | Live tracking dashboard | Ace has latency |
+| **Exact data needs** | "All trips from device X on date Y" | Precise, no AI interpretation |
+
+### Response Time Expectations
+
+| Query Type | Ace | Direct API |
+|------------|-----|------------|
+| Simple lookup | 10-30 seconds | <1 second |
+| Aggregation (1 week) | 20-45 seconds | 2-5 seconds (with code) |
+| Complex analysis | 30-90 seconds | N/A (would need custom code) |
+| Trend analysis | 45-120 seconds | N/A (would need ML) |
+
+**Rule of thumb:** If you need the answer in under 5 seconds, use direct API. If you need AI-powered insights or would otherwise need to write complex analysis code, use Ace.
+
+**Important: Ace Data Latency**
+- Ace data runs **behind** real-time API data - don't expect the very latest records
+- New demo accounts: wait **~1 day** before Ace has enough data to answer questions
+- If you need current data, use direct API calls
+
+### Decision Flowchart
+
+```
+Need data?
+    │
+    ├─► Real-time (<5s)? ──────► Direct API
+    │
+    ├─► Write operation? ──────► Direct API
+    │
+    ├─► Simple lookup? ────────► Direct API
+    │
+    ├─► Complex analysis? ─────► Ace
+    │
+    ├─► Need insights? ────────► Ace
+    │
+    └─► Natural language? ─────► Ace (or MCP)
+```
 
 ---
 
