@@ -116,8 +116,43 @@ Ace returns **only 10 rows** in `preview_array`. For complete results:
 
 **Strategies:**
 - Ask for "top N" or "worst N" to fit in preview
-- Download full results via `download_url`
+- Download full results via `signed_urls` (see below)
 - Store large downloads in DuckDB for local querying (see [reference implementation](https://github.com/fhoffa/geotab-ace-mcp-demo))
+
+### Fetching Full CSV Data (CORS-Approved)
+
+The `signed_urls` in Ace responses are **CORS-approved for geotab.com origin** - embedded Add-Ins can fetch them directly:
+
+```javascript
+// In your poll handler, after status === "DONE":
+var csvUrl = null;
+var messages = data.message_group.messages || {};
+Object.keys(messages).forEach(function(key) {
+    var msg = messages[key];
+    if (msg.signed_urls && msg.signed_urls.length > 0) {
+        csvUrl = msg.signed_urls[0];
+    }
+});
+
+if (csvUrl) {
+    fetch(csvUrl)
+        .then(function(res) { return res.text(); })
+        .then(function(csvText) {
+            // Parse CSV - first row is headers
+            var rows = csvText.split('\n');
+            var headers = rows[0].split(',');
+            console.log('Got ' + (rows.length - 1) + ' total rows');
+            // Now you have ALL data, not just 10 rows!
+        })
+        .catch(function(err) {
+            console.error('CSV fetch error:', err);
+        });
+}
+```
+
+**Why this matters:** A query like "Get 100 recent GPS logs" only shows 10 in `preview_array`, but the signed URL contains all 100+ results.
+
+**Note:** CORS allows `geotab.com` origin - embedded Add-Ins work. External/hosted Add-Ins may need to request expanded CORS policy from Geotab.
 
 ## Rate Limiting
 

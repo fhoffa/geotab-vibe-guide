@@ -68,6 +68,24 @@ api.authenticate()
 print("Connected!")
 ```
 
+### Server Redirection
+
+MyGeotab uses server redirection - authentication may return a different server URL in the `path` field. The `mygeotab` Python library handles this automatically.
+
+**If using raw HTTP requests:** Check the authentication response for a `path` value. If it's a real hostname (contains `.`), use that for subsequent calls. If it returns `"ThisServer"`, keep using the original server.
+
+```python
+# The mygeotab library handles this automatically:
+api.authenticate()  # May internally redirect to a different server
+
+# If using requests directly:
+auth_result = response.json()["result"]
+if "path" in auth_result:
+    new_server = auth_result["path"]
+    if new_server and "." in new_server and new_server.lower() != "thisserver":
+        base_url = f"https://{new_server}/apiv1"
+```
+
 ## Fetching Data
 
 ### Count Entities (Efficient)
@@ -125,7 +143,84 @@ for status in device_statuses[:5]:
     print(f"Vehicle at: {lat}, {lng}")
 ```
 
-## Common Data Types
+## Supported Entity Types (34 Types)
+
+The MyGeotab API supports these entity types via the `Get` method. Not all are writable.
+
+### Core Assets
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `Device` | Vehicles/assets | ✅ Yes | Fleet inventory, telematics units |
+| `User` | Users and drivers | ✅ Yes | Filter with `isDriver: True` for drivers |
+| `Group` | Organizational hierarchy | ✅ Yes | Company structure, vehicle grouping |
+
+### Geofencing
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `Zone` | Geofences/locations | ✅ Yes | Circular or polygon areas |
+| `Route` | Planned routes | ✅ Yes | Sequence of zones |
+
+### Rules & Alerts
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `Rule` | Exception rules | ✅ Yes | Triggers alerts on conditions |
+| `Condition` | Rule conditions | ✅ Yes | ⚠️ Get not supported; access via Rule entity |
+| `ExceptionEvent` | Rule violations | ❌ Read-only | Generated when rules trigger |
+| `DistributionList` | Notification recipients | ✅ Yes | Email/SMS alert lists |
+
+### Diagnostics & Faults
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `Diagnostic` | Sensor/data definitions | ❌ Read-only | Metadata about readings (65K+ types) |
+| `Controller` | ECU definitions | ❌ Read-only | Vehicle computer units |
+| `FaultData` | Engine fault codes | ❌ Read-only | DTC codes from vehicle |
+| `FailureMode` | Fault failure modes | ❌ Read-only | J1939 failure modes |
+| `FlashCode` | Flash codes | ❌ Read-only | ⚠️ Get not supported |
+
+### Telematics Data (Read-Only)
+| Type | Description | Notes |
+|------|-------------|-------|
+| `LogRecord` | GPS breadcrumbs | Location/speed history |
+| `StatusData` | Sensor readings | Engine data, fuel level, etc. |
+| `Trip` | Completed journeys | Ignition-on to ignition-off |
+| `DeviceStatusInfo` | Current vehicle state | Real-time location/status |
+
+### Compliance (HOS/ELD)
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `DVIRLog` | Driver vehicle inspection | ✅ Yes | Pre/post trip inspections |
+| `DutyStatusLog` | HOS duty status | ⚠️ Limited | ELD records |
+| `DutyStatusAvailability` | Available driving time | ❌ Read-only | ⚠️ Requires `userSearch` parameter |
+| `DutyStatusViolation` | HOS violations | ❌ Read-only | ⚠️ Requires specific search params |
+| `DriverChange` | Driver identification | ❌ Read-only | Driver login events |
+
+### Fuel
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `FuelTransaction` | Fuel card transactions | ✅ Yes | External fuel data |
+| `FuelUsed` | Fuel consumption | ❌ Read-only | Calculated usage |
+| `FillUp` | Fill-up events | ❌ Read-only | Detected fill events |
+| `FuelTaxDetail` | IFTA tax records | ❌ Read-only | Jurisdiction fuel use |
+
+### Custom Data
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `CustomData` | Custom entity storage | ✅ Yes | Store custom key-value data |
+| `AddInData` | Add-In storage | ✅ Yes | Per-Add-In data storage |
+
+### System
+| Type | Description | Writable | Notes |
+|------|-------------|----------|-------|
+| `Audit` | Audit log entries | ❌ Read-only | System activity log |
+| `BinaryPayload` | Raw device data | ❌ Read-only | ⚠️ Get/GetCountOf not supported |
+| `DebugData` | Debug information | ❌ Read-only | Device diagnostics |
+| `DeviceShare` | Shared device access | ✅ Yes | Cross-database sharing |
+
+> **Note:** Writable types support `Add` and `Set` methods. Read-only types are telemetry or system-generated data.
+>
+> **Tested:** 28/33 entity types work with `Get`, 30/33 work with `GetCountOf`. See notes for types requiring special handling.
+
+### Quick Reference (Most Common)
 
 | Type | Description | Example Use |
 |------|-------------|-------------|

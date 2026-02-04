@@ -174,6 +174,24 @@ geotab.addin["addin-name"] = function() {
 
 The `api` object is injected by MyGeotab - no credentials needed.
 
+### Available API Methods
+
+| Method | Purpose | Example |
+|--------|---------|---------|
+| `Get` | Fetch entities by type | `api.call("Get", { typeName: "Device" }, cb)` |
+| `GetCountOf` | Count entities (efficient) | `api.call("GetCountOf", { typeName: "Device" }, cb)` |
+| `Add` | Create new entity | `api.call("Add", { typeName: "Zone", entity: {...} }, cb)` |
+| `Set` | Update existing entity | `api.call("Set", { typeName: "Device", entity: {id, name} }, cb)` |
+| `Remove` | Delete entity | `api.call("Remove", { typeName: "Zone", entity: {id} }, cb)` |
+| `GetFeed` | Incremental data sync | `api.call("GetFeed", { typeName: "LogRecord", fromVersion }, cb)` |
+| `GetAddresses` | Reverse geocoding (coords→address) | `api.call("GetAddresses", { coordinates: [{x,y}] }, cb)` |
+| `GetCoordinates` | Geocoding (address→coords) | `api.call("GetCoordinates", { addresses: ["123 Main St"] }, cb)` |
+| `GetRoadMaxSpeeds` | Speed limits at locations | `api.call("GetRoadMaxSpeeds", { deviceSearch: {id} }, cb)` |
+| `GetVersion` | API version info | `api.call("GetVersion", {}, cb)` |
+| `multiCall` | Batch multiple calls | `api.multiCall([["Get", {...}], ["Get", {...}]], cb)` |
+| `getSession` | Current user session | `api.getSession(function(session) {...})` |
+| `GetAceResults` | AI-powered queries | See Ace section below |
+
 ### Getting Data
 api.call("Get", { typeName: "Device" }, function(devices) {
     console.log("Found " + devices.length + " vehicles");
@@ -208,17 +226,120 @@ api.call("Set", {
     entity: { id: deviceId, name: "New Name" }
 }, successCallback, errorCallback);
 
-### Common Type Names
+### Common Type Names (Quick Reference)
 - Device (vehicles)
-- User (users and drivers)
-- Trip
+- User (users and drivers - use `isDriver: true` for drivers only)
+- Trip (completed journeys)
 - Zone (geofences)
 - LogRecord (GPS points)
 - ExceptionEvent (rule violations)
-- Group
-- Rule
-- FuelTransaction
-- StatusData
+- Group (organizational hierarchy)
+- Rule (exception rules)
+- FuelTransaction (fuel card data)
+- StatusData (sensor readings)
+- DeviceStatusInfo (current vehicle state)
+- FaultData (engine fault codes)
+- DriverChange (driver login events)
+- Audit (system activity log)
+- Diagnostic (sensor definitions)
+
+### All Supported Entity Types (34 Total)
+
+**Core Assets (Writable):**
+- `Device` - Vehicles/assets
+- `User` - Users and drivers
+- `Group` - Organizational hierarchy
+
+**Geofencing (Writable):**
+- `Zone` - Geofences/locations
+- `Route` - Planned routes
+
+**Rules & Alerts:**
+- `Rule` - Exception rules (writable)
+- `Condition` - Rule conditions (writable, but Get not supported - access via Rule)
+- `ExceptionEvent` - Rule violations (read-only)
+- `DistributionList` - Notification recipients (writable)
+
+**Diagnostics & Faults (Read-Only):**
+- `Diagnostic` - Sensor definitions (65K+ types)
+- `Controller` - ECU definitions
+- `FaultData` - Engine fault codes
+- `FailureMode` - Fault failure modes
+- `FlashCode` - Legacy codes (Get not supported)
+
+**Telematics Data (Read-Only):**
+- `LogRecord` - GPS breadcrumbs
+- `StatusData` - Sensor readings
+- `Trip` - Completed journeys
+- `DeviceStatusInfo` - Current vehicle state
+
+**Compliance/HOS:**
+- `DVIRLog` - Vehicle inspections (writable)
+- `DutyStatusLog` - HOS records (limited write)
+- `DutyStatusAvailability` - Available time (requires userSearch param)
+- `DutyStatusViolation` - HOS violations (requires search params)
+- `DriverChange` - Driver ID events (read-only)
+
+**Fuel:**
+- `FuelTransaction` - Fuel card data (writable)
+- `FuelUsed` - Consumption (read-only)
+- `FillUp` - Fill events (read-only)
+- `FuelTaxDetail` - IFTA records (read-only)
+
+**Custom Data (Writable):**
+- `CustomData` - Custom storage
+- `AddInData` - Per-Add-In storage
+
+**System:**
+- `Audit` - Activity log (read-only)
+- `BinaryPayload` - Raw data (Get not supported)
+- `DebugData` - Debug info (read-only)
+- `DeviceShare` - Shared access (writable)
+
+> **Tested:** 28/33 types work with Get, 30/33 with GetCountOf. Types marked with issues require special handling.
+
+### Persistent Storage (AddInData)
+
+Add-Ins can store custom JSON data that persists across sessions using `AddInData`. Great for user settings, saved filters, or cached data.
+
+**IMPORTANT:** When generating Add-Ins that use storage, create a unique AddInId and hardcode it in the source. Generate a new ID for each Add-In you create:
+
+```javascript
+// Generate this ONCE per Add-In, then hardcode it
+var MY_ADDIN_ID = "aXYZ123AbcDef456GhiJk";  // Unique per Add-In
+
+// Save data
+api.call("Add", {
+    typeName: "AddInData",
+    entity: {
+        addInId: MY_ADDIN_ID,
+        groups: [{ id: "GroupCompanyId" }],
+        details: { theme: "dark", pageSize: 25 }
+    }
+}, function(newId) { console.log("Saved:", newId); }, errorCallback);
+
+// Load data
+api.call("Get", {
+    typeName: "AddInData",
+    search: { addInId: MY_ADDIN_ID }
+}, function(results) {
+    if (results.length > 0) {
+        var settings = results[0].details;
+        console.log("Theme:", settings.theme);
+    }
+}, errorCallback);
+
+// Update (requires record id from previous Get)
+api.call("Set", {
+    typeName: "AddInData",
+    entity: { id: existingRecordId, addInId: MY_ADDIN_ID, details: { theme: "light" } }
+}, successCallback, errorCallback);
+
+// Delete
+api.call("Remove", { typeName: "AddInData", entity: { id: recordId } }, successCallback, errorCallback);
+```
+
+**Limits:** 10,000 chars/record, no AND/OR in queries, case-sensitive, no "geotab" prefix in property names.
 
 ### Advanced Get Parameters
 
@@ -494,6 +615,40 @@ var dist = row[cols[1]];    // Second column = value
 "I analyzed trip data for the current month and ranked vehicles by total distance traveled..."
 ```
 
+### Getting Full Results via CSV Download
+
+The `preview_array` only returns 10 rows. For full datasets, use `signed_urls` from the response - these are **CORS-approved for geotab.com origin** (embedded Add-Ins work directly):
+
+```javascript
+// In your pollForResults success handler, after status === "DONE":
+var csvUrl = null;
+Object.keys(messages).forEach(function(key) {
+    var msg = messages[key];
+    if (msg.signed_urls && msg.signed_urls.length > 0) {
+        csvUrl = msg.signed_urls[0];  // URL to full CSV data
+    }
+});
+
+if (csvUrl) {
+    fetch(csvUrl)
+        .then(function(response) { return response.text(); })
+        .then(function(csvText) {
+            // Parse CSV (first row is headers)
+            var rows = csvText.split('\n');
+            var headers = rows[0].split(',');
+            console.log('Full data: ' + (rows.length - 1) + ' rows');
+            // Process all rows, not just 10!
+        })
+        .catch(function(err) {
+            console.error('CSV fetch failed:', err);
+        });
+}
+```
+
+**Why this matters:** Ace queries like "Get 100 recent GPS logs" will only show 10 in `preview_array`, but the CSV URL contains all 100+ results.
+
+**Note:** CORS allows `geotab.com` origin - embedded Add-Ins work. External/hosted Add-Ins may need to request expanded CORS policy from Geotab.
+
 ### Critical Ace Mistakes to Avoid
 
 | Mistake | Problem | Solution |
@@ -512,181 +667,52 @@ var dist = row[cols[1]];    // Second column = value
 - Increment the parameter (`?v=3`, `?v=4`) each time you deploy a new version
 - This "cache-busting" trick forces MyGeotab to fetch fresh HTML
 
-## Navigating to MyGeotab Pages (Clickable Links)
+## Navigating to MyGeotab Pages
 
-Add-Ins run inside MyGeotab's iframe. To make items clickable and navigate the parent MyGeotab window to a specific page, use `window.parent.location.hash`.
+Make entity names clickable using `window.parent.location.hash`:
 
-**You don't need the full URL** - just set the hash portion. MyGeotab handles the rest.
+| Page | Hash Pattern |
+|------|-------------|
+| Vehicle | `#device,id:` + device.id |
+| Trips | `#tripsHistory,devices:!(` + device.id + `)` |
+| Map | `#map,liveVehicleIds:!(` + device.id + `)` |
+| Exceptions | `#exceptions2,assetsFilter:!(` + device.id + `)` |
+| Zone edit | `#zones,edit:` + zone.id |
 
-### Navigation Patterns
-
-| Destination | Hash Format | Example |
-|-------------|-------------|---------|
-| Vehicle page | `#device,id:{deviceId}` | `#device,id:b3230` |
-| Trip history | `#tripsHistory,devices:!({deviceId})` | `#tripsHistory,devices:!(b12)` |
-| Exceptions | `#exceptions2,assetsFilter:!({deviceId})` | `#exceptions2,assetsFilter:!(b3306)` |
-| Map following vehicle | `#map,liveVehicleIds:!({deviceId})` | `#map,liveVehicleIds:!(b3230)` |
-| Zone edit | `#zones,edit:{zoneId}` | `#zones,edit:b2F` |
-
-### Code Pattern for Clickable Vehicle Names
-
-// Create a clickable link that navigates to the vehicle's page
-function createVehicleLink(device) {
-    var link = document.createElement('a');
-    link.textContent = device.name;
-    link.href = '#';
-    link.style.cssText = 'color:#2563eb;text-decoration:none;cursor:pointer;';
-    link.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = 'device,id:' + device.id;
-    };
-    return link;
-}
-
-### Example: Vehicle List with Clickable Names
-
-// In your render function:
-devices.forEach(function(device) {
-    var row = document.createElement('tr');
-
-    // Clickable vehicle name
-    var nameCell = document.createElement('td');
-    var link = document.createElement('a');
-    link.textContent = device.name;
-    link.href = '#';
-    link.style.cssText = 'color:#2563eb;cursor:pointer;';
-    link.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = 'device,id:' + device.id;
-    };
-    nameCell.appendChild(link);
-    row.appendChild(nameCell);
-
-    // View trips link
-    var tripsCell = document.createElement('td');
-    var tripsLink = document.createElement('a');
-    tripsLink.textContent = 'View Trips';
-    tripsLink.href = '#';
-    tripsLink.style.cssText = 'color:#2563eb;cursor:pointer;';
-    tripsLink.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = 'tripsHistory,devices:!(' + device.id + ')';
-    };
-    tripsCell.appendChild(tripsLink);
-    row.appendChild(tripsCell);
-
-    tableBody.appendChild(row);
-});
-
-### Important Notes
-
-1. **Use device.id, not device.name**: The hash requires the internal ID (like "b3230"), not the display name
-2. **Exclamation mark syntax**: For array parameters, use `!(id)` syntax: `devices:!(b12)`
-3. **Multiple vehicles**: Comma-separate IDs: `devices:!(b12,b13,b14)`
-4. **Prevent default**: Always call `e.preventDefault()` in click handlers to avoid page jumps
-
-## Creative Integrations (Beyond Data Display)
-
-Add-Ins can do more than show data. Use browser-native URL schemes to integrate with external services without needing APIs.
-
-### Email with Pre-Populated Content
-
-// Create a "Report Issue" link that opens Gmail with vehicle details pre-filled
-var emailLink = document.createElement('a');
-var subject = encodeURIComponent('Issue with ' + device.name);
-var body = encodeURIComponent('Vehicle: ' + device.name + '\nSerial: ' + device.serialNumber + '\n\nDescribe the issue:\n');
-emailLink.href = 'mailto:fleet-manager@company.com?subject=' + subject + '&body=' + body;
-emailLink.textContent = 'Report Issue';
-
-### Google Calendar Event
-
-// Create a maintenance reminder event
-var title = encodeURIComponent('Maintenance: ' + device.name);
-var details = encodeURIComponent('Vehicle: ' + device.name + '\nSerial: ' + device.serialNumber);
-var calendarLink = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title + '&details=' + details;
-
-### Google Maps Link
-
-// Open vehicle's last known location in Google Maps
-var mapsLink = 'https://www.google.com/maps?q=' + latitude + ',' + longitude;
-
-### Call or Text Driver
-
-// Phone call link
-var callLink = document.createElement('a');
-callLink.href = 'tel:' + driver.phoneNumber;
-callLink.textContent = 'Call Driver';
-
-// SMS link
-var smsLink = document.createElement('a');
-smsLink.href = 'sms:' + driver.phoneNumber + '?body=' + encodeURIComponent('Your vehicle ' + device.name + ' needs attention.');
-smsLink.textContent = 'Text Driver';
-
-### WhatsApp Message
-
-var whatsappLink = 'https://wa.me/' + phoneNumber + '?text=' + encodeURIComponent('Vehicle update: ' + device.name);
-
-### Copy to Clipboard
-
-// Copy vehicle info for pasting elsewhere
-function copyToClipboard(text) {
-    var textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    alert('Copied!');
-}
-
-var copyBtn = document.createElement('button');
-copyBtn.textContent = 'Copy Details';
-copyBtn.onclick = function() {
-    copyToClipboard('Vehicle: ' + device.name + '\nSerial: ' + device.serialNumber);
+```javascript
+link.onclick = function(e) {
+    e.preventDefault();
+    window.parent.location.hash = 'device,id:' + device.id;
 };
+```
 
-### Download as CSV
+**Important:**
+- Use `device.id` (internal ID like "b3230"), not `device.name`
+- Multiple vehicles: `devices:!(b12,b13,b14)` (comma-separated inside `!()`)
+- Always call `e.preventDefault()` in click handlers
 
-// Generate and download a CSV file
-function downloadCSV(data, filename) {
-    var csv = 'Name,Serial Number,Type\n';
-    data.forEach(function(d) {
-        csv += d.name + ',' + d.serialNumber + ',' + (d.deviceType || 'Unknown') + '\n';
-    });
-    var blob = new Blob([csv], { type: 'text/csv' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-}
+## External Integrations
 
-### Print Report
+Add-Ins can integrate with external services using standard URL schemes (no API keys needed):
 
-// Add a print button for the current view
-var printBtn = document.createElement('button');
-printBtn.textContent = 'Print Report';
-printBtn.onclick = function() { window.print(); };
+| Feature | URL Scheme |
+|---------|-----------|
+| Email | `mailto:email?subject=...&body=...` |
+| Phone call | `tel:number` |
+| SMS | `sms:number?body=...` |
+| WhatsApp | `https://wa.me/number?text=...` |
+| Google Maps | `https://google.com/maps?q=lat,lng` |
+| Google Calendar | `https://calendar.google.com/calendar/render?action=TEMPLATE&text=...` |
 
-### Text-to-Speech (Read Aloud)
+**Tip:** Use `encodeURIComponent()` when inserting device data into URLs:
+```javascript
+var subject = encodeURIComponent('Issue with ' + device.name);
+link.href = 'mailto:fleet@company.com?subject=' + subject;
+```
 
-// Speak vehicle count for hands-free use
-function speak(text) {
-    var utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-}
-speak('You have ' + devices.length + ' vehicles in your fleet');
+Also available: Copy to clipboard, CSV download, Print (`window.print()`), Text-to-speech (`speechSynthesis`), Native share (`navigator.share`).
 
-### Share via Native Share (Mobile)
-
-// Use Web Share API on mobile devices
-if (navigator.share) {
-    navigator.share({
-        title: 'Fleet Report',
-        text: 'Total vehicles: ' + devices.length,
-        url: window.location.href
-    });
-}
+**Free weather API (no key):** `https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current_weather=true`
 
 ## Critical Mistakes to Avoid
 
