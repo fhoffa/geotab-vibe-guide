@@ -882,7 +882,7 @@ for each city boundary."
 
 ### MCP Composability: The Real Power
 
-MCP isn't just about one server - it's about **multiple MCP servers working together**. Claude can use tools from different servers in the same conversation:
+**Multiple MCP servers can work together** in the same conversation. Claude uses tools from different servers seamlessly:
 
 ```
 You: "Find my 5 vehicles with most idle time last week,
