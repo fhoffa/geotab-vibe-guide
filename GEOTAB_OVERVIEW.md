@@ -11,13 +11,13 @@ Beyond the API, Geotab has built the **largest telematics ecosystem in the world
 | Metric | Scale |
 |--------|-------|
 | Solutions available | 430+ |
-| Customers browsing | 55,000+ |
+| Customers browsing | 100,000 |
 | Vehicles you can reach | 5 million+ |
 | Countries | 163+ |
 
 Developers like you have built solutions that now reach thousands of fleets. GoAnalytics started as simple dashboards. LifeSaver Mobile started because two dads worried about their teenagers driving. Your hackathon project could be next.
 
-**→ [Read the Ecosystem Primer](./guides/GEOTAB_ECOSYSTEM_PRIMER.md)** — See who started small and how to get your solution in front of 55,000+ customers.
+**→ [Read the Ecosystem Primer](./guides/GEOTAB_ECOSYSTEM_PRIMER.md)** — See who started small and how to get your solution in front of 100,000 customers.
 
 ## Who Uses Geotab?
 
@@ -98,7 +98,7 @@ Reducing environmental impact and carbon footprint:
 
 ### 6. **Expandability**
 Extending platform capabilities through integrations:
-- **[Geotab Marketplace](https://marketplace.geotab.com/)**: 430+ solutions from 350+ partners serving 55,000+ customers
+- **[Geotab Marketplace](https://marketplace.geotab.com/)**: 430+ solutions from 350+ partners serving 100,000 customers
 - **Add-ins**: Embed your application directly inside MyGeotab ([Developer Docs](https://developers.geotab.com/myGeotab/addIns/developingAddIns/))
 - Custom API integrations with open platform architecture
 - Hardware add-on compatibility via IOX expansion port

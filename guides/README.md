@@ -50,7 +50,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 ### Distributing Your Solution
 
-- **[GEOTAB_ECOSYSTEM_PRIMER.md](./GEOTAB_ECOSYSTEM_PRIMER.md)** - How to get your solution in front of 55,000+ customers. Success stories from developers who started small.
+- **[GEOTAB_ECOSYSTEM_PRIMER.md](./GEOTAB_ECOSYSTEM_PRIMER.md)** - How to get your solution in front of 100,000 customers. Success stories from developers who started small.
 
 ### Advanced Topics
 

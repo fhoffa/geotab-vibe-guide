@@ -2,7 +2,7 @@
 
 **What if your hackathon project could reach 5 million vehicles?**
 
-The Geotab Marketplace is where fleet solutions find real users. Over 350 companies distribute their products here—reaching 55,000+ customers without building their own sales team. Your prototype today could be in front of fleet managers tomorrow.
+The Geotab Marketplace is where fleet solutions find real users. Over 350 companies distribute their products here—reaching 100,000 customers without building their own sales team. Your prototype today could be in front of fleet managers tomorrow.
 
 This primer shows you what's possible.
 
@@ -89,7 +89,7 @@ The Marketplace has 15 categories. Each represents a real customer problem and a
 | Metric | Scale |
 |--------|-------|
 | Connected vehicles | 5 million+ |
-| Global customers | 55,000+ |
+| Global customers | 100,000 |
 | Data points processed daily | 100 billion+ |
 | Marketplace partners | 350+ |
 | Available solutions | 430+ |
@@ -328,7 +328,7 @@ Across pilot programs with gamified driver coaching:
 ### What You Get
 
 - **5M+ vehicles** you can reach immediately
-- **55,000+ customers** browsing the Marketplace for solutions
+- **100,000 customers** browsing the Marketplace for solutions
 - **300+ resellers** who can bundle and sell your solution
 - **Built-in trust** — customers already use Geotab, your Add-In is one click away
 
