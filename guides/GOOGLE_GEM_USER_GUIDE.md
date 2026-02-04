@@ -16,6 +16,19 @@ The Geotab Add-In Architect generates **ready-to-paste JSON configurations** tha
 
 ## Getting Started
 
+### Prerequisites: Create a Free Geotab Demo Account
+
+Before you can use Add-Ins, you need a MyGeotab account to install them in.
+
+1. Go to [my.geotab.com/registration.html](https://my.geotab.com/registration.html)
+2. **Click "Create a Demo Database"** (not "I'm a New Customer") — this gives you pre-populated sample data
+3. Fill out the form (takes ~2 minutes)
+4. Check your email for confirmation
+
+> **Geotab employees:** Use a personal Gmail or other external email address to create your demo account. Internal Geotab accounts may have different permissions that could affect these tutorials.
+
+Once you have your account, you're ready to create Add-Ins.
+
 ### Step 1: Open the Gem
 
 Go to [Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO)
