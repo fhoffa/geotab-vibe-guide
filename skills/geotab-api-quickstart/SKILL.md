@@ -68,6 +68,24 @@ api.authenticate()
 print("Connected!")
 ```
 
+### Server Redirection
+
+MyGeotab uses server redirection - authentication may return a different server URL in the `path` field. The `mygeotab` Python library handles this automatically.
+
+**If using raw HTTP requests:** Check the authentication response for a `path` value. If it's a real hostname (contains `.`), use that for subsequent calls. If it returns `"ThisServer"`, keep using the original server.
+
+```python
+# The mygeotab library handles this automatically:
+api.authenticate()  # May internally redirect to a different server
+
+# If using requests directly:
+auth_result = response.json()["result"]
+if "path" in auth_result:
+    new_server = auth_result["path"]
+    if new_server and "." in new_server and new_server.lower() != "thisserver":
+        base_url = f"https://{new_server}/apiv1"
+```
+
 ## Fetching Data
 
 ### Count Entities (Efficient)

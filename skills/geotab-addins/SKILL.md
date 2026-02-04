@@ -262,7 +262,8 @@ api.getSession(function(session) {
 Add-Ins can store custom JSON data that persists across sessions using `AddInData` (10,000 char limit per record).
 
 ```javascript
-var MY_ADDIN_ID = "a2C4ABQuLFkepPVf6-4OKAQ";  // Generate unique ID once
+// IMPORTANT: Generate this ID ONCE, then hardcode it in your Add-In
+var MY_ADDIN_ID = "a2C4ABQuLFkepPVf6-4OKAQ";  // Fixed ID for this Add-In
 
 // Save
 api.call("Add", {
@@ -324,247 +325,45 @@ askAce(api, "Which vehicles drove the most last month?", function(result) {
 
 > **Full Ace documentation:** See the [geotab-ace skill](../geotab-ace/SKILL.md) for complete patterns, response parsing, rate limiting, and code examples.
 
-## Navigating to MyGeotab Pages
+## Navigation & Integrations
 
-Add-Ins can navigate the parent MyGeotab window to other pages using `window.parent.location.hash`. This makes entity names (vehicles, drivers, zones) clickable.
+### MyGeotab Navigation
 
-### Navigation Hash Patterns
+Navigate to other MyGeotab pages using `window.parent.location.hash`:
 
-| Page | Hash Format | Example |
-|------|-------------|---------|
-| Vehicle detail | `#device,id:{id}` | `#device,id:b3230` |
-| Trip history | `#tripsHistory,devices:!({id})` | `#tripsHistory,devices:!(b12)` |
-| Exceptions | `#exceptions2,assetsFilter:!({id})` | `#exceptions2,assetsFilter:!(b3306)` |
-| Live map | `#map,liveVehicleIds:!({id})` | `#map,liveVehicleIds:!(b3230)` |
-| Zone edit | `#zones,edit:{id}` | `#zones,edit:b2F` |
-
-### Creating Clickable Vehicle Links
+| Page | Hash | Example |
+|------|------|---------|
+| Vehicle | `#device,id:{id}` | `#device,id:b3230` |
+| Trips | `#tripsHistory,devices:!({id})` | `#tripsHistory,devices:!(b12)` |
+| Map | `#map,liveVehicleIds:!({id})` | `#map,liveVehicleIds:!(b3230)` |
 
 ```javascript
-function createVehicleLink(device) {
-    var link = document.createElement("a");
-    link.textContent = device.name;
-    link.href = "#";
-    link.style.cssText = "color:#2563eb;cursor:pointer;";
-    link.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = "device,id:" + device.id;
-    };
-    return link;
-}
-```
-
-### Multiple Action Links
-
-```javascript
-// In a table row, add links for different destinations
-var actionsCell = document.createElement("td");
-
-// Link to vehicle page
-var vehicleLink = document.createElement("a");
-vehicleLink.textContent = "Details";
-vehicleLink.href = "#";
-vehicleLink.onclick = function(e) {
+// Clickable vehicle link
+link.onclick = function(e) {
     e.preventDefault();
     window.parent.location.hash = "device,id:" + device.id;
 };
-actionsCell.appendChild(vehicleLink);
-
-actionsCell.appendChild(document.createTextNode(" | "));
-
-// Link to trip history
-var tripsLink = document.createElement("a");
-tripsLink.textContent = "Trips";
-tripsLink.href = "#";
-tripsLink.onclick = function(e) {
-    e.preventDefault();
-    window.parent.location.hash = "tripsHistory,devices:!(" + device.id + ")";
-};
-actionsCell.appendChild(tripsLink);
 ```
 
-**Key points:**
-- Use `device.id` (the internal ID like "b3230"), not `device.name`
-- Array parameters use `!(id)` syntax
-- Multiple IDs: `devices:!(b12,b13,b14)`
-- Always call `e.preventDefault()` in click handlers
+### External Integrations (No API Key)
 
-## Creative Integrations (Browser-Native)
+| Integration | URL Scheme |
+|-------------|-----------|
+| Email | `mailto:email?subject=...&body=...` |
+| Phone | `tel:number` |
+| SMS | `sms:number?body=...` |
+| WhatsApp | `https://wa.me/number?text=...` |
+| Google Maps | `https://google.com/maps?q=lat,lng` |
+| Google Calendar | `https://calendar.google.com/calendar/render?action=TEMPLATE&text=...` |
 
-Add-Ins can integrate with external services using URL schemes and browser APIs - no external hosting or API keys needed.
+### Free APIs
 
-### Email with Pre-Populated Content
+| Service | URL | Notes |
+|---------|-----|-------|
+| Weather | `https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current_weather=true` | No key needed |
+| Geocoding | `https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lng}&format=json` | 1 req/sec limit |
 
-```javascript
-// "Report Issue" link that opens email with vehicle details
-function createEmailLink(device, recipientEmail) {
-    var link = document.createElement("a");
-    var subject = encodeURIComponent("Issue with " + device.name);
-    var body = encodeURIComponent(
-        "Vehicle: " + device.name + "\n" +
-        "Serial: " + device.serialNumber + "\n\n" +
-        "Describe the issue:\n"
-    );
-    link.href = "mailto:" + recipientEmail + "?subject=" + subject + "&body=" + body;
-    link.textContent = "Report Issue";
-    return link;
-}
-```
-
-### Google Calendar Event
-
-```javascript
-// Create a maintenance reminder in Google Calendar
-function createCalendarLink(device, date) {
-    var title = encodeURIComponent("Maintenance: " + device.name);
-    var details = encodeURIComponent(
-        "Vehicle: " + device.name + "\n" +
-        "Serial: " + device.serialNumber
-    );
-    var dateStr = date.toISOString().replace(/-|:|\.\d+/g, "").slice(0, 15) + "Z";
-    return "https://calendar.google.com/calendar/render?action=TEMPLATE" +
-           "&text=" + title +
-           "&details=" + details +
-           "&dates=" + dateStr + "/" + dateStr;
-}
-```
-
-### Google Maps Link
-
-```javascript
-// Open location in Google Maps
-function createMapsLink(latitude, longitude, label) {
-    var link = document.createElement("a");
-    link.href = "https://www.google.com/maps?q=" + latitude + "," + longitude;
-    link.textContent = label || "Open in Maps";
-    link.target = "_blank";
-    return link;
-}
-```
-
-### Call or Text Driver
-
-```javascript
-// Phone call link
-function createCallLink(phoneNumber, label) {
-    var link = document.createElement("a");
-    link.href = "tel:" + phoneNumber;
-    link.textContent = label || "Call";
-    return link;
-}
-
-// SMS link with pre-filled message
-function createSmsLink(phoneNumber, message, label) {
-    var link = document.createElement("a");
-    link.href = "sms:" + phoneNumber + "?body=" + encodeURIComponent(message);
-    link.textContent = label || "Text";
-    return link;
-}
-```
-
-### WhatsApp Message
-
-```javascript
-// WhatsApp link with pre-filled message (use number without + or spaces)
-function createWhatsAppLink(phoneNumber, message, label) {
-    var link = document.createElement("a");
-    link.href = "https://wa.me/" + phoneNumber + "?text=" + encodeURIComponent(message);
-    link.textContent = label || "WhatsApp";
-    link.target = "_blank";
-    return link;
-}
-```
-
-### Copy to Clipboard
-
-```javascript
-// Copy text to clipboard
-function copyToClipboard(text, button) {
-    var textarea = document.createElement("textarea");
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand("copy");
-    document.body.removeChild(textarea);
-
-    // Visual feedback
-    var originalText = button.textContent;
-    button.textContent = "Copied!";
-    setTimeout(function() { button.textContent = originalText; }, 2000);
-}
-
-// Usage
-var copyBtn = document.createElement("button");
-copyBtn.textContent = "Copy Details";
-copyBtn.onclick = function() {
-    copyToClipboard("Vehicle: " + device.name + "\nSerial: " + device.serialNumber, copyBtn);
-};
-```
-
-### Download as CSV
-
-```javascript
-// Generate and download CSV file
-function downloadCSV(data, filename) {
-    var csv = "Name,Serial Number,Type\n";
-    data.forEach(function(d) {
-        csv += '"' + (d.name || "") + '","' + (d.serialNumber || "") + '","' + (d.deviceType || "") + '"\n';
-    });
-
-    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    link.href = url;
-    link.download = filename || "export.csv";
-    link.click();
-    URL.revokeObjectURL(url);
-}
-```
-
-### Print Report
-
-```javascript
-// Print button
-var printBtn = document.createElement("button");
-printBtn.textContent = "Print Report";
-printBtn.onclick = function() { window.print(); };
-```
-
-### Text-to-Speech
-
-```javascript
-// Speak text aloud (hands-free use)
-function speak(text) {
-    if ("speechSynthesis" in window) {
-        var utterance = new SpeechSynthesisUtterance(text);
-        window.speechSynthesis.speak(utterance);
-    }
-}
-
-// Example: Read fleet summary
-speak("You have " + devices.length + " vehicles and " + drivers.length + " drivers.");
-```
-
-### Native Share (Mobile)
-
-```javascript
-// Use device's native share functionality
-function shareData(title, text) {
-    if (navigator.share) {
-        navigator.share({
-            title: title,
-            text: text,
-            url: window.location.href
-        });
-    } else {
-        // Fallback: copy to clipboard
-        copyToClipboard(text);
-    }
-}
-```
-
-### Common Type Names
-`Device` (vehicles), `User`, `Trip`, `Zone` (geofences), `LogRecord` (GPS), `ExceptionEvent` (rule violations), `Group`, `Rule`, `FuelTransaction`, `StatusData`
+> **Full documentation:** See [references/INTEGRATIONS.md](references/INTEGRATIONS.md) for complete code examples (email, calendar, maps, clipboard, CSV export, print, text-to-speech, native share).
 
 ## Critical Mistakes to Avoid
 
@@ -623,154 +422,14 @@ For quick prototypes without hosting.
 
 See [references/EMBEDDED.md](references/EMBEDDED.md) for complete embedded add-in guide.
 
-## Complete Example: Vehicle Manager
+## Complete Examples
 
-A working add-in with CRUD operations that lists vehicles and allows renaming them.
+**Vehicle Manager** - CRUD operations (list vehicles, rename):
+- Live: `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/`
+- Code: [references/EXAMPLES.md](references/EXAMPLES.md#vehicle-manager-crud-example)
 
-**Live example:** `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/`
-
-**vehicle-manager.css**
-```css
-body {
-    margin: 0; padding: 20px;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    min-height: 100vh;
-}
-.container { max-width: 900px; margin: 0 auto; }
-.header { color: white; text-align: center; margin-bottom: 30px; }
-.card {
-    background: white; border-radius: 12px; padding: 24px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
-}
-.stat-value { font-size: 36px; font-weight: bold; color: #1f2937; }
-.vehicle-list { width: 100%; border-collapse: collapse; }
-.vehicle-list th, .vehicle-list td { padding: 12px; border-bottom: 1px solid #f3f4f6; text-align: left; }
-.vehicle-name-input { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 100%; box-sizing: border-box; }
-.save-btn { background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
-.save-btn:hover { background: #5a67d8; }
-.save-btn:disabled { background: #9ca3af; cursor: not-allowed; }
-```
-
-**vehicle-manager.html**
-```html
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Vehicle Manager</title>
-    <link rel="stylesheet" href="vehicle-manager.css">
-</head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>Fleet Management</h1>
-            <div>Connected as: <span id="username">...</span></div>
-        </div>
-        <div class="card">
-            <div>Total Vehicles: <span id="vehicle-count" class="stat-value">...</span></div>
-        </div>
-        <div class="card">
-            <h2>Manage Vehicles</h2>
-            <table class="vehicle-list">
-                <thead><tr><th>Serial Number</th><th>Name</th><th>Action</th></tr></thead>
-                <tbody id="vehicle-table-body"><tr><td colspan="3">Loading...</td></tr></tbody>
-            </table>
-        </div>
-    </div>
-    <script src="vehicle-manager.js"></script>
-</body>
-</html>
-```
-
-**vehicle-manager.js**
-```javascript
-"use strict";
-
-geotab.addin["vehicle-manager"] = function() {
-    var apiRef = null;
-
-    function updateStats() {
-        if (!apiRef) return;
-
-        apiRef.getSession(function(session) {
-            document.getElementById("username").textContent = session.userName;
-        });
-
-        apiRef.call("Get", { typeName: "Device" }, function(devices) {
-            document.getElementById("vehicle-count").textContent = devices.length;
-            renderVehicleList(devices);
-        }, function(err) {
-            document.getElementById("vehicle-count").textContent = "Error";
-        });
-    }
-
-    function renderVehicleList(devices) {
-        var tbody = document.getElementById("vehicle-table-body");
-        tbody.innerHTML = "";
-
-        devices.forEach(function(device) {
-            var tr = document.createElement("tr");
-
-            var tdSerial = document.createElement("td");
-            tdSerial.textContent = device.serialNumber || "N/A";
-            tr.appendChild(tdSerial);
-
-            var tdName = document.createElement("td");
-            var input = document.createElement("input");
-            input.type = "text";
-            input.className = "vehicle-name-input";
-            input.value = device.name || "";
-            input.id = "input-" + device.id;
-            tdName.appendChild(input);
-            tr.appendChild(tdName);
-
-            var tdAction = document.createElement("td");
-            var btn = document.createElement("button");
-            btn.textContent = "Save";
-            btn.className = "save-btn";
-            btn.onclick = function() {
-                saveVehicleName(device.id, document.getElementById("input-" + device.id).value, btn);
-            };
-            tdAction.appendChild(btn);
-            tr.appendChild(tdAction);
-
-            tbody.appendChild(tr);
-        });
-    }
-
-    function saveVehicleName(deviceId, newName, btn) {
-        btn.disabled = true;
-        btn.textContent = "Saving...";
-
-        apiRef.call("Set", {
-            typeName: "Device",
-            entity: { id: deviceId, name: newName }
-        }, function() {
-            btn.disabled = false;
-            btn.textContent = "Saved!";
-            setTimeout(function() { btn.textContent = "Save"; }, 2000);
-        }, function(err) {
-            btn.disabled = false;
-            btn.textContent = "Retry";
-            alert("Error: " + (err.message || err));
-        });
-    }
-
-    return {
-        initialize: function(api, state, callback) {
-            apiRef = api;
-            updateStats();
-            callback();
-        },
-        focus: function(api, state) {
-            apiRef = api;
-            updateStats();
-        },
-        blur: function(api, state) {}
-    };
-};
-```
+**Fleet Stats** - Simple read-only dashboard:
+- Code: [references/EXAMPLES.md](references/EXAMPLES.md#complete-fleet-stats-example)
 
 ## GitHub Pages Deployment
 
@@ -792,7 +451,7 @@ geotab.addin["vehicle-manager"] = function() {
 
 ### Step 1: Start with Vanilla JS
 
-The Vehicle Manager example above uses vanilla JavaScript with external CSS. This approach:
+The Vehicle Manager example (see [references/EXAMPLES.md](references/EXAMPLES.md)) uses vanilla JavaScript with external CSS. This approach:
 - Works immediately (no build step)
 - Easy to understand and modify
 - Good for learning the Geotab API patterns
@@ -902,6 +561,7 @@ Here's my current vanilla JS add-in:
 **Reference Files:**
 - [Complete Examples](references/EXAMPLES.md) - Full working add-in code
 - [Embedded Add-Ins Guide](references/EMBEDDED.md) - No-hosting deployment
+- [Integrations](references/INTEGRATIONS.md) - Navigation, email, maps, weather, etc.
 - [Storage API](references/STORAGE_API.md) - AddInData persistence patterns
 - [Troubleshooting](references/TROUBLESHOOTING.md) - Common mistakes and debugging
 

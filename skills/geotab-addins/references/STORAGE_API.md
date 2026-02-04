@@ -2,12 +2,17 @@
 
 Add-Ins can store custom data in the Geotab database using `AddInData`. This persists across sessions and can store up to 10,000 characters of JSON per record.
 
-## Generate Your AddInId
+## Your AddInId
 
-Each Add-In needs a unique AddInId (encoded GUID) to isolate its data. Generate one:
+Each Add-In needs a **unique, fixed AddInId** to isolate its data. This ID must be:
+1. Generated **once** during development
+2. **Hardcoded** into your Add-In source code
+3. Used consistently for all data operations
+
+**Generate your AddInId once** (run in browser console or Node.js):
 
 ```javascript
-// Run once to generate your AddInId
+// Run ONCE, then copy the result into your Add-In code
 function generateAddInId() {
     var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         var r = Math.random() * 16 | 0;
@@ -19,6 +24,15 @@ function generateAddInId() {
 console.log("Your AddInId:", generateAddInId());
 // Example output: "a2C4ABQuLFkepPVf6-4OKAQ"
 ```
+
+**Then hardcode it in your Add-In:**
+
+```javascript
+// This ID is FIXED - same value every time the Add-In runs
+var MY_ADDIN_ID = "a2C4ABQuLFkepPVf6-4OKAQ";  // Your generated ID
+```
+
+> **Why fixed?** If the ID changes, you create new data instead of retrieving existing data. Each Add-In installation should use the same ID to access its persistent storage.
 
 ## Save Data
 

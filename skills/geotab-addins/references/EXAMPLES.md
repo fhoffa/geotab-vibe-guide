@@ -277,3 +277,168 @@ document.getElementById("stat-value").className = "stat";
 document.getElementById("stat-value").textContent = "Error";
 document.getElementById("stat-value").className = "stat error";
 ```
+
+---
+
+## Vehicle Manager (CRUD Example)
+
+A working add-in with CRUD operations that lists vehicles and allows renaming them.
+
+**Live example:** `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/`
+
+**vehicle-manager.css**
+```css
+body {
+    margin: 0; padding: 20px;
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+}
+.container { max-width: 900px; margin: 0 auto; }
+.header { color: white; text-align: center; margin-bottom: 30px; }
+.card {
+    background: white; border-radius: 12px; padding: 24px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;
+}
+.stat-value { font-size: 36px; font-weight: bold; color: #1f2937; }
+.vehicle-list { width: 100%; border-collapse: collapse; }
+.vehicle-list th, .vehicle-list td { padding: 12px; border-bottom: 1px solid #f3f4f6; text-align: left; }
+.vehicle-name-input { padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 100%; box-sizing: border-box; }
+.save-btn { background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; }
+.save-btn:hover { background: #5a67d8; }
+.save-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+```
+
+**vehicle-manager.html**
+```html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Vehicle Manager</title>
+    <link rel="stylesheet" href="vehicle-manager.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Fleet Management</h1>
+            <div>Connected as: <span id="username">...</span></div>
+        </div>
+        <div class="card">
+            <div>Total Vehicles: <span id="vehicle-count" class="stat-value">...</span></div>
+        </div>
+        <div class="card">
+            <h2>Manage Vehicles</h2>
+            <table class="vehicle-list">
+                <thead><tr><th>Serial Number</th><th>Name</th><th>Action</th></tr></thead>
+                <tbody id="vehicle-table-body"><tr><td colspan="3">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+    <script src="vehicle-manager.js"></script>
+</body>
+</html>
+```
+
+**vehicle-manager.js**
+```javascript
+"use strict";
+
+geotab.addin["vehicle-manager"] = function() {
+    var apiRef = null;
+
+    function updateStats() {
+        if (!apiRef) return;
+
+        apiRef.getSession(function(session) {
+            document.getElementById("username").textContent = session.userName;
+        });
+
+        apiRef.call("Get", { typeName: "Device" }, function(devices) {
+            document.getElementById("vehicle-count").textContent = devices.length;
+            renderVehicleList(devices);
+        }, function(err) {
+            document.getElementById("vehicle-count").textContent = "Error";
+        });
+    }
+
+    function renderVehicleList(devices) {
+        var tbody = document.getElementById("vehicle-table-body");
+        tbody.innerHTML = "";
+
+        devices.forEach(function(device) {
+            var tr = document.createElement("tr");
+
+            var tdSerial = document.createElement("td");
+            tdSerial.textContent = device.serialNumber || "N/A";
+            tr.appendChild(tdSerial);
+
+            var tdName = document.createElement("td");
+            var input = document.createElement("input");
+            input.type = "text";
+            input.className = "vehicle-name-input";
+            input.value = device.name || "";
+            input.id = "input-" + device.id;
+            tdName.appendChild(input);
+            tr.appendChild(tdName);
+
+            var tdAction = document.createElement("td");
+            var btn = document.createElement("button");
+            btn.textContent = "Save";
+            btn.className = "save-btn";
+            btn.onclick = function() {
+                saveVehicleName(device.id, document.getElementById("input-" + device.id).value, btn);
+            };
+            tdAction.appendChild(btn);
+            tr.appendChild(tdAction);
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function saveVehicleName(deviceId, newName, btn) {
+        btn.disabled = true;
+        btn.textContent = "Saving...";
+
+        apiRef.call("Set", {
+            typeName: "Device",
+            entity: { id: deviceId, name: newName }
+        }, function() {
+            btn.disabled = false;
+            btn.textContent = "Saved!";
+            setTimeout(function() { btn.textContent = "Save"; }, 2000);
+        }, function(err) {
+            btn.disabled = false;
+            btn.textContent = "Retry";
+            alert("Error: " + (err.message || err));
+        });
+    }
+
+    return {
+        initialize: function(api, state, callback) {
+            apiRef = api;
+            updateStats();
+            callback();
+        },
+        focus: function(api, state) {
+            apiRef = api;
+            updateStats();
+        },
+        blur: function(api, state) {}
+    };
+};
+```
+
+**MyGeotab Configuration:**
+```json
+{
+  "name": "Vehicle Manager",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "1.0.0",
+  "items": [{
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/vehicle-manager.html",
+    "path": "ActivityLink/",
+    "menuName": { "en": "Vehicle Manager" }
+  }]
+}
+```

@@ -284,88 +284,44 @@ api.call("Set", {
 
 Add-Ins can store custom JSON data that persists across sessions using `AddInData`. Great for user settings, saved filters, or cached data.
 
-**Step 1: Generate a unique AddInId** (run once in browser console):
-```javascript
-function generateAddInId() {
-    var guid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        var r = Math.random() * 16 | 0;
-        return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
-    });
-    return btoa(guid).replace(/=/g, '').substring(0, 22);
-}
-console.log(generateAddInId());  // e.g., "a2C4ABQuLFkepPVf6-4OKAQ"
-```
+**IMPORTANT:** When generating Add-Ins that use storage, create a unique AddInId and hardcode it in the source. Generate a new ID for each Add-In you create:
 
-**Step 2: Save data:**
 ```javascript
-var MY_ADDIN_ID = "yourGeneratedId";
+// Generate this ONCE per Add-In, then hardcode it
+var MY_ADDIN_ID = "aXYZ123AbcDef456GhiJk";  // Unique per Add-In
 
+// Save data
 api.call("Add", {
     typeName: "AddInData",
     entity: {
         addInId: MY_ADDIN_ID,
         groups: [{ id: "GroupCompanyId" }],
-        details: {
-            userSettings: { theme: "dark", pageSize: 25 },
-            lastUpdated: new Date().toISOString()
-        }
+        details: { theme: "dark", pageSize: 25 }
     }
-}, function(newId) {
-    console.log("Saved:", newId);
-}, errorCallback);
-```
+}, function(newId) { console.log("Saved:", newId); }, errorCallback);
 
-**Step 3: Retrieve data:**
-```javascript
+// Load data
 api.call("Get", {
     typeName: "AddInData",
     search: { addInId: MY_ADDIN_ID }
 }, function(results) {
     if (results.length > 0) {
         var settings = results[0].details;
-        console.log("Theme:", settings.userSettings.theme);
+        console.log("Theme:", settings.theme);
     }
 }, errorCallback);
-```
 
-**Step 4: Update data** (requires the record id):
-```javascript
+// Update (requires record id from previous Get)
 api.call("Set", {
     typeName: "AddInData",
-    entity: {
-        id: existingRecordId,
-        addInId: MY_ADDIN_ID,
-        groups: [{ id: "GroupCompanyId" }],
-        details: { userSettings: { theme: "light", pageSize: 50 } }
-    }
+    entity: { id: existingRecordId, addInId: MY_ADDIN_ID, details: { theme: "light" } }
 }, successCallback, errorCallback);
+
+// Delete
+api.call("Remove", { typeName: "AddInData", entity: { id: recordId } }, successCallback, errorCallback);
 ```
 
-**Step 5: Delete data:**
-```javascript
-api.call("Remove", {
-    typeName: "AddInData",
-    entity: { id: recordId }
-}, successCallback, errorCallback);
-```
-
-**Query with filters** (object path notation):
-```javascript
-api.call("Get", {
-    typeName: "AddInData",
-    search: {
-        addInId: MY_ADDIN_ID,
-        selectClause: "userSettings.theme",
-        whereClause: "userSettings.pageSize > 20"
-    }
-}, callback, errorCallback);
-```
-
-**Limitations:**
-- 10,000 character limit per record
-- No AND/OR in whereClause
-- Case-sensitive matching
-- Property names cannot start with "geotab"
+**Limits:** 10,000 chars/record, no AND/OR in queries, case-sensitive, no "geotab" prefix in property names.
 
 ### Advanced Get Parameters
 
@@ -659,181 +615,42 @@ var dist = row[cols[1]];    // Second column = value
 - Increment the parameter (`?v=3`, `?v=4`) each time you deploy a new version
 - This "cache-busting" trick forces MyGeotab to fetch fresh HTML
 
-## Navigating to MyGeotab Pages (Clickable Links)
+## Navigating to MyGeotab Pages
 
-Add-Ins run inside MyGeotab's iframe. To make items clickable and navigate the parent MyGeotab window to a specific page, use `window.parent.location.hash`.
+Make entity names clickable using `window.parent.location.hash`:
 
-**You don't need the full URL** - just set the hash portion. MyGeotab handles the rest.
+| Page | Hash Pattern |
+|------|-------------|
+| Vehicle | `#device,id:` + device.id |
+| Trips | `#tripsHistory,devices:!(` + device.id + `)` |
+| Map | `#map,liveVehicleIds:!(` + device.id + `)` |
+| Exceptions | `#exceptions2,assetsFilter:!(` + device.id + `)` |
 
-### Navigation Patterns
-
-| Destination | Hash Format | Example |
-|-------------|-------------|---------|
-| Vehicle page | `#device,id:{deviceId}` | `#device,id:b3230` |
-| Trip history | `#tripsHistory,devices:!({deviceId})` | `#tripsHistory,devices:!(b12)` |
-| Exceptions | `#exceptions2,assetsFilter:!({deviceId})` | `#exceptions2,assetsFilter:!(b3306)` |
-| Map following vehicle | `#map,liveVehicleIds:!({deviceId})` | `#map,liveVehicleIds:!(b3230)` |
-| Zone edit | `#zones,edit:{zoneId}` | `#zones,edit:b2F` |
-
-### Code Pattern for Clickable Vehicle Names
-
-// Create a clickable link that navigates to the vehicle's page
-function createVehicleLink(device) {
-    var link = document.createElement('a');
-    link.textContent = device.name;
-    link.href = '#';
-    link.style.cssText = 'color:#2563eb;text-decoration:none;cursor:pointer;';
-    link.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = 'device,id:' + device.id;
-    };
-    return link;
-}
-
-### Example: Vehicle List with Clickable Names
-
-// In your render function:
-devices.forEach(function(device) {
-    var row = document.createElement('tr');
-
-    // Clickable vehicle name
-    var nameCell = document.createElement('td');
-    var link = document.createElement('a');
-    link.textContent = device.name;
-    link.href = '#';
-    link.style.cssText = 'color:#2563eb;cursor:pointer;';
-    link.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = 'device,id:' + device.id;
-    };
-    nameCell.appendChild(link);
-    row.appendChild(nameCell);
-
-    // View trips link
-    var tripsCell = document.createElement('td');
-    var tripsLink = document.createElement('a');
-    tripsLink.textContent = 'View Trips';
-    tripsLink.href = '#';
-    tripsLink.style.cssText = 'color:#2563eb;cursor:pointer;';
-    tripsLink.onclick = function(e) {
-        e.preventDefault();
-        window.parent.location.hash = 'tripsHistory,devices:!(' + device.id + ')';
-    };
-    tripsCell.appendChild(tripsLink);
-    row.appendChild(tripsCell);
-
-    tableBody.appendChild(row);
-});
-
-### Important Notes
-
-1. **Use device.id, not device.name**: The hash requires the internal ID (like "b3230"), not the display name
-2. **Exclamation mark syntax**: For array parameters, use `!(id)` syntax: `devices:!(b12)`
-3. **Multiple vehicles**: Comma-separate IDs: `devices:!(b12,b13,b14)`
-4. **Prevent default**: Always call `e.preventDefault()` in click handlers to avoid page jumps
-
-## Creative Integrations (Beyond Data Display)
-
-Add-Ins can do more than show data. Use browser-native URL schemes to integrate with external services without needing APIs.
-
-### Email with Pre-Populated Content
-
-// Create a "Report Issue" link that opens Gmail with vehicle details pre-filled
-var emailLink = document.createElement('a');
-var subject = encodeURIComponent('Issue with ' + device.name);
-var body = encodeURIComponent('Vehicle: ' + device.name + '\nSerial: ' + device.serialNumber + '\n\nDescribe the issue:\n');
-emailLink.href = 'mailto:fleet-manager@company.com?subject=' + subject + '&body=' + body;
-emailLink.textContent = 'Report Issue';
-
-### Google Calendar Event
-
-// Create a maintenance reminder event
-var title = encodeURIComponent('Maintenance: ' + device.name);
-var details = encodeURIComponent('Vehicle: ' + device.name + '\nSerial: ' + device.serialNumber);
-var calendarLink = 'https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + title + '&details=' + details;
-
-### Google Maps Link
-
-// Open vehicle's last known location in Google Maps
-var mapsLink = 'https://www.google.com/maps?q=' + latitude + ',' + longitude;
-
-### Call or Text Driver
-
-// Phone call link
-var callLink = document.createElement('a');
-callLink.href = 'tel:' + driver.phoneNumber;
-callLink.textContent = 'Call Driver';
-
-// SMS link
-var smsLink = document.createElement('a');
-smsLink.href = 'sms:' + driver.phoneNumber + '?body=' + encodeURIComponent('Your vehicle ' + device.name + ' needs attention.');
-smsLink.textContent = 'Text Driver';
-
-### WhatsApp Message
-
-var whatsappLink = 'https://wa.me/' + phoneNumber + '?text=' + encodeURIComponent('Vehicle update: ' + device.name);
-
-### Copy to Clipboard
-
-// Copy vehicle info for pasting elsewhere
-function copyToClipboard(text) {
-    var textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-    alert('Copied!');
-}
-
-var copyBtn = document.createElement('button');
-copyBtn.textContent = 'Copy Details';
-copyBtn.onclick = function() {
-    copyToClipboard('Vehicle: ' + device.name + '\nSerial: ' + device.serialNumber);
+```javascript
+link.onclick = function(e) {
+    e.preventDefault();
+    window.parent.location.hash = 'device,id:' + device.id;
 };
+```
 
-### Download as CSV
+**Important:** Use `device.id` (internal ID like "b3230"), not `device.name`.
 
-// Generate and download a CSV file
-function downloadCSV(data, filename) {
-    var csv = 'Name,Serial Number,Type\n';
-    data.forEach(function(d) {
-        csv += d.name + ',' + d.serialNumber + ',' + (d.deviceType || 'Unknown') + '\n';
-    });
-    var blob = new Blob([csv], { type: 'text/csv' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-}
+## External Integrations
 
-### Print Report
+Add-Ins can integrate with external services using standard URL schemes (no API keys needed):
 
-// Add a print button for the current view
-var printBtn = document.createElement('button');
-printBtn.textContent = 'Print Report';
-printBtn.onclick = function() { window.print(); };
+| Feature | URL Scheme |
+|---------|-----------|
+| Email | `mailto:email?subject=...&body=...` |
+| Phone call | `tel:number` |
+| SMS | `sms:number?body=...` |
+| WhatsApp | `https://wa.me/number?text=...` |
+| Google Maps | `https://google.com/maps?q=lat,lng` |
+| Google Calendar | `https://calendar.google.com/calendar/render?action=TEMPLATE&text=...` |
 
-### Text-to-Speech (Read Aloud)
+Also available: Copy to clipboard, CSV download, Print (`window.print()`), Text-to-speech (`speechSynthesis`), Native share (`navigator.share`).
 
-// Speak vehicle count for hands-free use
-function speak(text) {
-    var utterance = new SpeechSynthesisUtterance(text);
-    window.speechSynthesis.speak(utterance);
-}
-speak('You have ' + devices.length + ' vehicles in your fleet');
-
-### Share via Native Share (Mobile)
-
-// Use Web Share API on mobile devices
-if (navigator.share) {
-    navigator.share({
-        title: 'Fleet Report',
-        text: 'Total vehicles: ' + devices.length,
-        url: window.location.href
-    });
-}
+**Free weather API (no key):** `https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current_weather=true`
 
 ## Critical Mistakes to Avoid
 
