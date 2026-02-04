@@ -282,7 +282,7 @@
         }
 
         function runTest1Ace(api) {
-            var question = 'How many vehicles are in my fleet?';
+            var question = 'How many vehicles are in my fleet? Return a single column named vehicle_count.';
             var start = Date.now();
 
             aceQuery(api, question, 't1', function(res) {
@@ -313,9 +313,8 @@
                 var count = '--';
                 if (parsed && parsed.length > 0) {
                     var row = parsed[0];
-                    count = row.count || row.Count || row.vehicle_count || row.VehicleCount ||
-                            row.NumberOfActiveVehicles || row.NumberOfVehicles || row.total ||
-                            row[Object.keys(row)[0]] || '--';
+                    // We asked for 'vehicle_count' column
+                    count = row.vehicle_count || row[Object.keys(row)[0]] || '--';
                 }
                 document.getElementById('t1-ace-status').textContent = count + ' vehicles';
                 document.getElementById('t1-ace-time').textContent = Math.round(elapsed / 1000) + 's';
@@ -372,7 +371,7 @@
         }
 
         function runTest2Ace(api) {
-            var question = 'What is the most recent trip in my fleet? Give me the device name and end time.';
+            var question = 'What is the most recent trip in my fleet? Return columns: device_name, trip_end_time. Use UTC timezone.';
 
             aceQuery(api, question, 't2', function(res) {
                 debug('t2-debug', '=== ACE IDs (for debugging) ===');
@@ -399,8 +398,9 @@
 
                 if (parsed && parsed.length > 0) {
                     var d = parsed[0];
-                    var name = d.device_name || d.DeviceName || d.vehicleName || 'Unknown';
-                    var timeStr = d.end_time || d.TripEndDateTime || d.endTime || 'Unknown';
+                    // We asked for 'device_name' and 'trip_end_time' columns
+                    var name = d.device_name || 'Unknown';
+                    var timeStr = d.trip_end_time || 'Unknown';
                     var deviceTz = d.DeviceTimeZoneId || null;
 
                     // Ace returns device local time, not UTC - display as-is with timezone note
@@ -498,7 +498,7 @@
             var todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
             var yesterdayStart = new Date(todayUTC.getTime() - 24 * 60 * 60 * 1000);
             var yesterdayStr = yesterdayStart.toISOString().split('T')[0];
-            var question = 'What are the top 3 vehicles by total distance traveled on ' + yesterdayStr + '? Show device_name and miles.';
+            var question = 'What are the top 3 vehicles by total distance traveled on ' + yesterdayStr + '? Return columns: device_name, miles';
 
             var start = Date.now();
 
@@ -540,8 +540,9 @@
                 if (parsed && parsed.length > 0) {
                     var aceTop3 = [];
                     parsed.forEach(function(row, i) {
-                        var name = row.device_name || row.DeviceName || 'Unknown';
-                        var dist = row.miles || row.Miles || row.Miles_mi || row.TotalDistance_Miles || row.Distance_mi || row.total_miles || '?';
+                        // We asked for 'device_name' and 'miles' columns
+                        var name = row.device_name || 'Unknown';
+                        var dist = row.miles || '?';
                         result('t3-ace-result', (i + 1) + '. ' + name + ': ' + dist + ' mi');
                         aceTop3.push({ name: name, miles: dist });
                     });

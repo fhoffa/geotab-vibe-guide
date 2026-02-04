@@ -120,6 +120,22 @@ new Date(timeStr.replace(' ', 'T') + 'Z')
 
 ## Question Phrasing
 
+**Specify exact column names** (best practice):
+```
+❌ "What are the top 3 vehicles by distance?"
+✅ "What are the top 3 vehicles by distance? Return columns: device_name, miles"
+```
+
+This ensures consistent column names in the response, making parsing reliable.
+
+**Specify timezone for timestamps:**
+```
+❌ "What is the most recent trip?"
+✅ "What is the most recent trip? Return columns: device_name, trip_end_time. Use UTC timezone."
+```
+
+By default, Ace may return times in device-local timezone. Specify UTC for consistent comparison.
+
 **Be explicit with dates:**
 ```
 ❌ "trips last month"

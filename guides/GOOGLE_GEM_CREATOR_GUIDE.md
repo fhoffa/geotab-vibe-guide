@@ -417,12 +417,12 @@ function pollForResults(api, chatId, messageGroupId, onComplete, onError) {
 
 ```javascript
 // In your initialize or focus function:
-askAce(api, "What are my top 3 vehicles by distance this month?",
+// BEST PRACTICE: Specify exact column names and timezone
+askAce(api, "What are my top 3 vehicles by distance this month? Return columns: device_name, miles",
     function(result) {
         console.log("Data:", result.data);
-        console.log("Reasoning:", result.reasoning);
-        // result.data is an array of objects with the answer
-        // result.reasoning explains how Ace arrived at the answer
+        // result.data is an array with YOUR specified columns
+        // e.g., [{ device_name: "Truck-1", miles: 2221 }, ...]
     },
     function(error) {
         console.error("Ace error:", error);
@@ -430,14 +430,33 @@ askAce(api, "What are my top 3 vehicles by distance this month?",
 );
 ```
 
+### Ace Query Best Practices
+
+**Specify column names:** Ace uses different names each time. Be explicit:
+```
+❌ "top 3 vehicles by distance"
+✅ "top 3 vehicles by distance? Return columns: device_name, miles"
+```
+
+**Specify timezone for timestamps:**
+```
+❌ "most recent trip?"
+✅ "most recent trip? Return columns: device_name, trip_end_time. Use UTC timezone."
+```
+
+**Use explicit dates:**
+```
+❌ "trips last month"
+✅ "trips from 2026-01-01 to 2026-01-31"
+```
+
 ### Ace Response Structure
 
 ```javascript
-// result.data (preview_array) - example for "top vehicles by distance":
+// result.data (preview_array) - with specified columns:
 [
-    { "Vehicle": "Demo-42", "Distance (mi)": 2221 },
-    { "Vehicle": "Demo-41", "Distance (mi)": 2150 },
-    { "Vehicle": "Demo-45", "Distance (mi)": 2082 }
+    { "device_name": "Demo-42", "miles": 2221 },
+    { "device_name": "Demo-41", "miles": 2150 }
 ]
 
 // result.reasoning - Ace's explanation:
