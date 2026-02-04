@@ -265,7 +265,7 @@ These organizations won at Geotab Connect 2025:
 
 ---
 
-## What Developers Say
+## What Partners Say
 
 > "Different fleets have different needs. The beauty of the Marketplace is making sure that every end-user has the best customer experience possible."
 > — **Max Hillman, CEO, SureCam**
@@ -294,7 +294,7 @@ Your solution could reach these organizations:
 
 ---
 
-## Results Customers Have Achieved
+## Results Partners Have Achieved
 
 | Customer | Result |
 |----------|--------|
