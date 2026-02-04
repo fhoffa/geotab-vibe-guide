@@ -79,9 +79,12 @@ geotab-vibe-guide/
 The `sandbox/` folder is gitignored, so your experiments won't interfere with git operations or accidentally get committed.
 
 ```bash
-# Create your sandbox
+# Create your sandbox folder (it's gitignored!)
 mkdir sandbox
 ```
+
+> [!TIP]
+> **Safety First:** The `sandbox/` folder is already included in `.gitignore`. This means you can create as many files and experiment as much as you want without accidentally polluting the repository or committing your private credentials.
 
 **Folder structure suggestion for your projects:**
 
@@ -100,7 +103,7 @@ sandbox/
 
 ## What to Test
 
-### Path A: No-Code Add-In (5 min)
+### Path A: No-Code Add-In (5 min) - **Recommended for ALL!**
 **Test the Google Gem experience:**
 1. Read `guides/GOOGLE_GEM_USER_GUIDE.md`
 2. Try the Gem at https://gemini.google.com/gem/geotab-add-in-architect
