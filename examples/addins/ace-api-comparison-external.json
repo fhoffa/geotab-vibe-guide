@@ -1,0 +1,14 @@
+{
+  "name": "Ace vs API Comparison v3.0",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "3.0",
+  "items": [
+    {
+      "url": "https://YOUR-HOSTING-URL/ace-api-comparison.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "en": "Ace vs API v3.0"
+      }
+    }
+  ]
+}
