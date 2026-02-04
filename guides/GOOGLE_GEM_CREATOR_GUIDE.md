@@ -220,6 +220,70 @@ api.call("Set", {
 - FuelTransaction
 - StatusData
 
+### Advanced Get Parameters
+
+The `Get` method supports additional parameters for efficient queries:
+
+| Parameter | Description | Status |
+|-----------|-------------|--------|
+| `resultsLimit` | Maximum entities to return (max 5000) | Stable |
+| `search` | Filter by property values | Stable |
+| `sort` | Sort results by property | Beta |
+| `propertySelector` | Limit which properties returned | Beta |
+
+**Limit Results:**
+api.call("Get", {
+    typeName: "Device",
+    resultsLimit: 10  // Only return first 10 devices
+}, callback, errorCallback);
+
+**Count Entities Efficiently (use GetCountOf instead of Get):**
+api.call("GetCountOf", { typeName: "Device" }, function(count) {
+    console.log("Total devices: " + count);
+});
+
+**Sort Results (Beta):**
+api.call("Get", {
+    typeName: "Trip",
+    search: { fromDate: fromDate.toISOString(), toDate: toDate.toISOString() },
+    sort: { sortBy: "distance", sortDirection: "desc" },
+    resultsLimit: 10
+}, callback, errorCallback);
+
+**Property Selector (Beta) - reduce data transfer:**
+api.call("Get", {
+    typeName: "Trip",
+    search: { fromDate: fromDate.toISOString(), toDate: toDate.toISOString() },
+    propertySelector: {
+        fields: ["device", "distance", "stop"],
+        isIncluded: true  // Only return these fields
+    }
+}, callback, errorCallback);
+
+**IMPORTANT:** Distance from the API (`trip.distance`) is in **kilometers**. Convert: `km * 0.621371 = miles`
+
+### Trips-First Pattern (Optimization)
+
+For aggregations like "top vehicles by distance", get trips first and aggregate in memory:
+
+```javascript
+// ❌ Slow: Query each device individually (5000+ calls!)
+// ✅ Fast: Get all trips, aggregate by device (1 call)
+api.call("Get", {
+    typeName: "Trip",
+    search: { fromDate: yesterday, toDate: today },
+    resultsLimit: 50000
+}, function(trips) {
+    var byDevice = {};
+    trips.forEach(function(t) {
+        var id = t.device.id;
+        if (!byDevice[id]) byDevice[id] = 0;
+        byDevice[id] += t.distance || 0;
+    });
+    // Sort Object.keys(byDevice) by distance to get top N
+});
+```
+
 ## Geotab Ace (AI-Powered Analysis)
 
 Ace is Geotab's AI that answers complex fleet questions in natural language. It works from Add-Ins but requires async polling.
@@ -228,7 +292,15 @@ Ace is Geotab's AI that answers complex fleet questions in natural language. It 
 
 ### When to Use Ace vs Direct API
 
-**Performance (real test data):** Direct API ~400ms vs Ace ~70 seconds (175x difference)
+**Performance comparison (real test data):**
+
+| Metric | Direct API | Ace AI |
+|--------|-----------|--------|
+| **Speed** | ~200-500ms | ~12-60 seconds |
+| **Data freshness** | Real-time | ~20 min to hours behind |
+| **Result limit** | 5000 per call | 10 in preview_array |
+| **Device filter** | All devices | Only IsTracked=TRUE |
+| **Date handling** | UTC | Device local timezone |
 
 | Use Ace For | Use Direct API For |
 |-------------|-------------------|
@@ -237,7 +309,21 @@ Ace is Geotab's AI that answers complex fleet questions in natural language. It 
 | "Fleet efficiency trends" | Real-time device info |
 | Complex analysis questions | Simple data lookups |
 
-> **Live demo:** The `ace-vs-api-comparison` Add-In shows this difference in real-time.
+> **Live demo:** The `ace-vs-api-comparison` Add-In shows this difference: [GitHub Pages](https://fhoffa.github.io/geotab-vibe-guide/examples/addins/ace-api-comparison.html)
+
+### Why Counts Differ
+
+GetCountOf returns ALL devices (6538), while Ace filters to tracked active devices (3161):
+```sql
+-- Ace always applies:
+WHERE IsTracked = TRUE AND Device_ActiveTo >= CURRENT_DATETIME()
+```
+
+### API Limits to Know
+
+- **5000 results max** per API call (use pagination for more)
+- **Ace preview_array** returns only 10 rows (use download_url for full data)
+- **Rate limiting:** Space Ace queries 8+ seconds apart
 
 ### Ace API Pattern (Verified Working)
 
@@ -249,6 +335,8 @@ Ace is Geotab's AI that answers complex fleet questions in natural language. It 
 **Field naming**: Uses underscores (`chat_id`), not camelCase (`chatId`)
 
 ### Complete Ace Implementation
+
+**CRITICAL: `customerData: true`** - Every GetAceResults call MUST include this parameter or Ace returns empty data!
 
 ```javascript
 // Helper to extract data from Ace response
@@ -264,6 +352,7 @@ function askAce(api, question, onComplete, onError) {
     api.call("GetAceResults", {
         serviceName: "dna-planet-orchestration",
         functionName: "create-chat",
+        customerData: true,  // REQUIRED!
         functionParameters: {}
     }, function(response) {
         var data = getAceData(response);
@@ -277,6 +366,7 @@ function askAce(api, question, onComplete, onError) {
         api.call("GetAceResults", {
             serviceName: "dna-planet-orchestration",
             functionName: "send-prompt",
+            customerData: true,  // REQUIRED!
             functionParameters: {
                 chat_id: chatId,
                 prompt: question
@@ -304,6 +394,7 @@ function pollForResults(api, chatId, messageGroupId, onComplete, onError) {
     api.call("GetAceResults", {
         serviceName: "dna-planet-orchestration",
         functionName: "get-message-group",  // NOT "get-status"!
+        customerData: true,  // REQUIRED!
         functionParameters: {
             chat_id: chatId,
             message_group_id: messageGroupId
@@ -349,12 +440,12 @@ function pollForResults(api, chatId, messageGroupId, onComplete, onError) {
 
 ```javascript
 // In your initialize or focus function:
-askAce(api, "What are my top 3 vehicles by distance this month?",
+// BEST PRACTICE: Specify exact column names and timezone
+askAce(api, "What are my top 3 vehicles by distance this month? Return columns: device_name, miles",
     function(result) {
         console.log("Data:", result.data);
-        console.log("Reasoning:", result.reasoning);
-        // result.data is an array of objects with the answer
-        // result.reasoning explains how Ace arrived at the answer
+        // result.data is an array with YOUR specified columns
+        // e.g., [{ device_name: "Truck-1", miles: 2221 }, ...]
     },
     function(error) {
         console.error("Ace error:", error);
@@ -362,14 +453,41 @@ askAce(api, "What are my top 3 vehicles by distance this month?",
 );
 ```
 
+### Ace Query Best Practices
+
+**Specify column names:** Ace doesn't always honor them, but it helps:
+```
+❌ "top 3 vehicles by distance"
+✅ "top 3 vehicles by distance? Return columns: device_name, miles"
+```
+
+**Use column position, not names:** Ace doesn't honor requested names, but `columns` tells you what it used:
+```javascript
+var cols = result.columns;  // e.g., ["DeviceName", "miles"]
+var row = result.data[0];
+var name = row[cols[0]];    // First column = device
+var dist = row[cols[1]];    // Second column = value
+```
+
+**Specify timezone for timestamps:**
+```
+❌ "most recent trip?"
+✅ "most recent trip? Return columns: device_name, trip_end_time. Use UTC timezone."
+```
+
+**Use explicit dates:**
+```
+❌ "trips last month"
+✅ "trips from 2026-01-01 to 2026-01-31"
+```
+
 ### Ace Response Structure
 
 ```javascript
-// result.data (preview_array) - example for "top vehicles by distance":
+// result.data (preview_array) - with specified columns:
 [
-    { "Vehicle": "Demo-42", "Distance (mi)": 2221 },
-    { "Vehicle": "Demo-41", "Distance (mi)": 2150 },
-    { "Vehicle": "Demo-45", "Distance (mi)": 2082 }
+    { "device_name": "Demo-42", "miles": 2221 },
+    { "device_name": "Demo-41", "miles": 2150 }
 ]
 
 // result.reasoning - Ace's explanation:
@@ -380,11 +498,19 @@ askAce(api, "What are my top 3 vehicles by distance this month?",
 
 | Mistake | Problem | Solution |
 |---------|---------|----------|
+| Missing `customerData: true` | Empty data returned | Add to ALL GetAceResults calls |
 | Using `get-status` | 404 errors | Use `get-message-group` |
 | Using `chatId` | Undefined values | Use `chat_id` (underscore) |
 | Polling immediately | Rate limits (429) | Wait 10s before first poll |
 | Polling too fast | Rate limits | Poll every 8 seconds |
 | Expecting real-time data | Stale results | Ace data is 2-24h old |
+
+### Debugging External Add-Ins
+
+**HTML not updating after deploy?** MyGeotab caches externally-hosted HTML. Add a query parameter to force reload:
+- Change URL in your Add-In config from `https://example.github.io/addin.html` to `https://example.github.io/addin.html?v=2`
+- Increment the parameter (`?v=3`, `?v=4`) each time you deploy a new version
+- This "cache-busting" trick forces MyGeotab to fetch fresh HTML
 
 ## Navigating to MyGeotab Pages (Clickable Links)
 

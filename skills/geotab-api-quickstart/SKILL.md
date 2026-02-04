@@ -70,6 +70,19 @@ print("Connected!")
 
 ## Fetching Data
 
+### Count Entities (Efficient)
+
+```python
+# GetCountOf returns just the count - no data transfer
+device_count = api.call('GetCountOf', typeName='Device')
+print(f"Fleet has {device_count} vehicles")
+
+trip_count = api.call('GetCountOf', typeName='Trip')
+zone_count = api.call('GetCountOf', typeName='Zone')
+```
+
+**Note:** `GetCountOf` includes inactive entities. Use `api.get()` with filters for active-only counts.
+
 ### Get All Vehicles
 
 ```python
@@ -162,6 +175,129 @@ groups = api.get('Group', search={'name': 'North Region'})
 if groups:
     group_id = groups[0]['id']
     devices = api.get('Device', search={'groups': [{'id': group_id}]})
+```
+
+## Advanced Get Parameters
+
+The `Get` method supports additional parameters for efficient queries:
+
+| Parameter | Description | Status |
+|-----------|-------------|--------|
+| `resultsLimit` | Maximum number of entities to return | Stable |
+| `search` | Filter entities by property values | Stable |
+| `sort` | Sort results by property | Beta |
+| `propertySelector` | Limit which properties are returned | Beta |
+
+### Limit Results
+
+```python
+# Get only the first 10 devices (useful for testing/previews)
+devices = api.get('Device', resultsLimit=10)
+
+# Get top 5 recent trips
+trips = api.get('Trip',
+    fromDate=datetime.now() - timedelta(days=7),
+    resultsLimit=5
+)
+```
+
+**Note:** The API has a maximum limit of 5000 results per call. For larger datasets, use pagination with date ranges.
+
+### Search (Filter by Properties)
+
+```python
+# Search by name
+devices = api.get('Device', search={'name': 'Truck-101'})
+
+# Search drivers only
+drivers = api.get('User', search={'isDriver': True})
+
+# Search by multiple criteria
+devices = api.get('Device', search={
+    'name': '%Truck%',  # Wildcard matching
+    'groups': [{'id': 'GroupCompanyId'}]
+})
+```
+
+### Sort Results (Beta)
+
+```python
+# Sort trips by distance (descending = highest first)
+# Note: Sort is in Beta - check SDK docs for supported properties
+trips = api.call('Get',
+    typeName='Trip',
+    search={
+        'fromDate': (datetime.now() - timedelta(days=1)).isoformat(),
+        'toDate': datetime.now().isoformat()
+    },
+    sort={'sortBy': 'distance', 'sortDirection': 'desc'},
+    resultsLimit=10
+)
+```
+
+### Property Selector (Beta)
+
+```python
+# Only return specific properties (reduces data transfer)
+# Note: propertySelector is in Beta
+devices = api.call('Get',
+    typeName='Device',
+    propertySelector={
+        'fields': ['id', 'name', 'serialNumber'],
+        'isIncluded': True
+    }
+)
+
+# Exclude large properties you don't need
+trips = api.call('Get',
+    typeName='Trip',
+    search={
+        'fromDate': (datetime.now() - timedelta(days=1)).isoformat(),
+        'toDate': datetime.now().isoformat()
+    },
+    propertySelector={
+        'fields': ['speedProfile', 'idleTimeProfile'],
+        'isIncluded': False  # Exclude these large fields
+    }
+)
+```
+
+### Combined Example: Top 3 Vehicles by Distance
+
+```python
+from datetime import datetime, timedelta, timezone
+
+# Get yesterday's date range (UTC)
+today_utc = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+yesterday_start = today_utc - timedelta(days=1)
+yesterday_end = today_utc
+
+# Get all trips from yesterday with minimal properties
+trips = api.call('Get',
+    typeName='Trip',
+    search={
+        'fromDate': yesterday_start.isoformat(),
+        'toDate': yesterday_end.isoformat()
+    },
+    propertySelector={
+        'fields': ['device', 'distance'],
+        'isIncluded': True
+    }
+)
+
+# Aggregate distance by device
+from collections import defaultdict
+distance_by_device = defaultdict(float)
+for trip in trips:
+    device_id = trip['device']['id']
+    distance_by_device[device_id] += trip.get('distance', 0)
+
+# Get top 3
+top_3 = sorted(distance_by_device.items(), key=lambda x: x[1], reverse=True)[:3]
+
+for device_id, km in top_3:
+    miles = km * 0.621371  # trip.distance is already in KM
+    print(f"Device {device_id}: {miles:.1f} miles")
 ```
 
 ## Error Handling
@@ -269,7 +405,7 @@ print("=== Fleet Summary ===")
 print(f"Vehicles: {len(devices)}")
 print(f"Drivers: {len(drivers)}")
 print(f"Trips (7 days): {len(trips)}")
-print(f"Distance (7 days): {total_distance / 1000:.1f} km")
+print(f"Distance (7 days): {total_distance:.1f} km")  # trip.distance is already in KM
 ```
 
 ## Common Mistakes

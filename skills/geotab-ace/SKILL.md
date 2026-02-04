@@ -20,8 +20,8 @@ Geotab Ace is an AI-powered query interface that lets you ask natural language q
 | Metric | Direct API | Ace AI |
 |--------|-----------|--------|
 | **Speed** | 300-500ms | 30-90 seconds |
-| **Data freshness** | Real-time | 2-24 hours behind |
-| **Query type** | Structured (Get/Set) | Natural language |
+| **Data freshness** | Real-time | ~20 min to hours behind |
+| **Date handling** | UTC | Device local timezone |
 | **Best for** | Live data, writes, simple lookups | Trends, insights, complex aggregations |
 
 ### Use Direct API When:
@@ -29,6 +29,33 @@ Geotab Ace is an AI-powered query interface that lets you ask natural language q
 - You're writing/updating data (Set, Add, Remove)
 - You need specific records by ID
 - Speed is critical
+
+### API Optimization: Trips-First Pattern
+
+For aggregations like "top vehicles by distance", don't query devices then trips per device:
+
+```javascript
+// ❌ Slow: 5000+ API calls (one per device)
+api.call('Get', { typeName: 'Device' }, function(devices) {
+    devices.forEach(function(d) {
+        api.call('Get', { typeName: 'Trip', search: { deviceSearch: { id: d.id } } }, ...);
+    });
+});
+
+// ✅ Fast: 1 API call, aggregate in memory
+api.call('Get', {
+    typeName: 'Trip',
+    search: { fromDate: yesterday, toDate: today },
+    resultsLimit: 50000
+}, function(trips) {
+    var byDevice = {};
+    trips.forEach(function(t) {
+        if (!byDevice[t.device.id]) byDevice[t.device.id] = 0;
+        byDevice[t.device.id] += t.distance || 0;
+    });
+    // Sort and get top N
+});
+```
 
 ### Use Ace When:
 - You want trend analysis ("Which vehicles drove most last month?")
@@ -47,6 +74,17 @@ Ace queries are **asynchronous** and require three steps:
 ```
 
 All calls use `GetAceResults` with `serviceName: 'dna-planet-orchestration'`.
+
+**CRITICAL: `customerData: true`** - Every GetAceResults call MUST include `customerData: true` or Ace will return empty data:
+
+```javascript
+api.call('GetAceResults', {
+    serviceName: 'dna-planet-orchestration',
+    functionName: 'create-chat',
+    customerData: true,  // REQUIRED! Without this, Ace returns no data
+    functionParameters: {}
+}, successCallback, errorCallback);
+```
 
 ### Response Structure
 
@@ -109,6 +147,31 @@ new Date(timeStr.replace(' ', 'T') + 'Z')
 
 ## Question Phrasing
 
+**Specify exact column names** (best practice):
+```
+❌ "What are the top 3 vehicles by distance?"
+✅ "What are the top 3 vehicles by distance? Return columns: device_name, miles"
+```
+
+Ace doesn't always honor requested names, but the `columns` array tells you what it actually used. **Use column position** instead of names:
+
+```javascript
+var cols = res.columns;  // e.g., ["DeviceName", "Trip_End_Time_UTC"]
+var row = parsed[0];
+var name = row[cols[0]];  // First column = device
+var time = row[cols[1]];  // Second column = time
+```
+
+This works regardless of what Ace names the columns.
+
+**Specify timezone for timestamps:**
+```
+❌ "What is the most recent trip?"
+✅ "What is the most recent trip? Return columns: device_name, trip_end_time. Use UTC timezone."
+```
+
+By default, Ace may return times in device-local timezone. Specify UTC for consistent comparison.
+
 **Be explicit with dates:**
 ```
 ❌ "trips last month"
@@ -122,20 +185,48 @@ new Date(timeStr.replace(' ', 'T') + 'Z')
 ```
 
 **Note:** Ace results may differ from direct API due to:
+- **Timezone:** Ace uses `Local_Date` (device timezone), API uses UTC. A "yesterday" query can return completely different date ranges!
 - Different data sources (BigQuery vs live)
-- Different aggregation logic
-- "Active" vs "all" device filtering
+- "Active" vs "all" device filtering (Ace filters `IsTracked=TRUE`)
+
+## Why Counts Differ: API vs Ace
+
+| Method | Count | What's Included |
+|--------|-------|-----------------|
+| `GetCountOf Device` | 6538 | ALL devices (active + inactive) |
+| Ace "How many vehicles?" | 3161 | Only tracked, active devices |
+
+**Ace always applies these filters:**
+```sql
+WHERE IsTracked = TRUE
+  AND Device_ActiveTo >= CURRENT_DATETIME()
+```
+
+This is usually what you want for analysis (ignore test devices, retired vehicles).
+
+## Ace BigQuery Tables
+
+Ace queries these pre-built tables (from actual SQL we've observed):
+
+| Table | Use Case |
+|-------|----------|
+| `LatestVehicleMetadata` | Device info with IsTracked filter |
+| `Trip` | Trip data with TripStartDateTime, TripEndDateTime |
+| `VehicleKPI_Daily` | Pre-aggregated daily stats (faster for distance queries) |
+
+**Device timezone matters:** Ace uses `Local_Date` and `DeviceTimeZoneId` for daily aggregations. A "yesterday" query respects each device's timezone, not UTC.
 
 ## Data Freshness
 
-- Typical lag: 2-24 hours behind real-time
+- Typical lag: **~20 minutes to a few hours** behind real-time (can be fresher than expected!)
 - New demo accounts: wait ~1 day before Ace has data
-- Don't use Ace for "what's happening right now" queries
+- For "right now" queries, use direct API instead
 
 ## Common Issues
 
 | Issue | Cause & Fix |
 |-------|-------------|
+| Empty data / preview_array | Missing `customerData: true` in GetAceResults call - add it! |
 | No chat_id | Ace not enabled (Admin → Beta Features), or rate limited - retry |
 | Query times out | Complex queries take 60-90s - simplify or increase timeout |
 | Empty data array | Question too vague, no data for period, or new account |
