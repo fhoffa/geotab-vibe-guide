@@ -260,7 +260,7 @@ api.call("Get", {
     }
 }, callback, errorCallback);
 
-**IMPORTANT:** Distance from the API is in meters. Convert: `(meters / 1000) * 0.621371 = miles`
+**IMPORTANT:** Distance from the API (`trip.distance`) is in **kilometers**. Convert: `km * 0.621371 = miles`
 
 ## Geotab Ace (AI-Powered Analysis)
 

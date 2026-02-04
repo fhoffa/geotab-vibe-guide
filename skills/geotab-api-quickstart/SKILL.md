@@ -295,8 +295,8 @@ for trip in trips:
 # Get top 3
 top_3 = sorted(distance_by_device.items(), key=lambda x: x[1], reverse=True)[:3]
 
-for device_id, meters in top_3:
-    miles = (meters / 1000) * 0.621371
+for device_id, km in top_3:
+    miles = km * 0.621371  # trip.distance is already in KM
     print(f"Device {device_id}: {miles:.1f} miles")
 ```
 
@@ -405,7 +405,7 @@ print("=== Fleet Summary ===")
 print(f"Vehicles: {len(devices)}")
 print(f"Drivers: {len(drivers)}")
 print(f"Trips (7 days): {len(trips)}")
-print(f"Distance (7 days): {total_distance / 1000:.1f} km")
+print(f"Distance (7 days): {total_distance:.1f} km")  # trip.distance is already in KM
 ```
 
 ## Common Mistakes
