@@ -474,6 +474,13 @@ askAce(api, "What are my top 3 vehicles by distance this month? Return columns: 
 | Polling too fast | Rate limits | Poll every 8 seconds |
 | Expecting real-time data | Stale results | Ace data is 2-24h old |
 
+### Debugging External Add-Ins
+
+**HTML not updating after deploy?** MyGeotab caches externally-hosted HTML. Add a query parameter to force reload:
+- Change URL in your Add-In config from `https://example.github.io/addin.html` to `https://example.github.io/addin.html?v=2`
+- Increment the parameter (`?v=3`, `?v=4`) each time you deploy a new version
+- This "cache-busting" trick forces MyGeotab to fetch fresh HTML
+
 ## Navigating to MyGeotab Pages (Clickable Links)
 
 Add-Ins run inside MyGeotab's iframe. To make items clickable and navigate the parent MyGeotab window to a specific page, use `window.parent.location.hash`.

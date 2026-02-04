@@ -561,6 +561,12 @@ The AI will walk you through every step. When done, your URL will look like:
 - Wait 2-3 minutes after pushing changes
 - If deployment takes too long, check GitHub Actions at `https://github.com/YOUR-USERNAME/YOUR-REPO/actions` to see if GitHub is being slow
 
+**HTML not updating after deploy?**
+- MyGeotab caches externally-hosted HTML. Add a query parameter to force reload:
+  - Change URL from `https://example.github.io/addin.html` to `https://example.github.io/addin.html?v=2`
+  - Increment the parameter (`?v=3`, `?v=4`) each time you need a fresh version
+- This is the `?a=1` trick - the parameter name doesn't matter, just needs to change
+
 **Data not loading?**
 - Open browser console (F12) to see errors
 - Check that `callback()` is called in initialize
