@@ -438,11 +438,12 @@ askAce(api, "What are my top 3 vehicles by distance this month? Return columns: 
 ✅ "top 3 vehicles by distance? Return columns: device_name, miles"
 ```
 
-**Handle column name variants:** Ace uses BigQuery column names that may differ:
+**Use column position, not names:** Ace doesn't honor requested names, but `columns` tells you what it used:
 ```javascript
-// Always check multiple variants
-var name = row.device_name || row.DeviceName || 'Unknown';
-var time = row.trip_end_time || row.Trip_End_Time_UTC || 'Unknown';
+var cols = result.columns;  // e.g., ["DeviceName", "miles"]
+var row = result.data[0];
+var name = row[cols[0]];    // First column = device
+var dist = row[cols[1]];    // Second column = value
 ```
 
 **Specify timezone for timestamps:**

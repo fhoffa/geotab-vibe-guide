@@ -126,16 +126,16 @@ new Date(timeStr.replace(' ', 'T') + 'Z')
 ✅ "What are the top 3 vehicles by distance? Return columns: device_name, miles"
 ```
 
-This helps but Ace doesn't always honor requested names. Common fields Ace uses:
-- `DeviceName` (not `device_name`) - from BigQuery tables
-- `Trip_End_Time_UTC` (not `trip_end_time`)
-- `miles` (usually honored when requested)
+Ace doesn't always honor requested names, but the `columns` array tells you what it actually used. **Use column position** instead of names:
 
-**Always check multiple variants** in your parsing code:
 ```javascript
-var name = row.device_name || row.DeviceName || 'Unknown';
-var time = row.trip_end_time || row.Trip_End_Time_UTC || 'Unknown';
+var cols = res.columns;  // e.g., ["DeviceName", "Trip_End_Time_UTC"]
+var row = parsed[0];
+var name = row[cols[0]];  // First column = device
+var time = row[cols[1]];  // Second column = time
 ```
+
+This works regardless of what Ace names the columns.
 
 **Specify timezone for timestamps:**
 ```
