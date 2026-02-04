@@ -146,18 +146,18 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
 | `Rule` | Exception rules | ✅ Yes | Triggers alerts on conditions |
-| `Condition` | Rule conditions | ✅ Yes | Part of Rule definition |
+| `Condition` | Rule conditions | ✅ Yes | ⚠️ Get not supported; access via Rule entity |
 | `ExceptionEvent` | Rule violations | ❌ Read-only | Generated when rules trigger |
 | `DistributionList` | Notification recipients | ✅ Yes | Email/SMS alert lists |
 
 ### Diagnostics & Faults
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `Diagnostic` | Sensor/data definitions | ❌ Read-only | Metadata about readings |
+| `Diagnostic` | Sensor/data definitions | ❌ Read-only | Metadata about readings (65K+ types) |
 | `Controller` | ECU definitions | ❌ Read-only | Vehicle computer units |
 | `FaultData` | Engine fault codes | ❌ Read-only | DTC codes from vehicle |
 | `FailureMode` | Fault failure modes | ❌ Read-only | J1939 failure modes |
-| `FlashCode` | Flash codes | ❌ Read-only | Legacy diagnostic codes |
+| `FlashCode` | Flash codes | ❌ Read-only | ⚠️ Get not supported |
 
 ### Telematics Data (Read-Only)
 | Type | Description | Notes |
@@ -172,8 +172,8 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 |------|-------------|----------|-------|
 | `DVIRLog` | Driver vehicle inspection | ✅ Yes | Pre/post trip inspections |
 | `DutyStatusLog` | HOS duty status | ⚠️ Limited | ELD records |
-| `DutyStatusAvailability` | Available driving time | ❌ Read-only | Calculated from logs |
-| `DutyStatusViolation` | HOS violations | ❌ Read-only | Generated violations |
+| `DutyStatusAvailability` | Available driving time | ❌ Read-only | ⚠️ Requires `userSearch` parameter |
+| `DutyStatusViolation` | HOS violations | ❌ Read-only | ⚠️ Requires specific search params |
 | `DriverChange` | Driver identification | ❌ Read-only | Driver login events |
 
 ### Fuel
@@ -194,11 +194,13 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
 | `Audit` | Audit log entries | ❌ Read-only | System activity log |
-| `BinaryPayload` | Raw device data | ❌ Read-only | Binary telematics data |
+| `BinaryPayload` | Raw device data | ❌ Read-only | ⚠️ Get/GetCountOf not supported |
 | `DebugData` | Debug information | ❌ Read-only | Device diagnostics |
 | `DeviceShare` | Shared device access | ✅ Yes | Cross-database sharing |
 
 > **Note:** Writable types support `Add` and `Set` methods. Read-only types are telemetry or system-generated data.
+>
+> **Tested:** 28/33 entity types work with `Get`, 30/33 work with `GetCountOf`. See notes for types requiring special handling.
 
 ### Quick Reference (Most Common)
 

@@ -238,16 +238,16 @@ api.call("Set", {
 
 **Rules & Alerts:**
 - `Rule` - Exception rules (writable)
-- `Condition` - Rule conditions (writable)
+- `Condition` - Rule conditions (writable, but Get not supported - access via Rule)
 - `ExceptionEvent` - Rule violations (read-only)
 - `DistributionList` - Notification recipients (writable)
 
 **Diagnostics & Faults (Read-Only):**
-- `Diagnostic` - Sensor definitions
+- `Diagnostic` - Sensor definitions (65K+ types)
 - `Controller` - ECU definitions
 - `FaultData` - Engine fault codes
 - `FailureMode` - Fault failure modes
-- `FlashCode` - Legacy diagnostic codes
+- `FlashCode` - Legacy codes (Get not supported)
 
 **Telematics Data (Read-Only):**
 - `LogRecord` - GPS breadcrumbs
@@ -258,8 +258,8 @@ api.call("Set", {
 **Compliance/HOS:**
 - `DVIRLog` - Vehicle inspections (writable)
 - `DutyStatusLog` - HOS records (limited write)
-- `DutyStatusAvailability` - Available time (read-only)
-- `DutyStatusViolation` - HOS violations (read-only)
+- `DutyStatusAvailability` - Available time (requires userSearch param)
+- `DutyStatusViolation` - HOS violations (requires search params)
 - `DriverChange` - Driver ID events (read-only)
 
 **Fuel:**
@@ -274,9 +274,11 @@ api.call("Set", {
 
 **System:**
 - `Audit` - Activity log (read-only)
-- `BinaryPayload` - Raw data (read-only)
+- `BinaryPayload` - Raw data (Get not supported)
 - `DebugData` - Debug info (read-only)
 - `DeviceShare` - Shared access (writable)
+
+> **Tested:** 28/33 types work with Get, 30/33 with GetCountOf. Types marked with issues require special handling.
 
 ### Persistent Storage (AddInData)
 
