@@ -252,12 +252,12 @@ Analyze electric vehicle data (battery health, charging, range).
 
 ---
 
-### ✅ geotab-mcp-server
+### ✅ geotab-custom-mcp
 Build Model Context Protocol servers for conversational fleet access.
-- **Location:** `skills/geotab-mcp-server/SKILL.md`
+- **Location:** `skills/geotab-custom-mcp/SKILL.md`
 - **Description:** Build and extend MCP servers for Claude Desktop integration
 - **Use Cases:** Conversational fleet queries, custom tools, multi-account access
-- **Resources:** [MCP Guide](../guides/MCP_SERVER_GUIDE.md), [Demo Repo](https://github.com/fhoffa/geotab-ace-mcp-demo)
+- **Resources:** [MCP Guide](../guides/CUSTOM_MCP_GUIDE.md), [Demo Repo](https://github.com/fhoffa/geotab-ace-mcp-demo)
 
 ---
 
@@ -411,7 +411,7 @@ Use LLMs to generate insights from fleet data.
 **Goal:** Enable advanced integrations
 
 ### Phase 3: Innovation (Future)
-9. 💡 geotab-mcp-server
+9. 💡 geotab-custom-mcp
 10. 💡 geotab-ev-analysis
 11. 💡 geotab-ai-insights
 12. 💡 geotab-voice-interface

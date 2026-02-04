@@ -58,7 +58,7 @@ GEOTAB_SERVER=my.geotab.com
 
 For complex questions ("Which drivers need coaching?", "Fuel efficiency trend"), use **Geotab Ace** instead of direct API. Ace takes 10-60 seconds but provides AI-powered analysis.
 
-**MCP Integration:** For conversational fleet access via Claude Desktop, see [MCP_SERVER_GUIDE.md](./guides/MCP_SERVER_GUIDE.md)
+**MCP Integration:** For conversational fleet access via Claude Desktop, see [CUSTOM_MCP_GUIDE.md](./guides/CUSTOM_MCP_GUIDE.md)
 
 ## Critical Rules
 

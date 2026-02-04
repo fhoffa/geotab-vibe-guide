@@ -393,7 +393,7 @@ Setup (advanced):
 - "This is advanced - great hackathon project for experienced developers"
 - Don't demo live unless pre-configured - just show the concept
 
-> **Full guide:** [MCP_SERVER_GUIDE.md](../guides/MCP_SERVER_GUIDE.md)
+> **Full guide:** [CUSTOM_MCP_GUIDE.md](../guides/CUSTOM_MCP_GUIDE.md)
 
 ---
 
@@ -713,7 +713,7 @@ External:
 | Instant Start | [INSTANT_START_WITH_CLAUDE.md](../guides/INSTANT_START_WITH_CLAUDE.md) |
 | Antigravity IDE | [ANTIGRAVITY_QUICKSTART.md](../guides/ANTIGRAVITY_QUICKSTART.md) |
 | No-Code Add-Ins | [GOOGLE_GEM_USER_GUIDE.md](../guides/GOOGLE_GEM_USER_GUIDE.md) |
-| MCP Server Setup | [MCP_SERVER_GUIDE.md](../guides/MCP_SERVER_GUIDE.md) |
+| MCP Server Setup | [CUSTOM_MCP_GUIDE.md](../guides/CUSTOM_MCP_GUIDE.md) |
 | Agentic Systems | [AGENTIC_OVERVIEW.md](../guides/AGENTIC_OVERVIEW.md) |
 | Hackathon Ideas | [HACKATHON_IDEAS.md](../guides/HACKATHON_IDEAS.md) |
 | API Reference | [GEOTAB_API_REFERENCE.md](../guides/GEOTAB_API_REFERENCE.md) |

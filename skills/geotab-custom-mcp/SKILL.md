@@ -1,5 +1,5 @@
 ---
-name: geotab-mcp-server
+name: geotab-custom-mcp
 description: Build and extend MCP servers for conversational fleet management. Use this skill when setting up MCP integration with Claude Desktop, adding custom tools, or troubleshooting MCP configurations.
 license: Apache-2.0
 metadata:
@@ -7,7 +7,7 @@ metadata:
   version: "1.0"
 ---
 
-# Geotab MCP Server Skill
+# Geotab Custom MCP Server Skill
 
 ## When to Use This Skill
 
@@ -490,5 +490,5 @@ os.remove('cache.duckdb')
 
 - **Repository:** [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo)
 - **MCP Specification:** [modelcontextprotocol.io](https://modelcontextprotocol.io/)
-- **MCP Server Guide:** [guides/MCP_SERVER_GUIDE.md](../../guides/MCP_SERVER_GUIDE.md)
+- **MCP Server Guide:** [guides/CUSTOM_MCP_GUIDE.md](../../guides/CUSTOM_MCP_GUIDE.md)
 - **Geotab API Reference:** [geotab.github.io/sdk/software/api/reference/](https://geotab.github.io/sdk/software/api/reference/)

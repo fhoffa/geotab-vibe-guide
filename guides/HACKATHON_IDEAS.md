@@ -583,7 +583,7 @@ using GPT-4."
 ### Idea 8.3: Fleet MCP Server - Conversational Fleet Control
 **Concept:** Build a Model Context Protocol (MCP) server that lets AI assistants interact with Geotab fleets conversationally, with write-back capabilities.
 
-> **Start here:** [MCP Server Guide](./MCP_SERVER_GUIDE.md)
+> **Start here:** [MCP Server Guide](./CUSTOM_MCP_GUIDE.md)
 >
 > [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
 
@@ -643,7 +643,7 @@ to a channel when Claude detects anomalies in the data."
 
 **Resources:**
 - [geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo)
-- [MCP Server Guide](./MCP_SERVER_GUIDE.md)
+- [MCP Server Guide](./CUSTOM_MCP_GUIDE.md)
 - [MCP Specification](https://modelcontextprotocol.io/)
 
 ---
@@ -926,7 +926,7 @@ severe weather warnings? Reschedule their deliveries.'"
 - Your MCP: Local processing, custom tools, works with other MCPs
 - Composability: The whole is greater than the sum of parts
 
-> **Guide:** [MCP_SERVER_GUIDE.md](./MCP_SERVER_GUIDE.md) | **Skill:** [geotab-mcp-server](../skills/geotab-mcp-server/SKILL.md)
+> **Guide:** [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) | **Skill:** [geotab-custom-mcp](../skills/geotab-custom-mcp/SKILL.md)
 
 ---
 
