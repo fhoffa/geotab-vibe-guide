@@ -391,6 +391,32 @@ Use LLMs to generate insights from fleet data.
 
 ---
 
+## Architecture Improvements
+
+### 📋 Consolidate Skills into Single `geotab` Skill
+
+**Priority:** MEDIUM - Improves LLM usability
+
+Merge separate Geotab skills into one `skills/geotab/` folder with routing SKILL.md and `references/` subfolder.
+
+**Current:** Separate folders for api-quickstart, addins, zenith-styling, ace
+**Proposed:** Single `skills/geotab/` with `references/` containing all topic files
+
+**Benefits:**
+- Single skill for LLMs to load for all Geotab tasks
+- LLM navigates to specific references via clear headers
+- No duplication of common patterns (entity types, search syntax)
+- Cross-references are natural (e.g., speed data used by both Python API and JS Add-Ins)
+
+**Tasks:**
+- [ ] Create `skills/geotab/` folder structure
+- [ ] Create router SKILL.md that indexes all references
+- [ ] Move/consolidate content from existing skills
+- [ ] Update references in guides
+- [ ] Remove old skill folders
+
+---
+
 ## Implementation Priority
 
 ### Phase 1: Foundation (Hackathon Weekend)
