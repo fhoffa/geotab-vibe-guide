@@ -206,162 +206,39 @@ api.call("Get", {
 
 Common issues when building speeding dashboards and safety Add-Ins.
 
-### 8. Wrong Diagnostic IDs for Speed
+**Full reference:** See [SPEED_DATA.md](/skills/geotab-api-quickstart/references/SPEED_DATA.md) for complete patterns (Python + JavaScript).
 
-**Problem:** Speed data returns empty or 0
+### Quick Reference: Common Speed Data Mistakes
 
+**Wrong diagnostic ID:**
 ```javascript
 // ❌ Wrong - DiagnosticPostedSpeedId doesn't exist
-api.call("Get", {
-    typeName: "StatusData",
-    search: {
-        diagnosticSearch: { id: "DiagnosticPostedSpeedId" },  // WRONG!
-        fromDate: ex.activeFrom,
-        toDate: ex.activeTo
-    }
-});
+diagnosticSearch: { id: "DiagnosticPostedSpeedId" }
 
-// ✅ Correct diagnostic IDs for speed
-// Vehicle speed (GPS-based):
-diagnosticSearch: { id: "DiagnosticSpeedId" }
-
-// Posted road speed limit:
+// ✅ Correct
 diagnosticSearch: { id: "DiagnosticPostedRoadSpeedId" }
-
-// Engine-reported road speed:
-diagnosticSearch: { id: "DiagnosticEngineRoadSpeedId" }
 ```
 
-**All speed-related diagnostic IDs:**
-
-| Diagnostic ID | Description | Unit |
-|--------------|-------------|------|
-| `DiagnosticSpeedId` | GPS-based vehicle speed | km/h |
-| `DiagnosticPostedRoadSpeedId` | Posted road speed limit | km/h |
-| `DiagnosticEngineRoadSpeedId` | Engine-reported speed | km/h |
-| `DiagnosticEngineSpeedId` | Engine RPM | RPM |
-
-### 9. Time Window Too Narrow for StatusData
-
-**Problem:** Speeding exceptions can be very short (seconds), and StatusData may not have readings at those exact timestamps.
-
+**Time window too narrow:**
 ```javascript
-// ❌ Wrong - time window may be too narrow
-api.call("Get", {
-    typeName: "StatusData",
-    search: {
-        deviceSearch: { id: ex.device.id },
-        diagnosticSearch: { id: "DiagnosticSpeedId" },
-        fromDate: ex.activeFrom,  // Exact exception start
-        toDate: ex.activeTo       // Exact exception end
-    }
-});
+// ❌ Wrong - exact timestamps may have no data
+fromDate: ex.activeFrom, toDate: ex.activeTo
 
-// ✅ Correct - add 30-second buffer before and after
+// ✅ Correct - add 30-second buffer
 var startTime = new Date(ex.activeFrom);
-var endTime = new Date(ex.activeTo || ex.activeFrom);
 startTime.setSeconds(startTime.getSeconds() - 30);
-endTime.setSeconds(endTime.getSeconds() + 30);
-
-api.call("Get", {
-    typeName: "StatusData",
-    search: {
-        deviceSearch: { id: ex.device.id },
-        diagnosticSearch: { id: "DiagnosticSpeedId" },
-        fromDate: startTime.toISOString(),
-        toDate: endTime.toISOString()
-    }
-});
 ```
 
-### 10. ExceptionEvent.details May Be Undefined
-
-**Problem:** For speeding rules, `ExceptionEvent` can have a `details` object with `maxSpeed` and `speedLimit`, but it's not always populated (especially for recent events still being processed).
-
+**ExceptionEvent.details undefined:**
 ```javascript
-// ❌ Wrong - crashes if details is undefined
-card.innerHTML = "Top Speed: " + Math.round(ex.details.maxSpeed);
+// ❌ Wrong - crashes if details missing
+Math.round(ex.details.maxSpeed)
 
-// ✅ Correct - defensive null checks
-var topSpeed = (ex.details && ex.details.maxSpeed)
-    ? Math.round(ex.details.maxSpeed) : 0;
-var speedLimit = (ex.details && ex.details.speedLimit)
-    ? Math.round(ex.details.speedLimit) : 0;
-
-// ✅ Even better - fallback to StatusData if details missing
-if (ex.details && ex.details.maxSpeed) {
-    displaySpeed(ex.details.maxSpeed, ex.details.speedLimit);
-} else {
-    // Query StatusData as fallback
-    fetchSpeedFromStatusData(api, ex);
-}
+// ✅ Correct - defensive check
+(ex.details && ex.details.maxSpeed) || 0
 ```
 
-### 11. Posted Speed Limit Shows 0 or N/A
-
-**Problem:** `DiagnosticPostedRoadSpeedId` returns 0 for some locations
-
-**Reason:** Not all road segments have posted speed limit data in Geotab's map database. Rural roads, private property, or certain regions may lack this data.
-
-**Solutions:**
-1. Display "N/A" instead of 0 when no limit data exists
-2. Fall back to rule threshold if available
-3. Clearly indicate when limit data is unavailable
-
-```javascript
-var limit = (limits && limits.length > 0) ? limits[0].data : 0;
-var limitDisplay = limit > 0 ? Math.round(limit) + " km/h" : "N/A";
-```
-
-### 12. Complete Pattern for Speeding Dashboard
-
-```javascript
-function fetchSpeedData(api, ex) {
-    // Add time buffer
-    var startTime = new Date(ex.activeFrom);
-    var endTime = new Date(ex.activeTo || ex.activeFrom);
-    startTime.setSeconds(startTime.getSeconds() - 30);
-    endTime.setSeconds(endTime.getSeconds() + 30);
-
-    api.multiCall([
-        ["Get", {
-            typeName: "StatusData",
-            search: {
-                deviceSearch: { id: ex.device.id },
-                diagnosticSearch: { id: "DiagnosticSpeedId" },
-                fromDate: startTime.toISOString(),
-                toDate: endTime.toISOString()
-            }
-        }],
-        ["Get", {
-            typeName: "StatusData",
-            search: {
-                deviceSearch: { id: ex.device.id },
-                diagnosticSearch: { id: "DiagnosticPostedRoadSpeedId" },
-                fromDate: startTime.toISOString(),
-                toDate: endTime.toISOString()
-            }
-        }]
-    ], function(results) {
-        var speeds = results[0] || [];
-        var limits = results[1] || [];
-
-        // Find max speed
-        var maxSpeed = 0;
-        speeds.forEach(function(s) {
-            if (s.data > maxSpeed) maxSpeed = s.data;
-        });
-
-        // Get posted limit (first reading in window)
-        var limit = (limits.length > 0) ? limits[0].data : 0;
-
-        displaySpeedData(ex.id, maxSpeed, limit);
-    }, function(error) {
-        console.error("Speed data error:", error);
-        displaySpeedError(ex.id);
-    });
-}
-```
+**Posted limit shows 0:** Not all roads have speed limit data. Display "N/A" when `limit === 0`.
 
 ---
 

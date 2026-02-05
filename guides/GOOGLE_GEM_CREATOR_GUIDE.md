@@ -269,9 +269,11 @@ api.call("Set", {
 
 **Telematics Data (Read-Only):**
 - `LogRecord` - GPS breadcrumbs
-- `StatusData` - Sensor readings
+- `StatusData` - Sensor readings (speed, fuel, temp, etc.)
 - `Trip` - Completed journeys
 - `DeviceStatusInfo` - Current vehicle state
+
+> **Speed Data Tip:** Use `DiagnosticSpeedId` for vehicle speed and `DiagnosticPostedRoadSpeedId` for posted limits. Add 30-second time buffers when querying. See [SPEED_DATA.md](/skills/geotab-api-quickstart/references/SPEED_DATA.md) for complete patterns.
 
 **Compliance/HOS:**
 - `DVIRLog` - Vehicle inspections (writable)
