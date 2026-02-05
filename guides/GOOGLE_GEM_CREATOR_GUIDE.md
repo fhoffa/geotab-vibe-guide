@@ -659,15 +659,43 @@ var dist = row[cols[1]];    // Second column = value
 
 ### Getting Full Results via CSV Download
 
-The `preview_array` only returns 10 rows. For full datasets, use `signed_urls` from the response - these are **CORS-approved for geotab.com origin** (embedded Add-Ins work directly):
+The `preview_array` only returns 10 rows. For full datasets, use `signed_urls` from the response.
+
+**Finding the CSV URL (Recursive Search):**
+Ace response schema is inconsistent - use recursive object-crawling to reliably find CSV URLs:
+
+```javascript
+function findCSVUrl(obj) {
+    if (typeof obj === 'string') {
+        if (obj.indexOf('https://') === 0 &&
+            (obj.indexOf('.csv') !== -1 || obj.indexOf('storage.googleapis.com') !== -1)) {
+            return obj;
+        }
+    }
+    if (obj && typeof obj === 'object') {
+        for (var key in obj) {
+            var found = findCSVUrl(obj[key]);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+// Usage:
+var csvUrl = findCSVUrl(messages);
+```
+
+**Fetching CSV Data (CORS-approved for geotab.com origin):**
 
 ```javascript
 // In your pollForResults success handler, after status === "DONE":
-var csvUrl = null;
+var csvUrl = findCSVUrl(messages);  // Use recursive finder
+
+// Or the direct approach if you know the location:
 Object.keys(messages).forEach(function(key) {
     var msg = messages[key];
     if (msg.signed_urls && msg.signed_urls.length > 0) {
-        csvUrl = msg.signed_urls[0];  // URL to full CSV data
+        csvUrl = msg.signed_urls[0];
     }
 });
 

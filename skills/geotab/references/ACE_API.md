@@ -110,6 +110,40 @@ Ace returns **only 10 rows** in `preview_array`. For complete results:
 - Download full results via `signed_urls` (see below)
 - Store large downloads in DuckDB for local querying (see [reference implementation](https://github.com/fhoffa/geotab-ace-mcp-demo))
 
+### Finding CSV URLs (Recursive Search)
+
+Ace response schema is inconsistent - the `signed_url` location varies across functions. Use recursive object-crawling to reliably find CSV URLs:
+
+```javascript
+/**
+ * Recursively search Ace response for CSV URLs
+ * Handles various response schemas from different Ace functions
+ */
+function findCSVUrl(obj) {
+    if (typeof obj === 'string') {
+        if (obj.indexOf('https://') === 0 &&
+            (obj.indexOf('.csv') !== -1 || obj.indexOf('storage.googleapis.com') !== -1)) {
+            return obj;
+        }
+    }
+    if (obj && typeof obj === 'object') {
+        for (var key in obj) {
+            var found = findCSVUrl(obj[key]);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+// Usage in poll handler:
+var csvUrl = findCSVUrl(messages);
+if (csvUrl) {
+    // Process CSV...
+}
+```
+
+This works regardless of where Ace places the URL in the response.
+
 ### Fetching Full CSV Data (CORS-Approved)
 
 The `signed_urls` in Ace responses are **CORS-approved for geotab.com origin** - embedded Add-Ins can fetch them directly:
@@ -143,7 +177,68 @@ if (csvUrl) {
 
 **Why this matters:** A query like "Get 100 recent GPS logs" only shows 10 in `preview_array`, but the signed URL contains all 100+ results.
 
-**Note:** CORS allows `geotab.com` origin - embedded Add-Ins work. External/hosted Add-Ins may need to request expanded CORS policy from Geotab.
+**Note:** CORS allows `geotab.com` origin - embedded Add-Ins work. External/hosted Add-Ins may need the Blob workaround below.
+
+### CORS Workaround for External Add-Ins
+
+For externally-hosted Add-Ins where direct fetch fails due to CORS, download the CSV into a Blob first:
+
+```javascript
+async function fetchCSVWithCORSWorkaround(url) {
+    try {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        const text = await blob.text();
+        return text;
+    } catch (e) {
+        console.error('CSV fetch error:', e);
+        return null;
+    }
+}
+```
+
+### DuckDB WASM Integration (Advanced)
+
+For large Ace result sets, load data into an in-browser DuckDB database for SQL analytics:
+
+```javascript
+// Initialize DuckDB WASM
+async function initDuckDB() {
+    const duckdbLib = await import('https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/+esm');
+    const base = 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/dist/';
+
+    // Worker workaround for CSP restrictions
+    const workerResponse = await fetch(base + 'duckdb-browser-eh.worker.js');
+    const workerBlob = new Blob([await workerResponse.text()], { type: 'application/javascript' });
+
+    const db = new duckdbLib.AsyncDuckDB(
+        new duckdbLib.ConsoleLogger(),
+        new Worker(URL.createObjectURL(workerBlob))
+    );
+    await db.instantiate(base + 'duckdb-eh.wasm');
+    return await db.connect();
+}
+
+// Ingest Ace CSV into DuckDB
+async function ingestAceCSV(db, conn, csvUrl) {
+    const response = await fetch(csvUrl);
+    const buffer = new Uint8Array(await response.arrayBuffer());
+
+    await db.registerFileBuffer('ace_results.csv', buffer);
+    await conn.query("CREATE VIEW ace_data AS SELECT * FROM read_csv_auto('ace_results.csv');");
+
+    // Now query with SQL!
+    const result = await conn.query("SELECT * FROM ace_data LIMIT 100;");
+    return result.toArray();
+}
+```
+
+**Benefits:**
+- Query 100K+ rows in-browser with SQL
+- Filter, aggregate, join without server roundtrips
+- Export subsets to CSV/JSON
+
+**See working example:** [ace-duckdb-lab.html](/examples/addins/ace-duckdb-lab.html)
 
 ## Rate Limiting
 
