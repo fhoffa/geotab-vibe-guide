@@ -1,15 +1,6 @@
----
-name: geotab-api-quickstart
-description: Connect to Geotab API and fetch fleet data. Use for any task involving vehicles, trips, drivers, or other Geotab data. This is the foundation skill for all Geotab integrations.
-license: Apache-2.0
-metadata:
-  author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
-  version: "1.0"
----
-
 # Geotab API Quickstart
 
-## When to Use This Skill
+## When to Use This Reference
 
 - Connecting to the Geotab API for the first time
 - Fetching vehicles, trips, drivers, or any fleet data
@@ -150,32 +141,32 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 ### Core Assets
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `Device` | Vehicles/assets | ✅ Yes | Fleet inventory, telematics units |
-| `User` | Users and drivers | ✅ Yes | Filter with `isDriver: True` for drivers |
-| `Group` | Organizational hierarchy | ✅ Yes | Company structure, vehicle grouping |
+| `Device` | Vehicles/assets | Yes | Fleet inventory, telematics units |
+| `User` | Users and drivers | Yes | Filter with `isDriver: True` for drivers |
+| `Group` | Organizational hierarchy | Yes | Company structure, vehicle grouping |
 
 ### Geofencing
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `Zone` | Geofences/locations | ✅ Yes | Circular or polygon areas |
-| `Route` | Planned routes | ✅ Yes | Sequence of zones |
+| `Zone` | Geofences/locations | Yes | Circular or polygon areas |
+| `Route` | Planned routes | Yes | Sequence of zones |
 
 ### Rules & Alerts
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `Rule` | Exception rules | ✅ Yes | Triggers alerts on conditions |
-| `Condition` | Rule conditions | ✅ Yes | ⚠️ Get not supported; access via Rule entity |
-| `ExceptionEvent` | Rule violations | ❌ Read-only | Generated when rules trigger |
-| `DistributionList` | Notification recipients | ✅ Yes | Email/SMS alert lists |
+| `Rule` | Exception rules | Yes | Triggers alerts on conditions |
+| `Condition` | Rule conditions | Yes | Get not supported; access via Rule entity |
+| `ExceptionEvent` | Rule violations | Read-only | Generated when rules trigger |
+| `DistributionList` | Notification recipients | Yes | Email/SMS alert lists |
 
 ### Diagnostics & Faults
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `Diagnostic` | Sensor/data definitions | ❌ Read-only | Metadata about readings (65K+ types) |
-| `Controller` | ECU definitions | ❌ Read-only | Vehicle computer units |
-| `FaultData` | Engine fault codes | ❌ Read-only | DTC codes from vehicle |
-| `FailureMode` | Fault failure modes | ❌ Read-only | J1939 failure modes |
-| `FlashCode` | Flash codes | ❌ Read-only | ⚠️ Get not supported |
+| `Diagnostic` | Sensor/data definitions | Read-only | Metadata about readings (65K+ types) |
+| `Controller` | ECU definitions | Read-only | Vehicle computer units |
+| `FaultData` | Engine fault codes | Read-only | DTC codes from vehicle |
+| `FailureMode` | Fault failure modes | Read-only | J1939 failure modes |
+| `FlashCode` | Flash codes | Read-only | Get not supported |
 
 ### Telematics Data (Read-Only)
 | Type | Description | Notes |
@@ -188,33 +179,33 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 ### Compliance (HOS/ELD)
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `DVIRLog` | Driver vehicle inspection | ✅ Yes | Pre/post trip inspections |
-| `DutyStatusLog` | HOS duty status | ⚠️ Limited | ELD records |
-| `DutyStatusAvailability` | Available driving time | ❌ Read-only | ⚠️ Requires `userSearch` parameter |
-| `DutyStatusViolation` | HOS violations | ❌ Read-only | ⚠️ Requires specific search params |
-| `DriverChange` | Driver identification | ❌ Read-only | Driver login events |
+| `DVIRLog` | Driver vehicle inspection | Yes | Pre/post trip inspections |
+| `DutyStatusLog` | HOS duty status | Limited | ELD records |
+| `DutyStatusAvailability` | Available driving time | Read-only | Requires `userSearch` parameter |
+| `DutyStatusViolation` | HOS violations | Read-only | Requires specific search params |
+| `DriverChange` | Driver identification | Read-only | Driver login events |
 
 ### Fuel
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `FuelTransaction` | Fuel card transactions | ✅ Yes | External fuel data |
-| `FuelUsed` | Fuel consumption | ❌ Read-only | Calculated usage |
-| `FillUp` | Fill-up events | ❌ Read-only | Detected fill events |
-| `FuelTaxDetail` | IFTA tax records | ❌ Read-only | Jurisdiction fuel use |
+| `FuelTransaction` | Fuel card transactions | Yes | External fuel data |
+| `FuelUsed` | Fuel consumption | Read-only | Calculated usage |
+| `FillUp` | Fill-up events | Read-only | Detected fill events |
+| `FuelTaxDetail` | IFTA tax records | Read-only | Jurisdiction fuel use |
 
 ### Custom Data
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `CustomData` | Custom entity storage | ✅ Yes | Store custom key-value data |
-| `AddInData` | Add-In storage | ✅ Yes | Per-Add-In data storage |
+| `CustomData` | Custom entity storage | Yes | Store custom key-value data |
+| `AddInData` | Add-In storage | Yes | Per-Add-In data storage |
 
 ### System
 | Type | Description | Writable | Notes |
 |------|-------------|----------|-------|
-| `Audit` | Audit log entries | ❌ Read-only | System activity log |
-| `BinaryPayload` | Raw device data | ❌ Read-only | ⚠️ Get/GetCountOf not supported |
-| `DebugData` | Debug information | ❌ Read-only | Device diagnostics |
-| `DeviceShare` | Shared device access | ✅ Yes | Cross-database sharing |
+| `Audit` | Audit log entries | Read-only | System activity log |
+| `BinaryPayload` | Raw device data | Read-only | Get/GetCountOf not supported |
+| `DebugData` | Debug information | Read-only | Device diagnostics |
+| `DeviceShare` | Shared device access | Yes | Cross-database sharing |
 
 > **Note:** Writable types support `Add` and `Set` methods. Read-only types are telemetry or system-generated data.
 >
@@ -238,7 +229,7 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 StatusData contains detailed sensor readings, but you need the **correct Diagnostic ID** to get specific measurements. There are 65,000+ diagnostic types - knowing the right ID unlocks detailed vehicle telemetry.
 
 **How to discover Diagnostic IDs:**
-1. In MyGeotab, go to **Engine & Maintenance → Engine Measurements**
+1. In MyGeotab, go to **Engine & Maintenance > Engine Measurements**
 2. Select the measurement you want (e.g., "Cranking Voltage")
 3. Check the URL - it shows the Diagnostic ID: `#engineMeasurements,diagnostics:!(DiagnosticCrankingVoltageId)`
 
@@ -269,7 +260,7 @@ for reading in status_data:
 | Engine Hours | `DiagnosticEngineHoursAdjustmentId` |
 | Battery Voltage | `DiagnosticBatteryTemperatureId` |
 
-**⚠️ Common Mistake:** Similar-sounding IDs may not work. For example, `DiagnosticEngineCrankingVoltageId` returns no data, but `DiagnosticCrankingVoltageId` works. Always verify in Engine Measurements first.
+**Common Mistake:** Similar-sounding IDs may not work. For example, `DiagnosticEngineCrankingVoltageId` returns no data, but `DiagnosticCrankingVoltageId` works. Always verify in Engine Measurements first.
 
 ## Filtering and Searching
 
@@ -581,11 +572,11 @@ trips = api.get('Trip',
 
 ## Next Steps
 
-- **AI-powered queries:** Use natural language with the [geotab-ace skill](../geotab-ace/SKILL.md)
+- **AI-powered queries:** Use natural language with [ACE_API.md](ACE_API.md)
 - **Build a dashboard:** Use Streamlit with this data
-- **Create an Add-In:** See the [geotab-addins skill](../geotab-addins/SKILL.md)
-- **Analyze trips:** See [references/TRIP_ANALYSIS.md](references/TRIP_ANALYSIS.md)
-- **Understand demo data:** See [Demo Database Reference](../../guides/DEMO_DATABASE_REFERENCE.md) for complete entity schemas and sample values
+- **Create an Add-In:** See [ADDINS.md](ADDINS.md)
+- **Analyze trips:** See [TRIP_ANALYSIS.md](TRIP_ANALYSIS.md)
+- **Understand demo data:** See [Demo Database Reference](../../../guides/DEMO_DATABASE_REFERENCE.md)
 
 ## Resources
 

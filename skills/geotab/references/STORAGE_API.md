@@ -119,9 +119,9 @@ Use dot notation to query nested JSON. Arrays use `[]`:
 
 | Path | Matches |
 |------|---------|
-| `settings.theme` | `{ settings: { theme: "dark" } }` → `"dark"` |
-| `items.[].name` | `{ items: [{ name: "A" }, { name: "B" }] }` → `"A"`, `"B"` |
-| `customer.email` | `{ customer: { email: "x@y.com" } }` → `"x@y.com"` |
+| `settings.theme` | `{ settings: { theme: "dark" } }` -> `"dark"` |
+| `items.[].name` | `{ items: [{ name: "A" }, { name: "B" }] }` -> `"A"`, `"B"` |
+| `customer.email` | `{ customer: { email: "x@y.com" } }` -> `"x@y.com"` |
 
 ## Where Clause Operators
 

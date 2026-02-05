@@ -114,7 +114,7 @@ When working with Claude or other AI assistants, tell them:
 Use the geotab-addins skill to help me build a Geotab Add-In
 ```
 
-The [skill file](/skills/geotab-addins.md) teaches AIs the correct patterns and common mistakes.
+The [skill file](/skills/geotab/SKILL.md) teaches AIs the correct patterns and common mistakes.
 
 ### Step 2: Describe What You Want
 
@@ -316,7 +316,7 @@ Show vehicle counts in Bootstrap cards with the grid layout.
 
 Tell your AI: "Use Bootstrap with dynamic CSS loading for an embedded Add-In"
 
-The [geotab-addins skill](/skills/geotab-addins/SKILL.md) has the code patterns for dynamic loading.
+The [geotab skill](/skills/geotab/SKILL.md) has the code patterns for dynamic loading.
 
 ---
 
@@ -592,7 +592,7 @@ The AI will walk you through every step. When done, your URL will look like:
 
 **Tools:**
 - [GitHub Pages](https://pages.github.com/) - Free HTTPS hosting
-- [Geotab Add-Ins Skill](/skills/geotab-addins.md) - AI skill file (use this when prompting)
+- [Geotab Skill](/skills/geotab/SKILL.md) - AI skill file (use this when prompting)
 
 ---
 

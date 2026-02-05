@@ -1,17 +1,8 @@
----
-name: geotab-ace
-description: Query fleet data using Geotab Ace AI. Use when you need natural language queries, trend analysis, or pre-aggregated insights. Ace is slower than direct API but handles complex analytical questions automatically.
-license: Apache-2.0
-metadata:
-  author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
-  version: "1.0"
----
-
 # Geotab Ace API
 
 Geotab Ace is an AI-powered query interface that lets you ask natural language questions about fleet data. It automatically generates SQL queries, aggregates data, and returns analyzed results.
 
-> **Enable Ace First:** Ace must be enabled by an admin in **Administration → Beta Features**. It's graduating from beta soon but may still require admin activation. With a demo account, you're the admin - just enable it yourself!
+> **Enable Ace First:** Ace must be enabled by an admin in **Administration > Beta Features**. It's graduating from beta soon but may still require admin activation. With a demo account, you're the admin - just enable it yourself!
 
 > **Reference Implementation:** [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) - Full working code for Ace queries, polling, DuckDB caching, and more.
 
@@ -35,14 +26,14 @@ Geotab Ace is an AI-powered query interface that lets you ask natural language q
 For aggregations like "top vehicles by distance", don't query devices then trips per device:
 
 ```javascript
-// ❌ Slow: 5000+ API calls (one per device)
+// Slow: 5000+ API calls (one per device)
 api.call('Get', { typeName: 'Device' }, function(devices) {
     devices.forEach(function(d) {
         api.call('Get', { typeName: 'Trip', search: { deviceSearch: { id: d.id } } }, ...);
     });
 });
 
-// ✅ Fast: 1 API call, aggregate in memory
+// Fast: 1 API call, aggregate in memory
 api.call('Get', {
     typeName: 'Trip',
     search: { fromDate: yesterday, toDate: today },
@@ -68,9 +59,9 @@ api.call('Get', {
 Ace queries are **asynchronous** and require three steps:
 
 ```
-1. create-chat       → Get a chat_id
-2. send-prompt       → Send question, get message_group_id
-3. get-message-group → Poll until status is DONE
+1. create-chat       -> Get a chat_id
+2. send-prompt       -> Send question, get message_group_id
+3. get-message-group -> Poll until status is DONE
 ```
 
 All calls use `GetAceResults` with `serviceName: 'dna-planet-orchestration'`.
@@ -184,8 +175,8 @@ new Date(timeStr.replace(' ', 'T') + 'Z')
 
 **Specify exact column names** (best practice):
 ```
-❌ "What are the top 3 vehicles by distance?"
-✅ "What are the top 3 vehicles by distance? Return columns: device_name, miles"
+Bad:  "What are the top 3 vehicles by distance?"
+Good: "What are the top 3 vehicles by distance? Return columns: device_name, miles"
 ```
 
 Ace doesn't always honor requested names, but the `columns` array tells you what it actually used. **Use column position** instead of names:
@@ -201,22 +192,22 @@ This works regardless of what Ace names the columns.
 
 **Specify timezone for timestamps:**
 ```
-❌ "What is the most recent trip?"
-✅ "What is the most recent trip? Return columns: device_name, trip_end_time. Use UTC timezone."
+Bad:  "What is the most recent trip?"
+Good: "What is the most recent trip? Return columns: device_name, trip_end_time. Use UTC timezone."
 ```
 
 By default, Ace may return times in device-local timezone. Specify UTC for consistent comparison.
 
 **Be explicit with dates:**
 ```
-❌ "trips last month"
-✅ "trips from 2026-01-04 to 2026-02-03"
+Bad:  "trips last month"
+Good: "trips from 2026-01-04 to 2026-02-03"
 ```
 
 **Ask for limited results:**
 ```
-❌ "all vehicles with trips"
-✅ "top 10 vehicles by distance"
+Bad:  "all vehicles with trips"
+Good: "top 10 vehicles by distance"
 ```
 
 **Note:** Ace results may differ from direct API due to:
@@ -262,7 +253,7 @@ Ace queries these pre-built tables (from actual SQL we've observed):
 | Issue | Cause & Fix |
 |-------|-------------|
 | Empty data / preview_array | Missing `customerData: true` in GetAceResults call - add it! |
-| No chat_id | Ace not enabled (Admin → Beta Features), or rate limited - retry |
+| No chat_id | Ace not enabled (Admin > Beta Features), or rate limited - retry |
 | Query times out | Complex queries take 60-90s - simplify or increase timeout |
 | Empty data array | Question too vague, no data for period, or new account |
 | Stale results | Ace lags real-time - use direct API for current data |
@@ -270,6 +261,6 @@ Ace queries these pre-built tables (from actual SQL we've observed):
 ## Resources
 
 - **Reference Implementation:** [geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) - Full Python code
-- **Custom MCP Guide:** [CUSTOM_MCP_GUIDE.md](../../guides/CUSTOM_MCP_GUIDE.md) - Build your own MCP server
-- **Add-Ins:** [geotab-addins skill](../geotab-addins/SKILL.md) - Using Ace in Add-Ins
-- **Direct API:** [geotab-api-quickstart skill](../geotab-api-quickstart/SKILL.md)
+- **Custom MCP Guide:** [CUSTOM_MCP_GUIDE.md](../../../guides/CUSTOM_MCP_GUIDE.md) - Build your own MCP server
+- **Add-Ins:** [ADDINS.md](ADDINS.md) - Using Ace in Add-Ins
+- **Direct API:** [API_QUICKSTART.md](API_QUICKSTART.md)

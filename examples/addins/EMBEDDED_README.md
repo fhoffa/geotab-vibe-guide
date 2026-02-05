@@ -164,5 +164,5 @@ This approach gives you the best of both worlds - easy development with external
 ## Learn More
 
 - See [guides/GEOTAB_ADDINS.md](../../guides/GEOTAB_ADDINS.md) for the full guide
-- See [skills/geotab-addins/SKILL.md](../../skills/geotab-addins/SKILL.md) for technical details
+- See [skills/geotab/SKILL.md](../../skills/geotab/SKILL.md) for technical details
 - Official docs: https://developers.geotab.com/myGeotab/addIns/developingAddIns/

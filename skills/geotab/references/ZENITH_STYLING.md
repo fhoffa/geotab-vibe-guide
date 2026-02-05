@@ -1,12 +1,3 @@
----
-name: geotab-addin-zenith-styling
-description: Style Geotab Add-Ins using the Zenith design system and React component library. Use when upgrading vanilla JS Add-Ins to professional React-based UIs that match MyGeotab's look exactly.
-license: Apache-2.0
-metadata:
-  author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
-  version: "1.0"
----
-
 # Styling Add-Ins with Zenith
 
 ## What is Zenith?
@@ -20,13 +11,13 @@ Zenith is Geotab's official React component library providing:
 
 Zenith pages increase development speed by over 40%.
 
-## When to Use This Skill
+## When to Use This Reference
 
 - Upgrading a working vanilla JS Add-In to professional styling
 - Building React-based MyGeotab Add-Ins
 - When you need the exact MyGeotab look and feel
 
-**Note:** Start with the `geotab-addins` skill first to build a working Add-In, then use this skill to upgrade its styling.
+**Note:** Start with [ADDINS.md](ADDINS.md) first to build a working Add-In, then use this reference to upgrade its styling.
 
 ## Installation
 
@@ -356,7 +347,7 @@ The Zenith `Table` component may have issues with complex custom render function
 | Setup | Instant | npm + webpack build |
 | Bundle size | ~5 KB | ~2.3 MB |
 | Debugging | Clear errors | Minified stack traces |
-| Iteration | Edit → Refresh | Edit → Build → Refresh |
+| Iteration | Edit -> Refresh | Edit -> Build -> Refresh |
 | MyGeotab match | Approximate | Exact |
 
 **Use Zenith when:** Professional look matching MyGeotab is required
@@ -373,7 +364,7 @@ For React Add-Ins using Zenith:
 
 **Note:** Embedded Add-Ins (vanilla JS) cannot use Zenith components directly. Instead, reference Zenith's design tokens for colors/spacing and mimic the visual style with CSS.
 
-See the `geotab-addins` skill for vanilla JavaScript patterns.
+See [ADDINS.md](ADDINS.md) for vanilla JavaScript patterns.
 
 ## Resources
 
@@ -382,5 +373,5 @@ See the `geotab-addins` skill for vanilla JavaScript patterns.
 - [NPM Package](https://www.npmjs.com/package/@geotab/zenith)
 - Contact: zenith@geotab.com
 
-For detailed component API reference, see [references/COMPONENTS.md](references/COMPONENTS.md).
-For a complete example application, see [references/EXAMPLE.md](references/EXAMPLE.md).
+For detailed component API reference, see [ZENITH_COMPONENTS.md](ZENITH_COMPONENTS.md).
+For a complete example application, see [ZENITH_EXAMPLE.md](ZENITH_EXAMPLE.md).

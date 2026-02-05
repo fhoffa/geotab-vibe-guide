@@ -182,19 +182,19 @@ cd geotab-vibe-guide
 claude
 ```
 Claude reads `CLAUDE.md` and can access all skills. Ask it to use a specific skill:
-> "Use the geotab-addins skill to help me build a vehicle list Add-In"
+> "Use the geotab skill to help me build a vehicle list Add-In"
 
 ### Claude Desktop/Web
 1. Start with `VIBE_CODING_CONTEXT.md` (paste or upload)
 2. For specific tasks, also share the relevant skill file:
-   - Building Add-Ins? Upload `skills/geotab-addins/SKILL.md`
-   - Styling? Upload `skills/geotab-addin-zenith-styling/SKILL.md`
-   - Python API work? Upload `skills/geotab-api-quickstart/SKILL.md`
+   - Building Add-Ins? Upload `skills/geotab/SKILL.md`
+   - Styling? Upload `skills/geotab/references/ZENITH_STYLING.md`
+   - Python API work? Upload `skills/geotab/SKILL.md`
 
 ### Cursor / Windsurf / Other IDEs
 1. Open the `geotab-vibe-guide` folder as your project
 2. The AI has access to all files automatically
-3. Reference skills explicitly: "Look at skills/geotab-addins and help me..."
+3. Reference skills explicitly: "Look at skills/geotab and help me..."
 
 ### ChatGPT / Other Tools
 1. Upload `VIBE_CODING_CONTEXT.md` for general context

@@ -286,7 +286,7 @@ Engine and sensor telemetry readings.
 For speeding dashboards in demo databases:
 - Use `DiagnosticEngineRoadSpeedId` (ECM-reported speed) instead of `DiagnosticSpeedId` (GPS speed)
 - `DiagnosticPostedRoadSpeedId` (posted speed limit) is not available
-- See [SPEED_DATA.md](/skills/geotab-api-quickstart/references/SPEED_DATA.md) for detection patterns and fallbacks
+- See [SPEED_DATA.md](/skills/geotab/references/SPEED_DATA.md) for detection patterns and fallbacks
 
 **Sample Record:**
 
@@ -395,7 +395,7 @@ This means speeding dashboards that rely on `ex.details.maxSpeed` will show 0 or
 
 **Always use defensive coding:** `(ex.details && ex.details.maxSpeed) || 0`
 
-See [SPEED_DATA.md](/skills/geotab-api-quickstart/references/SPEED_DATA.md) for demo database detection and fallback patterns.
+See [SPEED_DATA.md](/skills/geotab/references/SPEED_DATA.md) for demo database detection and fallback patterns.
 
 **Sample Record:**
 
@@ -786,4 +786,4 @@ drivers = api.get('User', search={'isDriver': True})
 - [Create a Demo Account](https://my.geotab.com/registration.html)
 - [Geotab SDK Documentation](https://geotab.github.io/sdk/)
 - [API Reference](https://geotab.github.io/sdk/software/api/reference/)
-- [geotab-api-quickstart skill](../skills/geotab-api-quickstart/SKILL.md)
+- [geotab skill](../skills/geotab/SKILL.md)

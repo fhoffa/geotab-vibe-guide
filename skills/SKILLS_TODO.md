@@ -12,27 +12,17 @@ This document tracks Agent Skills we want to create that would be valuable for f
 
 ## Core Geotab Skills
 
-### ✅ geotab-addins
-Build custom Add-Ins that extend the MyGeotab interface.
-- **Location:** `skills/geotab-addins/SKILL.md`
-- **Description:** Complete guide to building MyGeotab Add-Ins with external hosting
-- **Use Cases:** Custom dashboards, specialized reports, fleet tools
-
----
-
-### ✅ geotab-addin-zenith-styling
-Style Add-Ins using Geotab's Zenith design system (React).
-- **Location:** `skills/geotab-addin-zenith-styling/SKILL.md`
-- **Description:** Upgrade vanilla JS Add-Ins to professional React UIs matching MyGeotab
-- **Use Cases:** Professional styling, React components, accessibility compliance
-
----
-
-### ✅ geotab-api-quickstart
-Authenticate with Geotab API and make basic data queries.
-- **Location:** `skills/geotab-api-quickstart/SKILL.md`
-- **Description:** Foundation skill for all Geotab API integrations
-- **Use Cases:** Connect to API, fetch vehicles/trips/drivers, Python dashboards
+### ✅ geotab (consolidated)
+Complete guide for Geotab fleet management development.
+- **Location:** `skills/geotab/SKILL.md`
+- **Description:** Unified skill covering API, Add-Ins, Zenith styling, and Ace AI
+- **References:**
+  - `references/API_QUICKSTART.md` - Python authentication, fetching data
+  - `references/ADDINS.md` - MyGeotab Add-In development
+  - `references/ZENITH_STYLING.md` - React + Geotab design system
+  - `references/ACE_API.md` - Geotab Ace AI queries
+  - Plus: SPEED_DATA, TRIP_ANALYSIS, STORAGE_API, TROUBLESHOOTING, and more
+- **Use Cases:** All Geotab development (Python dashboards, Add-Ins, AI features)
 
 ---
 
@@ -90,31 +80,14 @@ Build driver safety scorecards using exception events.
 
 ---
 
-### 📋 geotab-ace-integration
-**Priority:** MEDIUM - Enables AI-powered features
+### ✅ geotab-ace-integration
+**Status:** COMPLETED (part of consolidated `geotab` skill)
 
 Integrate Geotab Ace API for natural language fleet queries.
 
-**What it should teach:**
-- Ace API authentication
-- Sending natural language queries
-- Processing structured responses
-- Best practices for prompt engineering
-- Multi-turn conversations
-- Combining Ace insights with raw API data
-
-**Use Cases:**
-- "Build a chatbot for fleet queries"
-- "Get AI-powered fleet insights"
-- "Natural language reporting"
-
-**Code Examples Needed:**
-- Python Ace client
-- JavaScript Ace integration
-- Sample prompts for common queries
-- Response parsing
-
-**Estimated Effort:** 3-4 hours
+- **Location:** `skills/geotab/references/ACE_API.md`
+- **Description:** Ace API patterns included in consolidated skill
+- **Covers:** Authentication, async polling, CSV fetching, rate limits
 
 ---
 
@@ -393,54 +366,50 @@ Use LLMs to generate insights from fleet data.
 
 ## Architecture Improvements
 
-### 📋 Consolidate Skills into Single `geotab` Skill
+### ✅ Consolidate Skills into Single `geotab` Skill
 
-**Priority:** MEDIUM - Improves LLM usability
+**Status:** COMPLETED
 
-Merge separate Geotab skills into one `skills/geotab/` folder with routing SKILL.md and `references/` subfolder.
+Merged separate Geotab skills into one `skills/geotab/` folder with routing SKILL.md and `references/` subfolder.
 
-**Current:** Separate folders for api-quickstart, addins, zenith-styling, ace
-**Proposed:** Single `skills/geotab/` with `references/` containing all topic files
+**Result:** Single `skills/geotab/` with `references/` containing all topic files
 
-**Benefits:**
+**Benefits Achieved:**
 - Single skill for LLMs to load for all Geotab tasks
 - LLM navigates to specific references via clear headers
 - No duplication of common patterns (entity types, search syntax)
 - Cross-references are natural (e.g., speed data used by both Python API and JS Add-Ins)
 
-**Tasks:**
-- [ ] Create `skills/geotab/` folder structure
-- [ ] Create router SKILL.md that indexes all references
-- [ ] Move/consolidate content from existing skills
-- [ ] Update references in guides
-- [ ] Remove old skill folders
+**Completed Tasks:**
+- [x] Created `skills/geotab/` folder structure
+- [x] Created router SKILL.md that indexes all references
+- [x] Moved/consolidated content from existing skills
+- [x] Updated references in guides
+- [x] Removed old skill folders (geotab-api-quickstart, geotab-addins, geotab-addin-zenith-styling, geotab-ace)
 
 ---
 
 ## Implementation Priority
 
 ### Phase 1: Foundation (Hackathon Weekend)
-1. ✅ geotab-addins
-2. ✅ geotab-addin-zenith-styling
-3. ✅ geotab-api-quickstart
-4. 📋 geotab-trip-analysis
-5. 📋 geotab-safety-scoring
+1. ✅ geotab (consolidated: API, Add-Ins, Zenith styling, Ace)
+2. 📋 geotab-trip-analysis
+3. 📋 geotab-safety-scoring
 
 **Goal:** Cover 80% of common use cases
 
 ### Phase 2: Enhancement (Post-Hackathon)
-5. 📋 geotab-ace-integration
-6. 📋 geotab-predictive-maintenance
-7. 📋 geotab-geofence-management
-8. 💡 geotab-data-visualization
+4. 📋 geotab-predictive-maintenance
+5. 📋 geotab-geofence-management
+6. 💡 geotab-data-visualization
 
 **Goal:** Enable advanced integrations
 
 ### Phase 3: Innovation (Future)
-9. 💡 geotab-custom-mcp
-10. 💡 geotab-ev-analysis
-11. 💡 geotab-ai-insights
-12. 💡 geotab-voice-interface
+7. ✅ geotab-custom-mcp
+8. 💡 geotab-ev-analysis
+9. 💡 geotab-ai-insights
+10. 💡 geotab-voice-interface
 
 **Goal:** Cutting-edge features
 

@@ -152,7 +152,7 @@ description: Build custom Add-Ins for MyGeotab interface with external hosting. 
 ---
 ```
 
-See [skills/geotab-addins/SKILL.md](../skills/geotab-addins/SKILL.md) for the full implementation.
+See [skills/geotab/SKILL.md](../skills/geotab/SKILL.md) for the full implementation.
 
 ---
 
@@ -297,11 +297,11 @@ Iterate based on what the AI does. Did it understand? Did it use the patterns co
 Add helper scripts that your skill references:
 
 ```
-skills/geotab-trip-analyzer/
+skills/geotab/
 ├── SKILL.md
-└── scripts/
-    ├── fetch_trips.py
-    └── calculate_efficiency.py
+└── references/
+    ├── TRIP_ANALYSIS.md
+    └── API_QUICKSTART.md
 ```
 
 Reference them in your skill:
@@ -315,11 +315,11 @@ Use the reference implementation in `scripts/fetch_trips.py` to see working code
 Include documentation, API examples, or sample responses:
 
 ```
-skills/geotab-api-quickstart/
+skills/geotab/
 ├── SKILL.md
 └── references/
-    ├── sample_device_response.json
-    └── authentication_flow.md
+    ├── API_QUICKSTART.md
+    └── SPEED_DATA.md
 ```
 
 ### assets/
@@ -327,10 +327,11 @@ skills/geotab-api-quickstart/
 Add diagrams, architecture images, or templates:
 
 ```
-skills/geotab-addin-builder/
+skills/geotab/
 ├── SKILL.md
-└── assets/
-    └── addin-lifecycle-diagram.png
+└── references/
+    ├── ADDINS.md
+    └── EXAMPLES.md
 ```
 
 ## Distribution & Sharing
@@ -492,7 +493,7 @@ and help me [task the skill covers].
 ### Essential Skills (Build These First)
 - [ ] `geotab-api-quickstart` - Authentication and basic API usage
 - [ ] `geotab-trip-analysis` - Trip data analysis patterns
-- [ ] `geotab-addin-builder` - Building MyGeotab Add-Ins (already started in skills/geotab-addins/)
+- [x] `geotab` - Unified Geotab skill (consolidated in skills/geotab/)
 
 ### High-Value Skills (Pick 2-3)
 - [ ] `geotab-ace-integration` - Using Geotab Ace API

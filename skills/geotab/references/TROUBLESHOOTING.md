@@ -118,19 +118,19 @@ debugApiCall(api, "Get", { typeName: "Device" }, function(devices) {
 **Problem:** Add-In hangs during initialization
 
 ```javascript
-// ❌ Wrong - callback never called
+// Wrong - callback never called
 initialize: function(api, state, callback) {
     loadData(api);
     // Missing callback()!
 }
 
-// ✅ Correct
+// Correct
 initialize: function(api, state, callback) {
     loadData(api);
     callback();
 }
 
-// ✅ Also correct - call after async work
+// Also correct - call after async work
 initialize: function(api, state, callback) {
     api.call("Get", {typeName: "Device"}, function(devices) {
         displayDevices(devices);
@@ -144,12 +144,12 @@ initialize: function(api, state, callback) {
 **Problem:** API calls fail silently
 
 ```javascript
-// ❌ No error handling
+// No error handling
 api.call("Get", {typeName: "Device"}, function(devices) {
     displayDevices(devices);
 });
 
-// ✅ With error handling
+// With error handling
 api.call("Get", {typeName: "Device"},
     function(devices) {
         displayDevices(devices);
@@ -166,10 +166,10 @@ api.call("Get", {typeName: "Device"},
 **Problem:** Using `}();` instead of `};` when registering
 
 ```javascript
-// ❌ Wrong - invokes the function immediately
+// Wrong - invokes the function immediately
 geotab.addin["name"] = function() { return {...}; }();
 
-// ✅ Correct - assigns the function for MyGeotab to call
+// Correct - assigns the function for MyGeotab to call
 geotab.addin["name"] = function() { return {...}; };
 ```
 
@@ -178,13 +178,13 @@ geotab.addin["name"] = function() { return {...}; };
 **Problem:** MyGeotab may run in older browsers
 
 ```javascript
-// ❌ Modern JavaScript (may not work)
+// Modern JavaScript (may not work)
 const devices = [];
 api.call("Get", {typeName: "Device"}, (devices) => {
     console.log(`Found ${devices.length} vehicles`);
 });
 
-// ✅ ES5 JavaScript (always works)
+// ES5 JavaScript (always works)
 var devices = [];
 api.call("Get", {typeName: "Device"}, function(devices) {
     console.log("Found " + devices.length + " vehicles");
@@ -196,7 +196,7 @@ api.call("Get", {typeName: "Device"}, function(devices) {
 **Problem:** Using `state` as both parameter AND global variable
 
 ```javascript
-// ❌ Wrong - 'state' parameter collides with global
+// Wrong - 'state' parameter collides with global
 var state = { data: [] };
 
 geotab.addin["name"] = function() {
@@ -209,7 +209,7 @@ geotab.addin["name"] = function() {
     };
 };
 
-// ✅ Correct - use different names
+// Correct - use different names
 var appState = { data: [] };
 
 geotab.addin["name"] = function() {
@@ -228,7 +228,7 @@ geotab.addin["name"] = function() {
 **Problem:** Only getting partial count
 
 ```javascript
-// ❌ Wrong - only returns up to 100
+// Wrong - only returns up to 100
 api.call("Get", {
     typeName: "Device",
     resultsLimit: 100
@@ -236,7 +236,7 @@ api.call("Get", {
     // devices.length will be at most 100!
 });
 
-// ✅ Correct - returns all for accurate count
+// Correct - returns all for accurate count
 api.call("Get", {
     typeName: "Device"
 }, function(devices) {
@@ -249,10 +249,10 @@ api.call("Get", {
 **Problem:** Causes InvalidCastException in many databases
 
 ```javascript
-// ❌ Wrong - causes errors in many databases
+// Wrong - causes errors in many databases
 api.call("Get", {typeName: "Driver"}, ...);
 
-// ✅ Correct - always works
+// Correct - always works
 api.call("Get", {
     typeName: "User",
     search: { isDriver: true }
@@ -306,16 +306,16 @@ api.call("Get", {
 
 Common issues when building speeding dashboards and safety Add-Ins.
 
-**Full reference:** See [SPEED_DATA.md](/skills/geotab-api-quickstart/references/SPEED_DATA.md) for complete patterns (Python + JavaScript).
+**Full reference:** See [SPEED_DATA.md](SPEED_DATA.md) for complete patterns (Python + JavaScript).
 
 ### Quick Reference: Common Speed Data Issues
 
 **ExceptionEvent.details undefined (CONFIRMED):**
 ```javascript
-// ❌ Wrong - crashes if details missing
+// Wrong - crashes if details missing
 Math.round(ex.details.maxSpeed)
 
-// ✅ Correct - defensive check
+// Correct - defensive check
 (ex.details && ex.details.maxSpeed) || 0
 ```
 
@@ -327,14 +327,14 @@ Math.round(ex.details.maxSpeed)
 
 **Wrong diagnostic ID (CONFIRMED):**
 ```javascript
-// ❌ Wrong - doesn't exist
+// Wrong - doesn't exist
 diagnosticSearch: { id: "DiagnosticPostedSpeedId" }
 
-// ✅ Correct
+// Correct
 diagnosticSearch: { id: "DiagnosticPostedRoadSpeedId" }
 ```
 
-**Unverified patterns** (see [SPEED_DATA.md](/skills/geotab-api-quickstart/references/SPEED_DATA.md)):
+**Unverified patterns** (see [SPEED_DATA.md](SPEED_DATA.md)):
 - Time window buffering for StatusData queries (30-second buffer)
 - StatusData fallback when `details` is missing
 

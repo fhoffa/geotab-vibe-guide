@@ -28,10 +28,10 @@ This pattern is confirmed from a real debugging session where `Cannot read prope
 
 | Diagnostic ID | Description | Unit | USA Daytime Demo | Real Vehicles |
 |--------------|-------------|------|------------------|---------------|
-| `DiagnosticEngineRoadSpeedId` | Engine-reported road speed | km/h | ✅ Yes | Yes |
-| `DiagnosticEngineSpeedId` | Engine RPM | RPM | ✅ Yes | Yes |
-| `DiagnosticSpeedId` | GPS-based vehicle speed | km/h | ❌ No | Yes |
-| `DiagnosticPostedRoadSpeedId` | Posted road speed limit | km/h | ❌ No | Yes (where map data exists) |
+| `DiagnosticEngineRoadSpeedId` | Engine-reported road speed | km/h | Yes | Yes |
+| `DiagnosticEngineSpeedId` | Engine RPM | RPM | Yes | Yes |
+| `DiagnosticSpeedId` | GPS-based vehicle speed | km/h | No | Yes |
+| `DiagnosticPostedRoadSpeedId` | Posted road speed limit | km/h | No | Yes (where map data exists) |
 
 **Tested in USA Daytime demo database:**
 - `DiagnosticEngineRoadSpeedId` returns ECM-reported speed (0, 3, 6, 23, 24 km/h observed)
@@ -302,5 +302,5 @@ def generate_speeding_report(api, days=7):
 
 ## Related Resources
 
-- [DEMO_DATABASE_REFERENCE.md](/guides/DEMO_DATABASE_REFERENCE.md) - StatusData schema and diagnostics
+- [Demo Database Reference](../../../guides/DEMO_DATABASE_REFERENCE.md) - StatusData schema and diagnostics
 - [Geotab SDK Diagnostics](https://geotab.github.io/sdk/software/api/reference/#Diagnostic) - Official diagnostic reference

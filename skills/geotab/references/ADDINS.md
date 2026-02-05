@@ -1,12 +1,3 @@
----
-name: geotab-addins
-description: Build custom Add-Ins that extend the MyGeotab fleet management interface with custom pages, dashboards, and functionality. Use when creating integrations that appear directly in MyGeotab UI or when someone wants to add custom features to their Geotab fleet management system.
-license: Apache-2.0
-metadata:
-  author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
-  version: "1.0"
----
-
 # Building Geotab Add-Ins
 
 ## What Are Geotab Add-Ins?
@@ -25,7 +16,7 @@ Custom pages that integrate directly into MyGeotab. They can display dashboards,
 
 ### Quick Reference: Embedded Add-In Format
 
-> ⚠️ **CRITICAL:** Embedded Add-Ins use a specific JSON structure. Getting this wrong causes "Page Not Found" errors.
+> **CRITICAL:** Embedded Add-Ins use a specific JSON structure. Getting this wrong causes "Page Not Found" errors.
 
 ```json
 {
@@ -45,21 +36,19 @@ Custom pages that integrate directly into MyGeotab. They can display dashboards,
 
 **Common Mistake - WRONG format:**
 ```json
-❌ "pages": [{ "html": "..." }]
-❌ "items": [{ "html": "..." }]
-❌ "content": "..."
+"pages": [{ "html": "..." }]
+"items": [{ "html": "..." }]
+"content": "..."
 ```
 
 **Correct format:**
 ```json
-✅ "files": { "page.html": "<!DOCTYPE html>..." }
+"files": { "page.html": "<!DOCTYPE html>..." }
 ```
 
-See [Embedded Add-Ins](#embedded-add-ins-no-hosting) section for complete details.
+See [EMBEDDED.md](EMBEDDED.md) for complete details.
 
 Other options: Netlify, Vercel, Firebase Hosting (all have CORS support).
-
-<!-- TODO: Explore Replit server-side capabilities for dynamic add-ins (API proxies, data processing) -->
 
 **CORS Required:** Hosting must include `Access-Control-Allow-Origin: *` header.
 
@@ -68,7 +57,7 @@ Other options: Netlify, Vercel, Firebase Hosting (all have CORS support).
 | Approach | Best For | Notes |
 |----------|----------|-------|
 | **Vanilla JS + External CSS** | Most add-ins, embedded | ES5 only, external CSS for reliable styling |
-| **React + Zenith** | Professional UI matching MyGeotab | See `geotab-addin-zenith-styling` skill |
+| **React + Zenith** | Professional UI matching MyGeotab | See [ZENITH_STYLING.md](ZENITH_STYLING.md) |
 
 **Note:** Embedded add-ins must use vanilla JS with inline styles. React/Zenith requires external hosting.
 
@@ -191,13 +180,13 @@ api.call('Get', { typeName: 'DeviceStatusInfo' }, function(statuses) {
 | `Set` | Update existing entity |
 | `Remove` | Delete entity |
 | `GetFeed` | Incremental data sync (for polling changes) |
-| `GetAddresses` | Reverse geocoding (coordinates → address) |
-| `GetCoordinates` | Geocoding (address → coordinates) |
+| `GetAddresses` | Reverse geocoding (coordinates -> address) |
+| `GetCoordinates` | Geocoding (address -> coordinates) |
 | `GetRoadMaxSpeeds` | Speed limits at GPS locations |
 | `GetVersion` | API version info |
 | `multiCall` | Batch multiple calls in one request |
 | `getSession` | Get current user session (userName, database) |
-| `GetAceResults` | AI-powered fleet queries (see Ace section) |
+| `GetAceResults` | AI-powered fleet queries (see [ACE_API.md](ACE_API.md)) |
 
 ### Read Data (Get)
 ```javascript
@@ -280,7 +269,7 @@ api.getSession(function(session) {
 StatusData contains detailed sensor readings, but you need the **correct Diagnostic ID** to get specific measurements. There are 65,000+ diagnostic types - knowing the right ID unlocks detailed vehicle telemetry.
 
 **How to discover Diagnostic IDs:**
-1. In MyGeotab, go to **Engine & Maintenance → Engine Measurements**
+1. In MyGeotab, go to **Engine & Maintenance > Engine Measurements**
 2. Select the measurement you want (e.g., "Cranking Voltage")
 3. Check the URL - it shows the Diagnostic ID: `#engineMeasurements,diagnostics:!(DiagnosticCrankingVoltageId)`
 
@@ -313,7 +302,7 @@ api.call('Get', {
 | Engine Hours | `DiagnosticEngineHoursAdjustmentId` |
 | Battery Voltage | `DiagnosticBatteryTemperatureId` |
 
-**⚠️ Common Mistake:** Similar-sounding IDs may not work. For example, `DiagnosticEngineCrankingVoltageId` returns no data, but `DiagnosticCrankingVoltageId` works. Always verify in Engine Measurements first.
+**Common Mistake:** Similar-sounding IDs may not work. For example, `DiagnosticEngineCrankingVoltageId` returns no data, but `DiagnosticCrankingVoltageId` works. Always verify in Engine Measurements first.
 
 ## Persistent Storage (AddInData)
 
@@ -342,7 +331,7 @@ api.call("Get", {
 });
 ```
 
-> **Full documentation:** See [references/STORAGE_API.md](references/STORAGE_API.md) for query operators, object path notation, update/delete patterns, and limitations.
+> **Full documentation:** See [STORAGE_API.md](STORAGE_API.md) for query operators, object path notation, update/delete patterns, and limitations.
 
 ## Using Geotab Ace in Add-Ins
 
@@ -394,7 +383,7 @@ if (msg.signed_urls) {
 }
 ```
 
-> **Full Ace documentation:** See the [geotab-ace skill](../geotab-ace/SKILL.md) for complete patterns, CSV parsing, rate limiting, and code examples.
+> **Full Ace documentation:** See [ACE_API.md](ACE_API.md) for complete patterns, CSV parsing, rate limiting, and code examples.
 
 ## Navigation & Integrations
 
@@ -434,7 +423,7 @@ link.onclick = function(e) {
 | Weather | `https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lng}&current_weather=true` | No key needed |
 | Geocoding | `https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lng}&format=json` | 1 req/sec limit |
 
-> **Full documentation:** See [references/INTEGRATIONS.md](references/INTEGRATIONS.md) for complete code examples (email, calendar, maps, clipboard, CSV export, print, text-to-speech, native share).
+> **Full documentation:** See [INTEGRATIONS.md](INTEGRATIONS.md) for complete code examples (email, calendar, maps, clipboard, CSV export, print, text-to-speech, native share).
 
 ## Critical Mistakes to Avoid
 
@@ -447,13 +436,13 @@ link.onclick = function(e) {
 | Inline `<style>` tags | Styles don't render | Use external CSS file |
 | Variable named `state` | Shadows parameter | Use `appState` or similar |
 
-See [references/TROUBLESHOOTING.md](references/TROUBLESHOOTING.md) for complete debugging guide.
+See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for complete debugging guide.
 
 ## Embedded Add-Ins (No Hosting)
 
 For quick prototypes without hosting.
 
-> ⚠️ **CRITICAL:** The JSON structure must be EXACTLY as shown below. Common mistakes cause "Page Not Found" errors.
+> **CRITICAL:** The JSON structure must be EXACTLY as shown below. Common mistakes cause "Page Not Found" errors.
 
 ### Correct Format
 
@@ -475,8 +464,8 @@ For quick prototypes without hosting.
 
 ### Common Format Mistakes
 
-| ❌ WRONG | ✅ CORRECT |
-|----------|-----------|
+| WRONG | CORRECT |
+|-------|---------|
 | `"pages": [{"html": "..."}]` | `"files": {"page.html": "..."}` |
 | `"items": [{"html": "..."}]` | `"files": {"page.html": "..."}` |
 | `"content": "..."` | `"files": {"page.html": "..."}` |
@@ -491,25 +480,25 @@ For quick prototypes without hosting.
 - `url` in items matches filename in `files` object
 - Path without trailing slash: `"ActivityLink"` (not `"ActivityLink/"`)
 
-See [references/EMBEDDED.md](references/EMBEDDED.md) for complete embedded add-in guide.
+See [EMBEDDED.md](EMBEDDED.md) for complete embedded add-in guide.
 
 ## Complete Examples
 
 **Vehicle Manager** - CRUD operations (list vehicles, rename):
 - Live: `https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-manager/`
-- Code: [references/EXAMPLES.md](references/EXAMPLES.md#vehicle-manager-crud-example)
+- Code: [EXAMPLES.md](EXAMPLES.md#vehicle-manager-crud-example)
 
 **Fleet Stats** - Simple read-only dashboard:
-- Code: [references/EXAMPLES.md](references/EXAMPLES.md#complete-fleet-stats-example)
+- Code: [EXAMPLES.md](EXAMPLES.md#complete-fleet-stats-example)
 
 ## GitHub Pages Deployment
 
 1. Push files to GitHub repository
-2. Enable GitHub Pages (Settings → Pages → main branch)
+2. Enable GitHub Pages (Settings > Pages > main branch)
 3. Wait 2-3 minutes for deployment
 4. Test URL directly in browser first
-5. In MyGeotab: Administration → System Settings → Add-Ins
-6. Enable "Allow unverified Add-Ins" → Yes (required for custom Add-Ins)
+5. In MyGeotab: Administration > System Settings > Add-Ins
+6. Enable "Allow unverified Add-Ins" > Yes (required for custom Add-Ins)
 7. Add your Add-In configuration JSON
 8. Hard refresh (Ctrl+Shift+R) if add-in doesn't appear
 
@@ -522,7 +511,7 @@ See [references/EMBEDDED.md](references/EMBEDDED.md) for complete embedded add-i
 
 ### Step 1: Start with Vanilla JS
 
-The Vehicle Manager example (see [references/EXAMPLES.md](references/EXAMPLES.md)) uses vanilla JavaScript with external CSS. This approach:
+The Vehicle Manager example (see [EXAMPLES.md](EXAMPLES.md)) uses vanilla JavaScript with external CSS. This approach:
 - Works immediately (no build step)
 - Easy to understand and modify
 - Good for learning the Geotab API patterns
@@ -555,11 +544,11 @@ Transform this Geotab Add-In to use React and the @geotab/zenith design system:
 
 1. Convert the vanilla JS to a React functional component
 2. Replace custom CSS with Zenith components:
-   - Buttons → <Button variant="primary/secondary">
-   - Text inputs → <TextInput label="..." />
-   - Tables → <Table columns={} data={} />
-   - Loading states → <Waiting size="large" />
-   - Error/success messages → <Alert variant="error/success">
+   - Buttons -> <Button variant="primary/secondary">
+   - Text inputs -> <TextInput label="..." />
+   - Tables -> <Table columns={} data={} />
+   - Loading states -> <Waiting size="large" />
+   - Error/success messages -> <Alert variant="error/success">
 3. Use Zenith design tokens for any custom styling (--zenith-spacing-md, etc.)
 4. Set up webpack build configuration
 5. Keep the same Geotab API logic (Get, Set calls)
@@ -610,31 +599,31 @@ Here's my current vanilla JS add-in:
 | **Bundle size** | ~5 KB | ~2.3 MB (fonts, components) |
 | **Debugging** | Clear stack traces | Minified, hard to trace |
 | **Dependencies** | None | React, Zenith, Webpack, Babel |
-| **Iteration speed** | Edit → Refresh | Edit → Build → Refresh |
+| **Iteration speed** | Edit -> Refresh | Edit -> Build -> Refresh |
 | **Error messages** | Clear | Cryptic (minified) |
 
 **Zenith Gotchas We Discovered:**
 - `FeedbackProvider` wrapper required for `Alert` components
-- Zenith `Table` component has issues with custom render functions → use HTML table with Zenith styling instead
+- Zenith `Table` component has issues with custom render functions -> use HTML table with Zenith styling instead
 - Component names differ: `TextInput` (not TextField), `Waiting` (not Spinner)
 - Large bundle includes all fonts even if unused
 
 **Recommendation:**
-- **Quick prototypes / learning** → Vanilla JS
-- **Production add-ins matching MyGeotab UI** → Zenith (worth the complexity)
-- **Simple add-ins that just work** → Vanilla JS with Zenith color tokens
+- **Quick prototypes / learning** -> Vanilla JS
+- **Production add-ins matching MyGeotab UI** -> Zenith (worth the complexity)
+- **Simple add-ins that just work** -> Vanilla JS with Zenith color tokens
 
 ## Additional Resources
 
-**Related Skills:**
-- `geotab-addin-zenith-styling` - React component library for professional Geotab UI
+**Related References:**
+- [ZENITH_STYLING.md](ZENITH_STYLING.md) - React component library for professional Geotab UI
 
 **Reference Files:**
-- [Complete Examples](references/EXAMPLES.md) - Full working add-in code
-- [Embedded Add-Ins Guide](references/EMBEDDED.md) - No-hosting deployment
-- [Integrations](references/INTEGRATIONS.md) - Navigation, email, maps, weather, etc.
-- [Storage API](references/STORAGE_API.md) - AddInData persistence patterns
-- [Troubleshooting](references/TROUBLESHOOTING.md) - Common mistakes and debugging
+- [EXAMPLES.md](EXAMPLES.md) - Full working add-in code
+- [EMBEDDED.md](EMBEDDED.md) - No-hosting deployment
+- [INTEGRATIONS.md](INTEGRATIONS.md) - Navigation, email, maps, weather, etc.
+- [STORAGE_API.md](STORAGE_API.md) - AddInData persistence patterns
+- [TROUBLESHOOTING.md](TROUBLESHOOTING.md) - Common mistakes and debugging
 
 **External Documentation:**
 - [Official Docs](https://developers.geotab.com/myGeotab/addIns/developingAddIns/)

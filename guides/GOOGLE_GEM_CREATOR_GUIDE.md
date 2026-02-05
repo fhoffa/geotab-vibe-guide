@@ -313,7 +313,7 @@ api.call('Get', {
 - `Trip` - Completed journeys
 - `DeviceStatusInfo` - Current vehicle state
 
-> **Speed Data Tip:** Use `DiagnosticSpeedId` for vehicle speed and `DiagnosticPostedRoadSpeedId` for posted limits. Add 30-second time buffers when querying. See [SPEED_DATA.md](/skills/geotab-api-quickstart/references/SPEED_DATA.md) for complete patterns.
+> **Speed Data Tip:** Use `DiagnosticSpeedId` for vehicle speed and `DiagnosticPostedRoadSpeedId` for posted limits. Add 30-second time buffers when querying. See [SPEED_DATA.md](/skills/geotab/references/SPEED_DATA.md) for complete patterns.
 
 **Compliance/HOS:**
 - `DVIRLog` - Vehicle inspections (writable)
@@ -943,4 +943,4 @@ Build an Add-In with a list of vehicles and a button to refresh the data
 - [Geotab Add-In Development Guide](https://developers.geotab.com/myGeotab/addIns/developingAddIns/)
 - [Geotab API Reference](https://geotab.github.io/sdk/software/api/reference/)
 - [Building Add-Ins (Vibe Guide)](GEOTAB_ADDINS.md)
-- [Embedded Add-Ins Reference](/skills/geotab-addins/references/EMBEDDED.md)
+- [Embedded Add-Ins Reference](/skills/geotab/references/EMBEDDED.md)

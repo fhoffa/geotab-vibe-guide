@@ -184,7 +184,7 @@ api.call('Get', {
     exceptions.forEach(function(exc) {
         // Create clickable link to video tab
         var videoLink = document.createElement("a");
-        videoLink.textContent = "📹 View";
+        videoLink.textContent = "View";
         videoLink.href = "#";
         videoLink.onclick = function(e) {
             e.preventDefault();
@@ -379,7 +379,7 @@ api.call("Get", { typeName: "DeviceStatusInfo" }, function(statuses) {
     if (vehicle.latitude && vehicle.longitude) {
         getWeather(vehicle.latitude, vehicle.longitude, function(err, weather) {
             if (!err) {
-                console.log("Temperature:", weather.temperature, "°C");
+                console.log("Temperature:", weather.temperature, "C");
                 console.log("Wind speed:", weather.windspeed, "km/h");
                 console.log("Conditions:", weather.weathercode);
             }
@@ -475,12 +475,12 @@ function getHistoricalWeather(latitude, longitude, date, callback) {
 var tripDate = trip.start;  // From Geotab Trip data
 getHistoricalWeather(37.7749, -122.4194, tripDate, function(err, weather) {
     if (!err) {
-        console.log("Trip weather: " + weather.minTemp + "°C to " + weather.maxTemp + "°C");
+        console.log("Trip weather: " + weather.minTemp + "C to " + weather.maxTemp + "C");
     }
 });
 ```
 
-**⚠️ Common Mistake:** Requesting weather for future dates returns HTTP 400 error. Always validate the date is in the past before calling historical weather APIs.
+**Common Mistake:** Requesting weather for future dates returns HTTP 400 error. Always validate the date is in the past before calling historical weather APIs.
 
 ### OpenWeatherMap (Requires Free API Key)
 

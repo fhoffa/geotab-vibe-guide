@@ -978,7 +978,7 @@ A skill is a structured document (SKILL.md) that teaches AI assistants how to ac
 - [specific capability 2]
 
 Include code patterns, common mistakes to avoid, and example use cases.
-Follow the format in skills/geotab-api-quickstart/SKILL.md"
+Follow the format in skills/geotab/SKILL.md"
 ```
 
 ### Why Judges Love Skill Projects

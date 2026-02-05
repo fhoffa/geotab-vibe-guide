@@ -2,7 +2,7 @@
 
 You have a working Add-In with vanilla JS/CSS. Should you transform it to Zenith for that polished MyGeotab look? Read this first.
 
-> **AI Skill Available:** Use the [geotab-addin-zenith-styling skill](/skills/geotab-addin-zenith-styling/SKILL.md) to help your AI assistant with Zenith components and patterns.
+> **AI Skill Available:** Use the [geotab skill](/skills/geotab/SKILL.md) with [Zenith styling reference](/skills/geotab/references/ZENITH_STYLING.md) to help your AI assistant with Zenith components and patterns.
 
 ---
 
@@ -137,5 +137,5 @@ Same functionality. The Zenith version looks more polished but took longer to bu
 
 ## Resources
 
-- [Zenith Skill](/skills/geotab-addin-zenith-styling/SKILL.md) - AI skill with component patterns and gotchas
+- [Zenith Styling Reference](/skills/geotab/references/ZENITH_STYLING.md) - AI skill with component patterns and gotchas
 - [Add-Ins Guide](GEOTAB_ADDINS.md) - Start here for vanilla Add-Ins
