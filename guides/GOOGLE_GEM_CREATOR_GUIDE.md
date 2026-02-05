@@ -730,6 +730,94 @@ if (csvUrl) {
 | Polling too fast | Rate limits | Poll every 8 seconds |
 | Expecting real-time data | Stale results | Ace data is 2-24h old |
 
+### DuckDB WASM Integration (Advanced)
+
+For large Ace result sets (100K+ rows), load data into an in-browser DuckDB database for SQL analytics. This lets users query, filter, and aggregate data without server roundtrips.
+
+**Loading DuckDB WASM:**
+
+```javascript
+// Initialize DuckDB (call once on page load)
+var db = null;
+var conn = null;
+
+async function initDuckDB() {
+    var duckdbLib = await import('https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/+esm');
+    var base = 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.28.0/dist/';
+
+    // Worker workaround for CSP restrictions in Add-In iframes
+    var workerResponse = await fetch(base + 'duckdb-browser-eh.worker.js');
+    var workerBlob = new Blob([await workerResponse.text()], { type: 'application/javascript' });
+
+    db = new duckdbLib.AsyncDuckDB(
+        new duckdbLib.ConsoleLogger(),
+        new Worker(URL.createObjectURL(workerBlob))
+    );
+    await db.instantiate(base + 'duckdb-eh.wasm');
+    conn = await db.connect();
+    console.log('DuckDB ready');
+}
+
+initDuckDB();
+```
+
+**Ingesting Ace CSV into DuckDB:**
+
+```javascript
+async function ingestAceCSV(csvUrl) {
+    // Fetch CSV (use blob for CORS workaround)
+    var response = await fetch(csvUrl);
+    var buffer = new Uint8Array(await response.arrayBuffer());
+
+    // Register in DuckDB virtual filesystem
+    await db.registerFileBuffer('ace_results.csv', buffer);
+
+    // Create queryable view
+    await conn.query("CREATE OR REPLACE VIEW ace_data AS SELECT * FROM read_csv_auto('ace_results.csv');");
+
+    console.log('Data loaded into ace_data view');
+}
+```
+
+**Running SQL Queries:**
+
+```javascript
+async function runSQL(sql) {
+    var result = await conn.query(sql);
+    return result.toArray();  // Returns array of objects
+}
+
+// Example queries:
+// runSQL("SELECT * FROM ace_data LIMIT 100")
+// runSQL("SELECT device_name, SUM(miles) as total FROM ace_data GROUP BY device_name ORDER BY total DESC")
+// runSQL("SELECT COUNT(*) as count FROM ace_data WHERE speed > 65")
+```
+
+**Complete Ace + DuckDB Pattern:**
+
+```javascript
+// After Ace returns DONE status:
+var csvUrl = findCSVUrl(messages);
+if (csvUrl) {
+    await ingestAceCSV(csvUrl);
+
+    // Now users can run any SQL on the data
+    var topVehicles = await runSQL(
+        "SELECT device_name, SUM(distance) as total_km " +
+        "FROM ace_data GROUP BY device_name ORDER BY total_km DESC LIMIT 10"
+    );
+    console.log('Top vehicles:', topVehicles);
+}
+```
+
+**Benefits:**
+- Query 100K+ rows in-browser with full SQL
+- Filter, aggregate, join without server roundtrips
+- Export subsets to CSV/JSON
+- No backend needed
+
+**Working example:** See [ace-duckdb-lab.html](https://github.com/fhoffa/geotab-vibe-guide/blob/main/examples/addins/ace-duckdb-lab.html)
+
 ### Debugging External Add-Ins
 
 **HTML not updating after deploy?** MyGeotab caches externally-hosted HTML. Add a query parameter to force reload:
