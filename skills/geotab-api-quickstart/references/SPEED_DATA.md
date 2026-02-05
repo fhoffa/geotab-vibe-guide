@@ -51,6 +51,63 @@ ExceptionEvents in demo databases have these characteristics:
 
 This means speeding dashboards that rely on `ex.details.maxSpeed` will show 0 or crash in demo databases.
 
+### Detecting Demo vs Real Database
+
+Skills should detect the database type and adjust behavior accordingly:
+
+```python
+def is_demo_database(api):
+    """
+    Check if connected to a demo database by testing for GPS speed data.
+    Demo databases lack DiagnosticSpeedId data.
+    """
+    from datetime import datetime, timedelta
+
+    # Try to get any recent GPS speed data
+    result = api.get('StatusData', search={
+        'diagnosticSearch': {'id': 'DiagnosticSpeedId'},
+        'fromDate': (datetime.utcnow() - timedelta(days=7)).isoformat(),
+        'resultsLimit': 1
+    })
+
+    return len(result) == 0
+
+def get_speed_diagnostic_id(api):
+    """
+    Return the appropriate speed diagnostic for this database.
+    Demo: DiagnosticEngineRoadSpeedId (ECM speed)
+    Real: DiagnosticSpeedId (GPS speed)
+    """
+    if is_demo_database(api):
+        return 'DiagnosticEngineRoadSpeedId'
+    return 'DiagnosticSpeedId'
+```
+
+```javascript
+// JavaScript (Add-In) version
+function detectDemoDatabase(api, callback) {
+    var sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    api.call("Get", {
+        typeName: "StatusData",
+        search: {
+            diagnosticSearch: { id: "DiagnosticSpeedId" },
+            fromDate: sevenDaysAgo.toISOString(),
+            resultsLimit: 1
+        }
+    }, function(result) {
+        callback(result.length === 0);  // true = demo database
+    }, function(error) {
+        callback(true);  // Assume demo on error
+    });
+}
+
+function getSpeedDiagnosticId(isDemo) {
+    return isDemo ? "DiagnosticEngineRoadSpeedId" : "DiagnosticSpeedId";
+}
+```
+
 ---
 
 # Unverified Experiments

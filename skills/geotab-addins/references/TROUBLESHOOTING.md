@@ -223,6 +223,7 @@ Math.round(ex.details.maxSpeed)
 - `DiagnosticSpeedId` and `DiagnosticPostedRoadSpeedId` return 0 results
 - Use `DiagnosticEngineRoadSpeedId` as alternative speed source
 - ExceptionEvents have no `details` object in demo databases
+- See SPEED_DATA.md for `detectDemoDatabase()` function to auto-detect
 
 **Wrong diagnostic ID (CONFIRMED):**
 ```javascript
