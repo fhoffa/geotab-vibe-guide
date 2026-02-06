@@ -102,6 +102,25 @@ This works immediately - no GitHub Pages, no waiting. It uses the MyGeotab API j
 - **Embedded**: Quick tests, prototypes, sharing examples, no hosting access
 - **External**: Active development, frequent updates, team projects, larger add-ins
 
+### What About Server-Side Logic?
+
+Add-Ins are HTML/JS that run in the browser, but that doesn't mean you're limited to client-side code. An externally hosted Add-In can call **your own backend API** for anything the browser can't (or shouldn't) do:
+
+- **Heavy processing** — crunch large datasets on your server instead of in the browser
+- **Database access** — store historical data, user preferences, or audit logs in your own database
+- **External integrations** — call third-party APIs that require server-side secrets
+- **PDF/Excel generation** — generate complex reports server-side if client-side libraries aren't enough
+- **Scheduled tasks** — trigger background jobs from the Add-In UI
+
+Your Add-In's JavaScript calls your server with `fetch()` or `XMLHttpRequest`, and your server does the work. The MyGeotab `api` object handles Geotab data; your backend handles everything else.
+
+```
+Create a Geotab Add-In that shows a vehicle maintenance dashboard.
+The Add-In should call my backend API at https://myserver.com/api
+to store maintenance records in my database. Use the Geotab API
+for vehicle data and my backend for maintenance history.
+```
+
 ---
 
 ## How to Build One (The Vibe Way)
@@ -290,6 +309,9 @@ Add-Ins can load JavaScript and CSS libraries from CDNs. This works for both ext
 | **Leaflet** | Interactive maps with markers | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js` |
 | **Day.js** | Date formatting and manipulation | `https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js` |
 | **Bootstrap** | Professional CSS framework | Load dynamically (see below) |
+| **jsPDF** | PDF export (client-side) | `https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js` |
+| **jspdf-autotable** | Formatted tables in PDFs | `https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js` |
+| **SheetJS (xlsx)** | Excel .xlsx export (client-side) | `https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js` |
 
 **Example prompts:**
 
@@ -540,8 +562,9 @@ The AI will walk you through every step. When done, your URL will look like:
 - Test with different user roles
 
 **Code is Public:** Most free hosting (GitHub Pages, etc.) is public
-- Don't hardcode API keys or secrets
-- Use server-side APIs for sensitive operations
+- Don't hardcode API keys or secrets in client-side code
+- Use a server-side backend for operations that require secrets (API keys, database credentials)
+- See [What About Server-Side Logic?](#what-about-server-side-logic) above
 
 **Cross-Origin Notes:**
 - Calls to MyGeotab API work automatically (handled by the injected `api` object)

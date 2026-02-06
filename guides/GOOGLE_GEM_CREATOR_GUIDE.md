@@ -814,7 +814,7 @@ if (csvUrl) {
 - Query 100K+ rows in-browser with full SQL
 - Filter, aggregate, join without server roundtrips
 - Export subsets to CSV/JSON
-- No backend needed
+- No backend needed (though you can add one for heavier workloads)
 
 **Working example:** See [ace-duckdb-lab.html](https://github.com/fhoffa/geotab-vibe-guide/blob/main/examples/addins/ace-duckdb-lab.html)
 
