@@ -163,6 +163,6 @@ This approach gives you the best of both worlds - easy development with external
 
 ## Learn More
 
-- See [guides/GEOTAB_ADDINS.md](../../guides/GEOTAB_ADDINS.md) for the full guide
-- See [skills/geotab/SKILL.md](../../skills/geotab/SKILL.md) for technical details
+- See [guides/GEOTAB_ADDINS.md](https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GEOTAB_ADDINS.md) for the full guide
+- See [skills/geotab/SKILL.md](https://github.com/fhoffa/geotab-vibe-guide/blob/main/skills/geotab/SKILL.md) for technical details
 - Official docs: https://developers.geotab.com/myGeotab/addIns/developingAddIns/

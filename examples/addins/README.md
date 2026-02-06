@@ -107,4 +107,4 @@ Create a Geotab Add-In similar to simple-test but with [your features].
 
 ## Learn More
 
-See [guides/GEOTAB_ADDINS.md](../../guides/GEOTAB_ADDINS.md) for the full guide.
+See [guides/GEOTAB_ADDINS.md](https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/GEOTAB_ADDINS.md) for the full guide.

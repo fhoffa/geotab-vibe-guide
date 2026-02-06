@@ -9,9 +9,9 @@ A Google Cloud Function that generates images using Gemini, secured so only auth
 3. **User allowlist** — restricts access to specific users (optional but recommended)
 4. **Rate limiting** — prevents abuse (default: 20 requests/hour per user)
 
-See [Securing Your Add-In's Backend Endpoints](../../../guides/SECURE_ADDIN_BACKEND.md) for the full explanation.
+See [Securing Your Add-In's Backend Endpoints](https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/SECURE_ADDIN_BACKEND.md) for the full explanation.
 
-For a line-by-line walkthrough, see the [annotated version](../../../guides/annotated-examples/GENERATE_IMAGE_ANNOTATED.md).
+For a line-by-line walkthrough, see the [annotated version](https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/annotated-examples/GENERATE_IMAGE_ANNOTATED.md).
 
 ## Deploy
 
