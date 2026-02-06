@@ -100,11 +100,11 @@ Instead of cramming all vehicles into one chart (messy), the Add-In creates a se
 
 ### 6. Client-side PDF and Excel export
 
-Both exports happen entirely in the browser using CDN libraries — no server needed. The PDF captures chart canvases as PNG images and adds data tables. The Excel file creates one worksheet per vehicle.
+Both exports happen entirely in the browser using CDN libraries. The PDF captures chart canvases as PNG images and adds data tables. The Excel file creates one worksheet per vehicle. No server setup required — though you could also generate exports server-side if you have a backend.
 
 **Where to see it:** Look for `btnExport` (PDF using jsPDF + autoTable) and `btnExcel` (Excel using SheetJS/xlsx).
 
-**Why this matters for your prompts:** Client-side export is the only option for Add-Ins since you can't run backend code. When asking for export features, specify: *"Use jsPDF for PDF export and SheetJS for Excel export, loaded from CDN."*
+**Why this matters for your prompts:** Client-side export is the simplest path when you haven't set up a server. When asking for export features, specify: *"Use jsPDF for PDF export and SheetJS for Excel export, loaded from CDN."*
 
 ### 7. Version-pinned CDN libraries
 
