@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an educational curriculum and starter kit for teaching developers to build fleet management applications using the Geotab API with "vibe coding" (AI-assisted development). It provides tutorials, code examples, and ready-made prompts for hackathons and developer onboarding.
 
-**Primary languages:** JavaScript (Add-Ins), Python (guide-driven workflows)
+**Primary languages:** JavaScript (Add-Ins), API-first workflows
 
 ## Repository Structure
 
@@ -23,16 +23,9 @@ This is an educational curriculum and starter kit for teaching developers to bui
 | AI assistants needing repo orientation | `AGENT_SUMMARY.md` |
 | AI assistants choosing implementation skill | `skills/README.md` |
 | AI assistants needing API context | `VIBE_CODING_CONTEXT.md` |
-| Building guide-driven Python workflows | `guides/ANTIGRAVITY_QUICKSTART.md` |
+| Building dashboard workflows | `guides/ANTIGRAVITY_QUICKSTART.md` |
 | Understanding Add-Ins | `guides/GEOTAB_ADDINS.md` |
 | Human learners | `README.md` → choose a path |
-
-## Development Setup
-
-### Python Examples
-```bash
-pip install python-dotenv requests mygeotab
-```
 
 ### Credentials
 All scripts load credentials from `.env` in the repository root:
@@ -78,7 +71,7 @@ API Reference: https://geotab.github.io/sdk/software/api/reference/
 ## Code Standards
 
 When writing code examples or snippets:
-- Follow language style guides (PEP 8 for Python, consistent ES5 for Add-Ins)
+- Follow language style guides and keep Add-In snippets ES5-compatible
 - Add clear comments and error handling
 - Keep examples beginner-friendly
 

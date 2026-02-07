@@ -30,10 +30,10 @@ Then use [**CLAUDE PROMPTS**](./guides/CLAUDE_PROMPTS.md) for ready-made prompts
 
 ---
 
-### Path C: Build a Python Dashboard
+### Path C: Build a Dashboard App
 **Want a standalone app with maps, charts, and data analysis?**
 
-[**ANTIGRAVITY QUICKSTART**](./guides/ANTIGRAVITY_QUICKSTART.md) - Use Google's free IDE to build interactive Streamlit dashboards.
+[**ANTIGRAVITY QUICKSTART**](./guides/ANTIGRAVITY_QUICKSTART.md) - Use Google's free IDE to build interactive dashboards.
 
 ---
 
