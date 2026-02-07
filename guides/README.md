@@ -37,6 +37,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 - **[GEOTAB_ADDINS.md](./GEOTAB_ADDINS.md)** - Build custom pages that run inside MyGeotab.
 - **[TRANSFORM_ADDIN_ZENITH.md](./TRANSFORM_ADDIN_ZENITH.md)** - Should you transform to Zenith? Advantages, drawbacks, and how-to.
+- **[annotated-examples/](./annotated-examples/)** - Real-world Add-Ins broken down line by line. Learn patterns from working code.
 
 ### Google Gems for Add-Ins
 

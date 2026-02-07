@@ -304,6 +304,94 @@ api.call('Get', {
 
 **Common Mistake:** Similar-sounding IDs may not work. For example, `DiagnosticEngineCrankingVoltageId` returns no data, but `DiagnosticCrankingVoltageId` works. Always verify in Engine Measurements first.
 
+### Discovering Diagnostics by Name (Portable Across Databases)
+
+When you don't know the exact Diagnostic ID — or need your Add-In to work across different databases — search by name pattern instead of hardcoding IDs. The `%` wildcard works like SQL LIKE:
+
+```javascript
+api.call("Get", {
+    typeName: "Diagnostic",
+    search: { name: "%Temperature%" }
+}, function(diags) {
+    // Filter client-side for the specific sensor you need
+    var tempDiag = null;
+    for (var i = 0; i < diags.length; i++) {
+        var n = diags[i].name.toLowerCase();
+        if (n.indexOf("cargo") > -1 && n.indexOf("zone 1") > -1) {
+            tempDiag = diags[i];
+            break;
+        }
+    }
+    if (tempDiag) {
+        // Now use tempDiag.id in your StatusData queries
+    }
+}, errorCallback);
+```
+
+**When to use this pattern:**
+- Sensor-based Add-Ins (temperature, fuel, tire pressure) where IDs vary by device type
+- Add-Ins intended for distribution across multiple databases
+- Any time you don't have access to Engine Measurements to manually look up IDs
+
+**Common search patterns:** `%Temperature%`, `%Fuel%`, `%Tire%`, `%Battery%`, `%Speed%`
+
+### Exporting Data (PDF, Excel, CSV)
+
+Add-Ins can generate downloadable files client-side using CDN libraries. This is the simplest approach when you don't have a backend — but you can also generate exports server-side if you have one.
+
+**Recommended CDN libraries for export:**
+| Library | CDN URL | Use Case |
+|---------|---------|----------|
+| jsPDF | `https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js` | PDF generation |
+| jspdf-autotable | `https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js` | Formatted tables in PDFs |
+| SheetJS (xlsx) | `https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js` | Excel .xlsx files |
+
+**PDF with chart image and data table:**
+```javascript
+var doc = new jspdf.jsPDF("p", "mm", "a4");
+doc.setFontSize(16);
+doc.text("Fleet Report", 14, 15);
+
+// Capture a Chart.js canvas as an image
+var img = document.getElementById("myChart").toDataURL("image/png", 1.0);
+doc.addImage(img, "PNG", 10, 25, 190, 90);
+
+// Add a data table below the chart
+doc.autoTable({
+    head: [["Vehicle", "Value", "Time"]],
+    body: rows,
+    startY: 120,
+    theme: "striped"
+});
+doc.save("report.pdf");
+```
+
+**Excel with multiple worksheets:**
+```javascript
+var wb = XLSX.utils.book_new();
+dataByVehicle.forEach(function(d) {
+    var ws = XLSX.utils.json_to_sheet(d.rows);
+    // Excel tab names max 31 characters
+    XLSX.utils.book_append_sheet(wb, ws, d.name.substring(0, 31));
+});
+XLSX.writeFile(wb, "fleet_data.xlsx");
+```
+
+**CSV (no library needed):**
+```javascript
+var csv = "Vehicle,Speed,Time\n";
+data.forEach(function(r) {
+    csv += r.vehicle + "," + r.speed + "," + r.time + "\n";
+});
+var blob = new Blob([csv], { type: "text/csv" });
+var a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "export.csv";
+a.click();
+```
+
+See the [Cold Chain Historical View](../../../guides/annotated-examples/COLD_CHAIN_HISTORICAL_VIEW.md) annotated example for a complete working Add-In with PDF and Excel export.
+
 ## Persistent Storage (AddInData)
 
 Add-Ins can store custom JSON data that persists across sessions using `AddInData` (10,000 char limit per record).
