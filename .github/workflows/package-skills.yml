@@ -41,16 +41,28 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Create or update the "latest" release so the download link always works
-          # Must NOT use --prerelease, otherwise /releases/latest/download/ returns 404
-          gh release delete latest --yes 2>/dev/null || true
-          git push origin :refs/tags/latest 2>/dev/null || true
-          gh release create latest \
-            --title "Latest Skills" \
-            --notes "Auto-updated on every push to main. Download the zip to get all Geotab agent skills." \
-            --prerelease 2>/dev/null || true
-            2>/dev/null || true
-          gh release upload latest dist/geotab-skills.zip --clobber
+          set -euo pipefail
+
+          # Keep a stable release tag named "latest" and upload the packaged zip there.
+          # Consumers can use /releases/download/latest/geotab-skills.zip reliably.
+          RELEASE_NOTES="Auto-updated on every push to main. Download the zip to get all Geotab agent skills."
+
+          if gh release view latest >/dev/null 2>&1; then
+            gh release edit latest \
+              --title "Latest Skills" \
+              --notes "$RELEASE_NOTES" \
+              --latest
+            gh release upload latest dist/geotab-skills.zip --clobber
+          else
+            gh release create latest dist/geotab-skills.zip \
+              --title "Latest Skills" \
+              --notes "$RELEASE_NOTES" \
+              --latest
+          fi
+
+      - name: Verify stable download URL
+        run: |
+          curl -fI "https://github.com/${{ github.repository }}/releases/download/latest/geotab-skills.zip"
  
       - name: Attach to tagged release
         if: github.event_name == 'release'
