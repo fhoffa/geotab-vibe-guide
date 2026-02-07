@@ -41,15 +41,41 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          # Create or update the "latest" release so the download link always works
-          # Must NOT use --prerelease, otherwise /releases/latest/download/ returns 404
-          gh release delete latest --yes 2>/dev/null || true
-          git push origin :refs/tags/latest 2>/dev/null || true
-          gh release create latest \
+          set -euo pipefail
+
+          RELEASE_TAG="latest"
+          RELEASE_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}/geotab-skills.zip"
+
+          # Delete an existing release explicitly by the latest tag, then recreate it at this commit.
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release delete "${RELEASE_TAG}" --yes
+          fi
+
+          # Ensure tag cleanup (release delete normally removes it; this handles any leftovers).
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh api --method DELETE "repos/${GITHUB_REPOSITORY}/git/refs/tags/${RELEASE_TAG}"
+          fi
+
+          gh release create "${RELEASE_TAG}" \
+            --target "${GITHUB_SHA}" \
             --title "Latest Skills" \
-            --notes "Auto-updated on every push to main. Download the zip to get all Geotab agent skills." \
-            2>/dev/null || true
-          gh release upload latest dist/geotab-skills.zip --clobber
+            --notes "Auto-updated on every push to main. Download the zip to get all Geotab agent skills."
+
+          # Always upload/replace the zip asset on the stable release.
+          gh release upload "${RELEASE_TAG}" dist/geotab-skills.zip --clobber
+
+          # Verify the final public stable URL is reachable (allow time for GitHub edge propagation).
+          for attempt in {1..12}; do
+            if curl --fail --silent --show-error --location --head "${RELEASE_URL}" >/dev/null; then
+              echo "Stable release asset is reachable: ${RELEASE_URL}"
+              exit 0
+            fi
+            echo "Attempt ${attempt}/12: ${RELEASE_URL} not reachable yet; retrying in 5s..."
+            sleep 5
+          done
+
+          echo "ERROR: Stable release asset URL did not become reachable: ${RELEASE_URL}" >&2
+          exit 1
  
       - name: Attach to tagged release
         if: github.event_name == 'release'

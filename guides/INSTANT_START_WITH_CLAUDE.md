@@ -43,7 +43,7 @@ Before Claude can connect to the Geotab API, you need to allow network egress to
 Before asking questions, give Claude the knowledge to work with the Geotab API. Pick the method that matches your setup:
 
 **Claude.ai** — Upload skill files to your project:
-1. [Download geotab-skills.zip](https://github.com/fhoffa/geotab-vibe-guide/releases/latest/download/geotab-skills.zip) and unzip it
+1. [Download geotab-skills.zip](https://github.com/fhoffa/geotab-vibe-guide/releases/download/latest/geotab-skills.zip) and unzip it
 2. Open your Claude project settings
 3. Upload `skills/geotab/SKILL.md` **and the files from `skills/geotab/references/`** (SKILL.md alone links to these reference files — without them Claude sees a table of contents with dead links)
 4. Claude now knows the Geotab API patterns, entity types, Add-In development, and best practices
