@@ -6,31 +6,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an educational curriculum and starter kit for teaching developers to build fleet management applications using the Geotab API with "vibe coding" (AI-assisted development). It provides tutorials, code examples, and ready-made prompts for hackathons and developer onboarding.
 
-**Primary languages:** Python (examples), JavaScript (Add-Ins)
+**Primary languages:** JavaScript (Add-Ins), API-first workflows
 
 ## Repository Structure
 
 - `guides/` - Human-readable documentation, tutorials, and prompts
-- `examples/python/` - Task-based Python code challenges (01-06 folders, build sequentially)
 - `examples/addins/` - Geotab Add-In templates (HTML/JS for MyGeotab)
 - `skills/` - Code patterns for AI implementation
+- `AGENT_SUMMARY.md` - Canonical orientation for AI assistants
 - `VIBE_CODING_CONTEXT.md` - Quick reference for AI assistants (~400 tokens)
 
 ## Key Entry Points
 
 | Audience | Start Here |
 |----------|-----------|
+| AI assistants needing repo orientation | `AGENT_SUMMARY.md` |
+| AI assistants choosing implementation skill | `skills/README.md` |
 | AI assistants needing API context | `VIBE_CODING_CONTEXT.md` |
-| Building Python examples | `examples/instructions_for_ai/AGENT_DELEGATION.md` |
+| Building dashboard workflows | `guides/ANTIGRAVITY_QUICKSTART.md` |
 | Understanding Add-Ins | `guides/GEOTAB_ADDINS.md` |
 | Human learners | `README.md` → choose a path |
-
-## Development Setup
-
-### Python Examples
-```bash
-pip install python-dotenv requests mygeotab
-```
 
 ### Credentials
 All scripts load credentials from `.env` in the repository root:
@@ -75,25 +70,10 @@ API Reference: https://geotab.github.io/sdk/software/api/reference/
 
 ## Code Standards
 
-When building Python examples:
-- Follow PEP 8
-- Add type hints and docstrings
-- Keep code beginner-friendly with inline comments
-- Test with real Geotab credentials
-- Include error handling for network failures, invalid credentials, and empty results
-- Each example folder needs: working scripts, `README.md`, `requirements.txt`
-
-## Building Python Examples
-
-Work sequentially through `examples/python/` folders:
-1. `01_authentication/` - Start here (foundation)
-2. `02_fetch_data/` - Data fetching
-3. `03_cli_dashboard/` - CLI dashboards
-4. `04_web_dashboard/` - Web dashboards
-5. `05_ace_integration/` - Geotab Ace API (mock if unavailable)
-6. `06_complete_apps/` - Full applications
-
-Each folder has a `TASK.md` with specific requirements and "vibe prompts."
+When writing code examples or snippets:
+- Follow language style guides and keep Add-In snippets ES5-compatible
+- Add clear comments and error handling
+- Keep examples beginner-friendly
 
 ## Documentation Style
 

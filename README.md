@@ -30,10 +30,10 @@ Then use [**CLAUDE PROMPTS**](./guides/CLAUDE_PROMPTS.md) for ready-made prompts
 
 ---
 
-### Path C: Build a Python Dashboard
+### Path C: Build a Dashboard App
 **Want a standalone app with maps, charts, and data analysis?**
 
-[**ANTIGRAVITY QUICKSTART**](./guides/ANTIGRAVITY_QUICKSTART.md) - Use Google's free IDE to build interactive Streamlit dashboards.
+[**ANTIGRAVITY QUICKSTART**](./guides/ANTIGRAVITY_QUICKSTART.md) - Use Google's free IDE to build interactive dashboards.
 
 ---
 
@@ -55,12 +55,33 @@ Examples: Speeding alerts to Slack, maintenance ticket creation, geofence notifi
 
 ---
 
+## 🧭 Workshop Organizer Snapshot
+
+Use this repo as a **60-minute hackathon kickoff workshop** starter for developer onboarding and community events.
+
+- **Core curriculum:** [`guides/TUTORIAL_DESIGN.md`](./guides/TUTORIAL_DESIGN.md)
+- **Facilitator materials:** [`slides/README.md`](./slides/README.md)
+- **Project follow-up ideas:** [`guides/HACKATHON_IDEAS.md`](./guides/HACKATHON_IDEAS.md)
+
+---
+
+## 🤖 For AI Assistants
+
+If you're an AI coding assistant, start with:
+
+1. [AGENT_SUMMARY.md](./AGENT_SUMMARY.md) - canonical repo orientation
+2. [skills/README.md](./skills/README.md) - choose the right skill pack first
+3. [VIBE_CODING_CONTEXT.md](./VIBE_CODING_CONTEXT.md) - minimal-token API context
+4. [WHICH_GUIDE.md](./WHICH_GUIDE.md) - route to deeper docs by task
+
+---
+
 ## 📂 Repository Structure
 
 *   [**`GOOGLE_GEM_USER_GUIDE.md`**](./guides/GOOGLE_GEM_USER_GUIDE.md): **Start here!** Build Add-Ins by describing (or drawing) what you want.
 *   [**`BEGINNER_GLOSSARY.md`**](./guides/BEGINNER_GLOSSARY.md): New to coding? This explains all terms.
 *   [**`CLAUDE_PROMPTS.md`**](./guides/CLAUDE_PROMPTS.md): Ready-made prompts to build apps with Claude.
-*   [**`examples/`**](./examples/): Task-based challenges. Use AI to solve them!
+*   [**`examples/`**](./examples/): Working Add-In examples plus AI delegation guidance.
 *   [**`guides/`**](./guides/): Hackathon ideas, tutorials, and deep dives.
     *   [`HACKATHON_IDEAS.md`](./guides/HACKATHON_IDEAS.md)
     *   [`TUTORIAL_DESIGN.md`](./guides/TUTORIAL_DESIGN.md)

@@ -95,7 +95,7 @@ mkdir sandbox
 sandbox/
 ├── addins/              # Your Add-In experiments
 │   └── my-fleet-view/
-├── python/              # Your Python scripts
+├── dashboards/          # Your dashboard scripts
 │   └── trip-analyzer/
 ├── notes/               # Your learning notes
 │   └── feedback.md
@@ -129,15 +129,15 @@ sandbox/
 - Was the context file helpful?
 - What would you add or change?
 
-### Path C: Python Examples (30-60 min)
-**Test the step-by-step examples:**
-1. Start with `examples/python/01_authentication/TASK.md`
-2. Use your preferred AI tool to complete the task
-3. Move through 02, 03, etc.
+### Path C: Dashboard Workflow (30-60 min)
+**Test a guide-driven dashboard flow:**
+1. Start with `guides/ANTIGRAVITY_QUICKSTART.md`
+2. Use your preferred AI tool to build a first dashboard
+3. Reference `guides/API_REFERENCE_FOR_AI.md` for API patterns as needed
 
 **Questions to consider:**
-- Is the difficulty progression right?
-- Are the vibe prompts effective?
+- Is the flow from setup to dashboard clear?
+- Are the prompts effective for iteration?
 - Did you get stuck anywhere?
 
 ### Path D: Add-In Development (30 min)
@@ -164,10 +164,9 @@ The `skills/` folder contains reusable patterns that teach AI tools how to build
 
 | Skill | What it teaches | When to use |
 |-------|-----------------|-------------|
-| `geotab-api-quickstart` | API authentication, data fetching, trip analysis | Python scripts, data analysis |
-| `geotab-addins` | Add-In structure, embedded configs, troubleshooting | Building MyGeotab custom pages |
-| `geotab-addin-zenith-styling` | Modern UI components, Zenith design system | Making Add-Ins look professional |
-| `agentic-n8n` | Workflow automation with n8n | Building autonomous systems |
+| `geotab` | API authentication, Add-In patterns, troubleshooting | Building API and MyGeotab solutions |
+| `agentic-n8n` | Workflow automation with n8n | Building autonomous monitoring systems |
+| `geotab-custom-mcp` | MCP server setup and extension | Conversational fleet access via Claude Desktop |
 
 Each skill has a `SKILL.md` file (the main entry point) and a `references/` folder with detailed examples.
 
@@ -189,7 +188,7 @@ Claude reads `CLAUDE.md` and can access all skills. Ask it to use a specific ski
 2. For specific tasks, also share the relevant skill file:
    - Building Add-Ins? Upload `skills/geotab/SKILL.md`
    - Styling? Upload `skills/geotab/references/ZENITH_STYLING.md`
-   - Python API work? Upload `skills/geotab/SKILL.md`
+   - API workflow tasks? Upload `skills/geotab/SKILL.md`
 
 ### Cursor / Windsurf / Other IDEs
 1. Open the `geotab-vibe-guide` folder as your project
@@ -263,9 +262,7 @@ Reach out to **Felipe Hoffa**:
 - Wait 15-30 min if you got locked out from too many attempts
 
 ### "Module not found"
-```bash
-pip install python-dotenv requests mygeotab
-```
+Install the dependencies required by your chosen guide/workflow, then retry.
 
 ### Add-In doesn't appear in MyGeotab
 - Make sure you're in Admin mode
@@ -297,7 +294,7 @@ Your feedback directly shapes what hackathon participants will experience. Thank
 | Quick AI Context | `VIBE_CODING_CONTEXT.md` |
 | Beginner Glossary | `guides/BEGINNER_GLOSSARY.md` |
 | All Guides | `guides/README.md` |
-| Python Examples | `examples/python/` |
+| Dashboard Guide | `guides/ANTIGRAVITY_QUICKSTART.md` |
 | Add-In Examples | `examples/addins/` |
 | Hackathon Ideas | `guides/HACKATHON_IDEAS.md` |
 | Create Demo Account | https://my.geotab.com/registration.html |

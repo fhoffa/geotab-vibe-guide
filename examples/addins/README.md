@@ -100,7 +100,7 @@ See `EMBEDDED_README.md` for details.
 
 **Or tell AI:**
 ```
-Use the geotab-addins skill.
+Use the geotab skill (`skills/geotab/SKILL.md`) and load `skills/geotab/references/ADDINS.md`.
 
 Create a Geotab Add-In similar to simple-test but with [your features].
 ```
