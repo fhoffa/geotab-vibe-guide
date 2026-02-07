@@ -2,6 +2,8 @@
 
 **A temperature monitoring Add-In — what it does, why it works, and how to prompt for something like it.**
 
+*Created by [Majdi Ben Hassen](https://www.linkedin.com/in/majdi-ben-hassen-48300996/)*
+
 This Add-In lets fleet managers filter vehicles by group, pick which temperature signals to plot (across multiple reefer zones), set a date range, and see historical charts with PDF and Excel export. It supports multiple languages and includes reefer unit status tracking.
 
 > **Try it yourself:** Paste [cold-chain-configuration.json](cold-chain-configuration.json) into MyGeotab.

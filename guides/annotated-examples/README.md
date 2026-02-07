@@ -6,9 +6,9 @@ This folder contains detailed walkthroughs of production-quality Add-Ins. Each g
 
 ## Available Examples
 
-| Example | What It Does | Key Patterns |
-|---------|-------------|--------------|
-| [Cold Chain Historical View](COLD_CHAIN_HISTORICAL_VIEW.md) | Temperature monitoring with charts, PDF, and Excel export | `multiCall` batching, diagnostic discovery, Chart.js time-series, export workflows |
+| Example | Author | What It Does | Key Patterns |
+|---------|--------|-------------|--------------|
+| [Cold Chain Historical View](COLD_CHAIN_HISTORICAL_VIEW.md) | [Majdi Ben Hassen](https://www.linkedin.com/in/majdi-ben-hassen-48300996/) | Temperature monitoring with charts, PDF, and Excel export | `multiCall` batching, group filtering, i18n, multi-zone signals, export workflows |
 
 ## How to Use These Guides
 
