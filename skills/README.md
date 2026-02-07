@@ -35,7 +35,7 @@ On paid Claude.ai plans, upload skill files to your project via the UI. See [Usi
 
 Grab just the skills (no need to clone the whole repo):
 
-**[Download geotab-skills.zip](https://github.com/fhoffa/geotab-vibe-guide/releases/latest/download/geotab-skills.zip)**
+**[Download geotab-skills.zip](https://github.com/fhoffa/geotab-vibe-guide/releases/download/latest/geotab-skills.zip)**
 
 Unzip and point your agent at the skill folders.
 
