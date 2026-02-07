@@ -1,0 +1,12 @@
+{
+  "name": "generate-image",
+  "version": "1.0.0",
+  "description": "Image generation Cloud Function secured with Geotab session verification",
+  "main": "index.js",
+  "scripts": {
+    "start": "npx @google-cloud/functions-framework --target=generateImage"
+  },
+  "dependencies": {
+    "@google-cloud/functions-framework": "^3.0.0"
+  }
+}
