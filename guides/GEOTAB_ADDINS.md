@@ -542,6 +542,7 @@ The AI will walk you through every step. When done, your URL will look like:
 **Code is Public:** Most free hosting (GitHub Pages, etc.) is public
 - Don't hardcode API keys or secrets
 - Use server-side APIs for sensitive operations
+- **→ [Securing Your Add-In's Backend Endpoints](SECURE_ADDIN_BACKEND.md)** — how to protect your Cloud Functions/APIs so only your Add-In can call them
 
 **Cross-Origin Notes:**
 - Calls to MyGeotab API work automatically (handled by the injected `api` object)

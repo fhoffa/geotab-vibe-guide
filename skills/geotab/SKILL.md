@@ -45,6 +45,7 @@ This is the unified skill for all Geotab fleet management development. Navigate 
 | [EMBEDDED.md](references/EMBEDDED.md) | No-hosting Add-In deployment, inline JSON config |
 | [EXAMPLES.md](references/EXAMPLES.md) | Complete working Add-In code examples |
 | [INTEGRATIONS.md](references/INTEGRATIONS.md) | Navigation, email, maps, external APIs |
+| [SECURE_BACKEND.md](references/SECURE_BACKEND.md) | Securing Cloud Functions called by Add-Ins |
 | [STORAGE_API.md](references/STORAGE_API.md) | Persisting Add-In data with AddInData |
 | [TROUBLESHOOTING.md](references/TROUBLESHOOTING.md) | Debugging common Add-In issues |
 
