@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <script src='https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/chartjs-adapter-moment@1.0.1/dist/chartjs-adapter-moment.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js'></script>
+    <script src='https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'></script>
+</head>
+<body style='margin:0;padding:20px;font-family:sans-serif;background:#f4f7f9;'>
+    <div style='background:#fff;padding:20px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1);'>
+        <h2 id='l-title' style='margin-top:0;color:#2c3e50;'>Cold Chain Historical View</h2>
+
+        <!-- Controls bar -->
+        <div style='display:flex;gap:15px;margin-bottom:20px;flex-wrap:wrap;align-items:flex-end;'>
+
+            <!-- Group filter -->
+            <div style='display:flex;flex-direction:column;'>
+                <label id='l-group' style='font-size:11px;font-weight:bold;'>Group</label>
+                <select id='groupFilter' style='padding:8px;border-radius:4px;border:1px solid #ccc;width:200px;height:38px;box-sizing:border-box;'></select>
+            </div>
+
+            <!-- Vehicle checkbox dropdown -->
+            <div style='display:flex;flex-direction:column;position:relative;'>
+                <label id='l-vehicle' style='font-size:11px;font-weight:bold;'>Vehicles</label>
+                <div id='vehBtn' style='padding:8px;border-radius:4px;border:1px solid #ccc;width:200px;height:38px;background:#fff;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box;'>
+                    <span id='l-veh-span'>Select...</span><span>▼</span>
+                </div>
+                <div id='vehDrop' style='display:none;position:absolute;top:58px;left:0;width:200px;max-height:250px;overflow-y:auto;background:#fff;border:1px solid #ccc;z-index:1000;box-shadow:0 4px 8px rgba(0,0,0,0.1);padding:5px;box-sizing:border-box;'></div>
+            </div>
+
+            <!-- Signal checkbox dropdown -->
+            <div style='display:flex;flex-direction:column;position:relative;'>
+                <label id='l-signal' style='font-size:11px;font-weight:bold;'>Signals</label>
+                <div id='sigBtn' style='padding:8px;border-radius:4px;border:1px solid #ccc;width:200px;height:38px;background:#fff;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;box-sizing:border-box;'>
+                    <span id='l-sig-span'>Select...</span><span>▼</span>
+                </div>
+                <div id='sigDrop' style='display:none;position:absolute;top:58px;left:0;width:200px;max-height:250px;overflow-y:auto;background:#fff;border:1px solid #ccc;z-index:1001;box-shadow:0 4px 8px rgba(0,0,0,0.1);padding:5px;box-sizing:border-box;'></div>
+            </div>
+
+            <!-- Min/Max thresholds -->
+            <div style='display:flex;flex-direction:column;'>
+                <label style='font-size:11px;font-weight:bold;'>Min/Max °C</label>
+                <div style='display:flex;gap:5px;'>
+                    <input type='number' id='minTemp' placeholder='Min' style='padding:8px;border-radius:4px;border:1px solid #ccc;width:60px;height:38px;box-sizing:border-box;'>
+                    <input type='number' id='maxTemp' placeholder='Max' style='padding:8px;border-radius:4px;border:1px solid #ccc;width:60px;height:38px;box-sizing:border-box;'>
+                </div>
+            </div>
+
+            <!-- Date range -->
+            <div style='display:flex;flex-direction:column;'>
+                <label id='l-from' style='font-size:11px;font-weight:bold;'>From</label>
+                <input type='datetime-local' id='fromDate' style='padding:8px;border-radius:4px;border:1px solid #ccc;width:190px;height:38px;box-sizing:border-box;'>
+            </div>
+            <div style='display:flex;flex-direction:column;'>
+                <label id='l-to' style='font-size:11px;font-weight:bold;'>To</label>
+                <input type='datetime-local' id='toDate' style='padding:8px;border-radius:4px;border:1px solid #ccc;width:190px;height:38px;box-sizing:border-box;'>
+            </div>
+
+            <!-- Action buttons -->
+            <div style='display:flex;gap:5px;'>
+                <button id='btnLoad' style='padding:0 12px;background:#007bff;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;height:38px;'>Plot</button>
+                <button id='btnExport' style='padding:0 12px;background:#e74c3c;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;height:38px;'>PDF</button>
+                <button id='btnExcel' style='padding:0 12px;background:#27ae60;color:white;border:none;border-radius:4px;cursor:pointer;font-weight:bold;height:38px;'>Excel</button>
+            </div>
+        </div>
+
+        <!-- Charts render here -->
+        <div id='chartArea'></div>
+        <div id='status' style='margin-top:10px;font-size:14px;color:#666;'>...</div>
+    </div>
+
+<script>
+geotab.addin['cold-chain-monitor'] = function() {
+    var chartInstances = [];
+    var reportData = [];
+    var allDevices = [];
+
+    // --- Known reefer diagnostic IDs ---
+    var signals = [
+        { id: 'DiagnosticCargoTemperatureZone1Id',          n: 'Cargo Temp Z1' },
+        { id: 'DiagnosticCargoTemperatureZone2Id',          n: 'Cargo Temp Z2' },
+        { id: 'DiagnosticCargoTemperatureZone3Id',          n: 'Cargo Temp Z3' },
+        { id: 'RefrigerationUnitSetTemperatureZone1Id',     n: 'Setpoint Z1' },
+        { id: 'RefrigerationUnitSetTemperatureZone2Id',     n: 'Setpoint Z2' },
+        { id: 'RefrigerationUnitSetTemperatureZone3Id',     n: 'Setpoint Z3' },
+        { id: 'RefrigerationUnitStatusId',                  n: 'Unit status (0. Disabled, 1. On, 2. Off, 3. Error)', isDigital: true }
+    ];
+
+    // --- i18n labels (extend for other languages) ---
+    var i18n = {
+        en: {
+            title: 'Cold Chain Historical View',
+            group: 'Group',
+            allGroups: '-- All Groups --',
+            vehicle: 'Vehicles',
+            signal: 'Signals',
+            select: 'Select...',
+            from: 'From',
+            to: 'To',
+            plot: 'Plot',
+            loading: 'Loading...',
+            timeCol: 'Time (24h)',
+            valCol: 'Value',
+            reportTitle: 'Cold Chain Historical Report'
+        }
+    };
+
+    var statusLabels = ['Disabled', 'On', 'Off', 'Error'];
+
+    return {
+        initialize: function(api, state, callback) {
+            // --- Apply i18n labels ---
+            var lang = state.language || 'en';
+            var t = i18n[lang] || i18n.en;
+            document.getElementById('l-title').innerHTML = t.title;
+            document.getElementById('l-group').innerHTML = t.group;
+            document.getElementById('l-vehicle').innerHTML = t.vehicle;
+            document.getElementById('l-signal').innerHTML = t.signal;
+            document.getElementById('l-veh-span').innerHTML = t.select;
+            document.getElementById('l-sig-span').innerHTML = t.select;
+            document.getElementById('l-from').innerHTML = t.from;
+            document.getElementById('l-to').innerHTML = t.to;
+            document.getElementById('btnLoad').innerHTML = t.plot;
+
+            // --- Default date range: yesterday ---
+            var now = new Date();
+            var yest = new Date();
+            yest.setDate(now.getDate() - 1);
+            yest.setHours(0, 0, 0, 0);
+            var yestEnd = new Date();
+            yestEnd.setDate(now.getDate() - 1);
+            yestEnd.setHours(23, 59, 59, 999);
+
+            var pad = function(n) { return n < 10 ? '0' + n : n; };
+            var formatDT = function(d) {
+                return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+                       'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+            };
+            document.getElementById('fromDate').value = formatDT(yest);
+            document.getElementById('toDate').value = formatDT(yestEnd);
+
+            // --- Dropdown toggle logic (only one open at a time) ---
+            document.getElementById('vehBtn').onclick = function() {
+                document.getElementById('vehDrop').style.display =
+                    document.getElementById('vehDrop').style.display === 'none' ? 'block' : 'none';
+                document.getElementById('sigDrop').style.display = 'none';
+            };
+            document.getElementById('sigBtn').onclick = function() {
+                document.getElementById('sigDrop').style.display =
+                    document.getElementById('sigDrop').style.display === 'none' ? 'block' : 'none';
+                document.getElementById('vehDrop').style.display = 'none';
+            };
+
+            // --- Populate signal checkboxes ---
+            var sDrop = document.getElementById('sigDrop');
+            signals.forEach(function(s) {
+                var d = document.createElement('div');
+                d.style.padding = '5px';
+                d.innerHTML = '<label style="cursor:pointer;font-size:13px;">' +
+                    '<input type="checkbox" class="sig-chk" value="' + s.id +
+                    '" data-name="' + s.n + '"' +
+                    (s.isDigital ? ' data-digital="true"' : '') +
+                    '> ' + s.n + '</label>';
+                sDrop.appendChild(d);
+            });
+
+            // --- Fetch devices and groups ---
+            api.multiCall([
+                ['Get', { typeName: 'Device' }],
+                ['Get', { typeName: 'Group' }]
+            ], function(res) {
+                allDevices = res[0];
+                var groups = res[1];
+
+                // Populate group dropdown
+                var gSelect = document.getElementById('groupFilter');
+                gSelect.innerHTML = '<option value="all">' + t.allGroups + '</option>';
+                groups.sort(function(a, b) {
+                    return (a.name || '').localeCompare(b.name || '');
+                }).forEach(function(g) {
+                    if (g.name) {
+                        var o = document.createElement('option');
+                        o.value = g.id;
+                        o.innerHTML = g.name;
+                        gSelect.appendChild(o);
+                    }
+                });
+
+                // Filter vehicles by selected group
+                var updateVeh = function(gId) {
+                    var cont = document.getElementById('vehDrop');
+                    cont.innerHTML = '';
+                    var fil = gId === 'all' ? allDevices : allDevices.filter(function(d) {
+                        return d.groups.some(function(dg) { return dg.id === gId; });
+                    });
+                    fil.sort(function(a, b) {
+                        return a.name.localeCompare(b.name);
+                    }).forEach(function(d) {
+                        var div = document.createElement('div');
+                        div.style.padding = '5px';
+                        div.innerHTML = '<label style="cursor:pointer;font-size:13px;">' +
+                            '<input type="checkbox" class="veh-chk" value="' + d.id +
+                            '" data-name="' + d.name + '"> ' + d.name + '</label>';
+                        cont.appendChild(div);
+                    });
+                };
+                gSelect.onchange = function() { updateVeh(this.value); };
+                updateVeh('all');
+
+                document.getElementById('status').innerHTML = 'Ready.';
+            });
+
+            // --- Plot button: fetch StatusData and render charts ---
+            document.getElementById('btnLoad').onclick = function() {
+                var vChks = document.querySelectorAll('.veh-chk:checked');
+                var sChks = document.querySelectorAll('.sig-chk:checked');
+                if (!vChks.length || !sChks.length) return;
+
+                var customMin = document.getElementById('minTemp').value;
+                var customMax = document.getElementById('maxTemp').value;
+                document.getElementById('vehDrop').style.display = 'none';
+                document.getElementById('sigDrop').style.display = 'none';
+                document.getElementById('chartArea').innerHTML = '';
+                chartInstances = [];
+                reportData = [];
+                document.getElementById('status').innerHTML = t.loading;
+
+                var fr = new Date(document.getElementById('fromDate').value).toISOString();
+                var to = new Date(document.getElementById('toDate').value).toISOString();
+
+                vChks.forEach(function(v, vIdx) {
+                    var dId = v.value, dName = v.getAttribute('data-name');
+
+                    // One StatusData call per selected signal, batched in multiCall
+                    var calls = [];
+                    sChks.forEach(function(s) {
+                        calls.push(['Get', {
+                            typeName: 'StatusData',
+                            search: {
+                                deviceSearch: { id: dId },
+                                diagnosticSearch: { id: s.value },
+                                fromDate: fr,
+                                toDate: to
+                            }
+                        }]);
+                    });
+
+                    api.multiCall(calls, function(res) {
+                        var datasets = [];
+                        var vehicleReport = [];
+
+                        res.forEach(function(pts, sIdx) {
+                            var sName = sChks[sIdx].getAttribute('data-name');
+                            var isDig = sChks[sIdx].getAttribute('data-digital') === 'true';
+
+                            vehicleReport.push({ signal: sName, points: pts, isDig: isDig });
+                            datasets.push({
+                                label: sName,
+                                data: pts.map(function(p) {
+                                    return { x: moment(p.dateTime).toDate(), y: p.data };
+                                }),
+                                borderColor: ['#ff4757', '#2f3542', '#27ae60', '#ffa502',
+                                              '#3742fa', '#2ed573', '#7d5fff'][sIdx % 7],
+                                borderWidth: 2,
+                                pointRadius: 0,
+                                stepped: isDig  // Stepped line for digital signals
+                            });
+                        });
+
+                        reportData.push({ name: dName, data: vehicleReport });
+
+                        // Create chart container
+                        var wrap = document.createElement('div');
+                        wrap.style.marginBottom = '40px';
+                        wrap.innerHTML = '<h4>' + dName + '</h4>' +
+                            '<div style="height:300px;border:1px solid #eee;background:#fff;">' +
+                            '<canvas id="chart-' + vIdx + '"></canvas></div>';
+                        document.getElementById('chartArea').appendChild(wrap);
+
+                        // Render Chart.js
+                        var ctx = document.getElementById('chart-' + vIdx).getContext('2d');
+                        var c = new Chart(ctx, {
+                            type: 'line',
+                            data: { datasets: datasets },
+                            options: {
+                                animation: false,
+                                responsive: true,
+                                maintainAspectRatio: false,
+                                scales: {
+                                    x: {
+                                        type: 'time',
+                                        time: { unit: 'hour', displayFormats: { hour: 'HH:mm' } }
+                                    },
+                                    y: {
+                                        min: customMin !== '' ? parseFloat(customMin) : null,
+                                        max: customMax !== '' ? parseFloat(customMax) : null
+                                    }
+                                }
+                            }
+                        });
+                        chartInstances.push({ canvasId: 'chart-' + vIdx, name: dName });
+                    });
+                });
+            };
+
+            // --- PDF export ---
+            document.getElementById('btnExport').onclick = function() {
+                if (!chartInstances.length) return;
+                var lang = state.language || 'en';
+                var t = i18n[lang] || i18n.en;
+                var doc = new jspdf.jsPDF('p', 'mm', 'a4');
+                doc.setFontSize(18);
+                doc.text(t.reportTitle, 14, 15);
+
+                chartInstances.forEach(function(ci, i) {
+                    if (i > 0) doc.addPage();
+                    var can = document.getElementById(ci.canvasId);
+                    try {
+                        var img = can.toDataURL('image/png', 1.0);
+                        doc.setFontSize(14);
+                        doc.text('Vehicle: ' + ci.name, 14, 25);
+                        doc.addImage(img, 'PNG', 10, 30, 190, 90);
+                    } catch (e) {
+                        console.error('PDF Error', e);
+                    }
+
+                    var rows = [];
+                    var vData = reportData.find(function(r) { return r.name === ci.name; });
+                    if (vData) {
+                        vData.data.forEach(function(sg) {
+                            sg.points.forEach(function(p) {
+                                var v = sg.isDig ? (statusLabels[p.data] || p.data) : p.data.toFixed(1);
+                                rows.push([
+                                    moment(p.dateTime).format('YYYY-MM-DD HH:mm'),
+                                    sg.signal,
+                                    v
+                                ]);
+                            });
+                        });
+                        doc.autoTable({
+                            head: [[t.timeCol, 'Signal', t.valCol]],
+                            body: rows.slice(0, 100),
+                            startY: 125,
+                            theme: 'striped',
+                            headStyles: { fillColor: [44, 62, 80] }
+                        });
+                    }
+                });
+                doc.save('ColdChain_Report.pdf');
+            };
+
+            // --- Excel export ---
+            document.getElementById('btnExcel').onclick = function() {
+                if (!reportData.length) return;
+                var wb = XLSX.utils.book_new();
+                var lang = state.language || 'en';
+                var t = i18n[lang] || i18n.en;
+
+                reportData.forEach(function(v) {
+                    var rs = [];
+                    v.data.forEach(function(s) {
+                        s.points.forEach(function(p) {
+                            var val = s.isDig ? (statusLabels[p.data] || p.data) : p.data.toFixed(1);
+                            rs.push({
+                                [t.timeCol]: moment(p.dateTime).format('YYYY-MM-DD HH:mm'),
+                                Signal: s.signal,
+                                [t.valCol]: val
+                            });
+                        });
+                    });
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rs),
+                        v.name.substring(0, 31));
+                });
+                XLSX.writeFile(wb, 'Fleet_ColdChain_Data.xlsx');
+            };
+
+            callback();
+        },
+
+        focus: function(api, state) {},
+        blur: function(api, state) {}
+    };
+};
+</script>
+</body>
+</html>

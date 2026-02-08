@@ -685,7 +685,7 @@ if (csvUrl) {
 
 ### DuckDB WASM Integration (Advanced)
 
-For large Ace result sets (100K+ rows), you can load CSV data into an in-browser DuckDB database for full SQL analytics — no backend needed. If a user asks about DuckDB integration, tell them to copy the working implementation from:
+For large Ace result sets (100K+ rows), you can load CSV data into an in-browser DuckDB database for full SQL analytics — no backend needed (though you can add one for heavier workloads). If a user asks about DuckDB integration, tell them to copy the working implementation from:
 https://github.com/fhoffa/geotab-vibe-guide/blob/main/examples/addins/ace-duckdb-lab.html
 
 ### Debugging External Add-Ins

@@ -129,7 +129,67 @@ body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
 **Configuration Rules:**
 - `name`: Letters, numbers, spaces, dots, dashes, underscores, parentheses OK. No `&`, `+`, `!`. Use `"Fleet Dashboard (Beta)"` not `"Fleet & Dashboard"`
 - `supportEmail`: Never use support@geotab.com. Use `https://github.com/fhoffa/geotab-vibe-guide` or your own contact
-- `menuName`: Can contain spaces and special characters (this is what users see in the menu)
+- `menuName`: Can contain spaces and special characters (this is what users see in the menu). Add translations for multilingual fleets:
+  ```json
+  "menuName": {
+    "en": "Cold Chain View",
+    "fr": "Vue Chaîne du Froid",
+    "es": "Vista Cadena de Frío"
+  }
+  ```
+
+### Localization (i18n)
+
+MyGeotab passes the user's language in `state.language` during `initialize`. Use this to set UI labels:
+
+```javascript
+var i18n = {
+    en: { title: "Fleet Dashboard", loading: "Loading..." },
+    fr: { title: "Tableau de Bord", loading: "Chargement..." },
+    es: { title: "Panel de Flota", loading: "Cargando..." }
+};
+
+initialize: function(api, state, callback) {
+    var lang = state.language || "en";
+    var t = i18n[lang] || i18n.en;
+    document.getElementById("title").textContent = t.title;
+    // ...
+}
+```
+
+MyGeotab handles `menuName` translations automatically. Your JavaScript handles UI labels via `state.language`.
+
+### Filtering Devices by Group
+
+Large fleets can have thousands of vehicles. Add a group dropdown to let users narrow the list:
+
+```javascript
+// Fetch devices and groups together
+api.multiCall([
+    ["Get", { typeName: "Device" }],
+    ["Get", { typeName: "Group" }]
+], function(res) {
+    var allDevices = res[0], groups = res[1];
+
+    // Populate group dropdown
+    groups.forEach(function(g) {
+        if (g.name) {
+            var o = document.createElement("option");
+            o.value = g.id;
+            o.textContent = g.name;
+            groupSelect.appendChild(o);
+        }
+    });
+
+    // Filter vehicles when group changes
+    groupSelect.onchange = function() {
+        var gId = this.value;
+        var filtered = gId === "all" ? allDevices : allDevices.filter(function(d) {
+            return d.groups.some(function(dg) { return dg.id === gId; });
+        });
+        // Rebuild vehicle list from filtered array
+    };
+});
 
 **Embedded Add-In Rules:**
 - `<style>` tags ARE stripped - use inline `style=""` or load CSS dynamically via JS
@@ -301,8 +361,103 @@ api.call('Get', {
 | Fuel Level | `DiagnosticFuelLevelId` |
 | Engine Hours | `DiagnosticEngineHoursAdjustmentId` |
 | Battery Voltage | `DiagnosticBatteryTemperatureId` |
+| Cargo Temp Zone 1 | `DiagnosticCargoTemperatureZone1Id` |
+| Cargo Temp Zone 2 | `DiagnosticCargoTemperatureZone2Id` |
+| Cargo Temp Zone 3 | `DiagnosticCargoTemperatureZone3Id` |
+| Reefer Setpoint Zone 1 | `RefrigerationUnitSetTemperatureZone1Id` |
+| Reefer Setpoint Zone 2 | `RefrigerationUnitSetTemperatureZone2Id` |
+| Reefer Setpoint Zone 3 | `RefrigerationUnitSetTemperatureZone3Id` |
+| Reefer Unit Status | `RefrigerationUnitStatusId` (digital: 0=Disabled, 1=On, 2=Off, 3=Error) |
 
 **Common Mistake:** Similar-sounding IDs may not work. For example, `DiagnosticEngineCrankingVoltageId` returns no data, but `DiagnosticCrankingVoltageId` works. Always verify in Engine Measurements first.
+
+### Discovering Diagnostics by Name (Portable Across Databases)
+
+When you don't know the exact Diagnostic ID — or need your Add-In to work across different databases — search by name pattern instead of hardcoding IDs. The `%` wildcard works like SQL LIKE:
+
+```javascript
+api.call("Get", {
+    typeName: "Diagnostic",
+    search: { name: "%Temperature%" }
+}, function(diags) {
+    // Filter client-side for the specific sensor you need
+    var tempDiag = null;
+    for (var i = 0; i < diags.length; i++) {
+        var n = diags[i].name.toLowerCase();
+        if (n.indexOf("cargo") > -1 && n.indexOf("zone 1") > -1) {
+            tempDiag = diags[i];
+            break;
+        }
+    }
+    if (tempDiag) {
+        // Now use tempDiag.id in your StatusData queries
+    }
+}, errorCallback);
+```
+
+**When to use this pattern:**
+- Sensor-based Add-Ins (temperature, fuel, tire pressure) where IDs vary by device type
+- Add-Ins intended for distribution across multiple databases
+- Any time you don't have access to Engine Measurements to manually look up IDs
+
+**Common search patterns:** `%Temperature%`, `%Fuel%`, `%Tire%`, `%Battery%`, `%Speed%`
+
+### Exporting Data (PDF, Excel, CSV)
+
+Add-Ins can generate downloadable files client-side using CDN libraries. This is the simplest approach when you don't have a backend — but you can also generate exports server-side if you have one.
+
+**Recommended CDN libraries for export:**
+| Library | CDN URL | Use Case |
+|---------|---------|----------|
+| jsPDF | `https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js` | PDF generation |
+| jspdf-autotable | `https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.23/jspdf.plugin.autotable.min.js` | Formatted tables in PDFs |
+| SheetJS (xlsx) | `https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js` | Excel .xlsx files |
+
+**PDF with chart image and data table:**
+```javascript
+var doc = new jspdf.jsPDF("p", "mm", "a4");
+doc.setFontSize(16);
+doc.text("Fleet Report", 14, 15);
+
+// Capture a Chart.js canvas as an image
+var img = document.getElementById("myChart").toDataURL("image/png", 1.0);
+doc.addImage(img, "PNG", 10, 25, 190, 90);
+
+// Add a data table below the chart
+doc.autoTable({
+    head: [["Vehicle", "Value", "Time"]],
+    body: rows,
+    startY: 120,
+    theme: "striped"
+});
+doc.save("report.pdf");
+```
+
+**Excel with multiple worksheets:**
+```javascript
+var wb = XLSX.utils.book_new();
+dataByVehicle.forEach(function(d) {
+    var ws = XLSX.utils.json_to_sheet(d.rows);
+    // Excel tab names max 31 characters
+    XLSX.utils.book_append_sheet(wb, ws, d.name.substring(0, 31));
+});
+XLSX.writeFile(wb, "fleet_data.xlsx");
+```
+
+**CSV (no library needed):**
+```javascript
+var csv = "Vehicle,Speed,Time\n";
+data.forEach(function(r) {
+    csv += r.vehicle + "," + r.speed + "," + r.time + "\n";
+});
+var blob = new Blob([csv], { type: "text/csv" });
+var a = document.createElement("a");
+a.href = URL.createObjectURL(blob);
+a.download = "export.csv";
+a.click();
+```
+
+See the [Cold Chain Historical View](../../../guides/annotated-examples/COLD_CHAIN_HISTORICAL_VIEW.md) annotated example for a complete working Add-In with PDF and Excel export.
 
 ## Persistent Storage (AddInData)
 
