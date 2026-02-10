@@ -7,7 +7,7 @@ Quick navigation to the right resource for your needs.
 | Situation | Use This | Why |
 |-----------|----------|-----|
 | **Easiest path (Try this first!)** | [GOOGLE_GEM_USER_GUIDE.md](./guides/GOOGLE_GEM_USER_GUIDE.md) | **Zero coding required - build Add-Ins by describing (or drawing) what you want!** |
-| Complete beginner | [BEGINNER_GLOSSARY.md](./guides/BEGINNER_GLOSSARY.md) | Explains GitHub, APIs, vibe coding, and all terms used in these guides |
+| Complete beginner | [BEGINNER_GUIDE.md](./guides/BEGINNER_GUIDE.md) | Explains GitHub, APIs, vibe coding, and all terms used in these guides |
 | Using Claude on web | [INSTANT_START_WITH_CLAUDE.md](./guides/INSTANT_START_WITH_CLAUDE.md) | Zero to working code in 60 seconds |
 | Want ready-made prompts | [CLAUDE_PROMPTS.md](./guides/CLAUDE_PROMPTS.md) | 10+ copy-paste prompts for instant productivity |
 | **Building a MyGeotab Add-In** | [GEOTAB_ADDINS.md](./guides/GEOTAB_ADDINS.md) | **Custom pages inside MyGeotab** |
@@ -40,7 +40,7 @@ Are you a human or AI tool?
 ├─ HUMAN
 │  │
 │  ├─ Complete beginner? (New to coding, GitHub, APIs, etc.)
-│  │  └─> BEGINNER_GLOSSARY.md (learn all the terms first!)
+│  │  └─> BEGINNER_GUIDE.md (learn all the terms first!)
 │  │
 │  ├─ Want to create your first Geotab add-in in 15 seconds?
 │  │  └─> GOOGLE_GEM_USER_GUIDE.md (generate Add-Ins with the Gem - NO CODE!)

@@ -292,7 +292,7 @@ Your feedback directly shapes what hackathon participants will experience. Thank
 |----------|------|
 | Main README | `README.md` |
 | Quick AI Context | `VIBE_CODING_CONTEXT.md` |
-| Beginner Glossary | `guides/BEGINNER_GLOSSARY.md` |
+| Beginner Guide | `guides/BEGINNER_GUIDE.md` |
 | All Guides | `guides/README.md` |
 | Dashboard Guide | `guides/ANTIGRAVITY_QUICKSTART.md` |
 | Add-In Examples | `examples/addins/` |

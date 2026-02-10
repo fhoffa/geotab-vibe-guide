@@ -1,4 +1,4 @@
-# Beginner's Glossary: Your First Steps in Vibe Coding
+# Beginner's Guide: Your First Steps in Vibe Coding
 
 **Welcome!** If you're new to coding, APIs, or fleet management, this guide is for you. Don't worry if these terms sound unfamiliar—by the end of this glossary, you'll understand everything you need to start building with Geotab.
 
@@ -460,6 +460,9 @@ When you connect to the Geotab API, you specify which database (which company's 
 
 Like a key to unlock your data. You'll store these securely in an `.env` file.
 
+**First step**: [Create a free demo database](https://my.geotab.com/registration.html) (takes 2 minutes).
+> **Important:** Click **"Create a Demo Database"** (not "I'm a New Customer") to get pre-populated sample data.
+
 ### Device
 **What it is**: A vehicle or asset being tracked in Geotab.
 
@@ -685,19 +688,22 @@ In tools like n8n, you build workflows by connecting nodes:
 
 Now that you understand the basics, here's where to go next:
 
-1. **Brand new to coding?**
+1. **Get credentials:** [Create a free demo database](https://my.geotab.com/registration.html) (takes 2 minutes)
+   > **Important:** Click **"Create a Demo Database"** (not "I'm a New Customer") to get pre-populated sample data.
+
+2. **Brand new to coding?**
    - Start with [GOOGLE_GEM_USER_GUIDE.md](GOOGLE_GEM_USER_GUIDE.md) - Build a MyGeotab Add-In in minutes using Google Gemini's Gem
 
-2. **Want to build something specific?**
+4. **Want to build something specific?**
    - Check [HACKATHON_IDEAS.md](HACKATHON_IDEAS.md) for 20+ project ideas with difficulty ratings
 
-3. **Need help with setup?**
+5. **Need help with setup?**
    - Read [CREDENTIALS.md](CREDENTIALS.md) for Geotab account setup
 
-4. **Want copy-paste prompts for AI?**
+6. **Want copy-paste prompts for AI?**
    - Use [CLAUDE_PROMPTS.md](CLAUDE_PROMPTS.md) for ready-to-use prompts
 
-5. **Teaching others?**
+7. **Teaching others?**
    - See [TUTORIAL_DESIGN.md](TUTORIAL_DESIGN.md) for a full 60-minute curriculum
 
 ---
