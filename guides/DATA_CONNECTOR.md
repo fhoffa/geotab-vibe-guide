@@ -51,7 +51,19 @@ The Data Connector exposes an OData v4 endpoint. You query it with HTTP GET requ
 - **Format:** JSON responses with fleet data in the `value` array
 - **Query options:** `$search` for date ranges, `$select` to choose columns, `$filter` to filter on any column
 
-Your database lives on server 1 or server 2. The wrong server returns a **406 Jurisdiction Mismatch** — try both to find yours.
+Each Geotab database lives on a jurisdictional server. The wrong server returns a **406 Jurisdiction Mismatch**. You can either use `data-connector.geotab.com` (which redirects automatically) or connect directly:
+
+| Jurisdiction | Server URL |
+|---|---|
+| EU | `odata-connector-1.geotab.com` |
+| US | `odata-connector-2.geotab.com` |
+| CA | `odata-connector-3.geotab.com` |
+| AU | `odata-connector-4.geotab.com` |
+| BR | `odata-connector-5.geotab.com` |
+| AS | `odata-connector-6.geotab.com` |
+| USGov | `odata-connector-7.geotab.com` |
+
+> **Tip:** If you don't know your jurisdiction, try `data-connector.geotab.com` and handle the redirect, or iterate through server numbers 1–7 until you get a 200.
 
 > **Permissions:** The Data Connector respects user group access. Non-admin users only see data for devices and drivers they have permission to access in MyGeotab.
 
@@ -83,10 +95,11 @@ My credentials:
 
 The Data Connector uses HTTP Basic Auth with "database/username" as the username.
 The base URL is: https://odata-connector-{server}.geotab.com/odata/v4/svc/
-(Try server 1 and 2 — one will return 200, the other 406.)
+Server numbers by jurisdiction: 1=EU, 2=US, 3=CA, 4=AU, 5=BR, 6=AS, 7=USGov.
+(The wrong server returns 406 — try them until you get 200.)
 
 Please:
-1. Find which server my database is on (try both 1 and 2).
+1. Find which server my database is on (try servers 1 through 7).
 2. Query the LatestVehicleMetadata table to see my vehicles.
 3. Show me what tables are available (query the service document at the base URL).
 4. Pick a KPI table and pull the last 14 days of data using ?$search=last_14_day

@@ -89,8 +89,8 @@ password = os.getenv('GEOTAB_PASSWORD')
 # Basic Auth: "database/username" as the username field
 auth = (f"{database}/{username}", password)
 
-# Your database is on server 1 or 2 — find which one
-for server in [1, 2]:
+# Server numbers by jurisdiction: 1=EU, 2=US, 3=CA, 4=AU, 5=BR, 6=AS, 7=USGov
+for server in range(1, 8):
     url = f"https://odata-connector-{server}.geotab.com/odata/v4/svc/LatestVehicleMetadata"
     r = requests.get(url, auth=auth)
     if r.status_code == 200:
@@ -99,9 +99,9 @@ for server in [1, 2]:
         break
 ```
 
-**Server detection:** The wrong server returns **406 Jurisdiction Mismatch**. Always try both.
+**Server detection:** The wrong server returns **406 Jurisdiction Mismatch**. Iterate through servers 1–7 or use `data-connector.geotab.com` with redirect handling.
 
-**Simplified URL note:** `https://data-connector.geotab.com/odata/v4/svc/` exists for Power BI/Excel but may return 403 on table queries for some servers. Use the server-specific URL.
+**Base DNS:** `https://data-connector.geotab.com/odata/v4/svc/` redirects to the correct jurisdictional server. Useful for Power BI/Excel, but programmatic clients must follow the redirect. For direct access, use the server-specific URL.
 
 ## .env File
 
@@ -679,7 +679,7 @@ print(persistent.groupby("FaultCode")["DeviceId"].count()
 |---|---|---|
 | 401 | Bad credentials | Check `database/username` format |
 | 403 | Access denied | Use server-specific URL, not `data-connector.geotab.com` |
-| 406 | Jurisdiction Mismatch | Wrong server number — try the other one |
+| 406 | Jurisdiction Mismatch | Wrong server number — try servers 1–7 (1=EU, 2=US, 3=CA, 4=AU, 5=BR, 6=AS, 7=USGov) |
 | 412 | Not subscribed | Install Data Connector add-in (see Prerequisites) |
 | 416 | Date range too wide | Narrow `$search` range |
 | 429 | Rate limited (100 req/user/min) | Wait and retry |
@@ -692,7 +692,7 @@ print(persistent.groupby("FaultCode")["DeviceId"].count()
 2. **`last_` vs `this_`** — `last_` = complete past periods only. `this_` = includes current partial period.
 3. **Auth format is `database/username`** as the Basic Auth username field
 4. **SAML/SSO not supported** — Data Connector requires basic auth credentials (create a service account)
-5. **Always detect your server number** (1 or 2) before querying
+5. **Always detect your server number** (1–7 by jurisdiction: 1=EU, 2=US, 3=CA, 4=AU, 5=BR, 6=AS, 7=USGov) before querying
 6. **Follow `@odata.nextLink`** for paginated results — don't assume one page has everything
 7. **New databases need ~2–3 hours** for KPI tables to populate after activation
 8. **Safety data lags ~2 days** — it benchmarks against fleets across Geotab, not just yours
