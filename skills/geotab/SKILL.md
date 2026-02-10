@@ -23,7 +23,7 @@ Geotab has three ways to get fleet data. Pick based on the task:
 
 **Key constraints:**
 - **OData** requires HTTP Basic Auth on a separate server — **not usable from Add-Ins** (they only get a session token). Use for server-side scripts, Python apps, and BI tools.
-- **API** is the only channel for real-time data (`DeviceStatusInfo`) and works everywhere including Add-Ins.
+- **API** is the only channel for real-time data (`DeviceStatusInfo`) and works everywhere including Add-Ins. But it **doesn't scale for fleet-wide aggregation** — works fine on a 50-vehicle demo, but a production fleet with thousands of vehicles makes "fetch all trips and aggregate" impractical. Use OData for fleet-wide KPIs at scale.
 - **Ace** is great for exploration but slow, may apply implicit filters, and results can vary between runs.
 - For trip-level or per-event detail, use the **API** — OData only has daily/hourly/monthly aggregates.
 

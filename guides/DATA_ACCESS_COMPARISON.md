@@ -128,12 +128,12 @@ All three agree on 1.2% idle. The ratio is consistent even though absolute hours
 - Works inside MyGeotab Add-Ins via the `api` object
 
 **Weaknesses:**
-- Results can be capped (5,000 default, need pagination for large datasets)
+- **Doesn't scale for fleet-wide aggregation.** Works great on a demo database with 50 vehicles, but a production fleet with thousands of vehicles and millions of trips makes raw API aggregation impractical. You'll hit result caps, need extensive pagination, and spend significant time on client-side computation. This is the biggest surprise when moving from demo to production — see [Demo vs Production](#demo-vs-production) below.
+- Results capped at 5,000 per call (need pagination for large datasets)
 - Requires code to aggregate (sum trips, calculate idle percentages, etc.)
 - Duration fields may need parsing
-- Must handle pagination for large result sets
 
-**Best for:** Custom applications, real-time monitoring, Add-Ins, granular per-vehicle analysis
+**Best for:** Custom applications, real-time monitoring, Add-Ins, granular per-vehicle/per-trip analysis
 
 **Guide:** [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) | **Skill:** [API_QUICKSTART.md](../skills/geotab/references/API_QUICKSTART.md)
 
@@ -190,3 +190,22 @@ Even identical questions can return different numbers across channels:
 5. **Unit conversion:** Ace may auto-convert km to miles. OData and API always return metric units.
 
 When numbers don't match, it's usually one of these reasons — not a bug.
+
+---
+
+## Demo vs Production
+
+> **The benchmarks above were run on a demo database with 50 vehicles.** Production fleets can have hundreds or thousands of vehicles, and the API's behavior changes dramatically at scale.
+
+The API approach that works smoothly on a demo database — fetch all trips, aggregate in pandas — becomes impractical on a production fleet. Here's what changes:
+
+| | Demo (50 vehicles) | Production (500–5,000+ vehicles) |
+|---|---|---|
+| Trips per month | ~30K | 300K–3M+ |
+| API calls needed | 1–6 (with pagination) | Dozens to hundreds |
+| Client-side aggregation | Instant | Minutes, memory-intensive |
+| Result cap issues | Rarely hit | Constantly hit |
+
+**The practical takeaway:** If you're building something that works on a demo database using raw API calls and client-side aggregation, think about whether it will still work at production scale. For fleet-wide KPIs (distance, fuel, idle time, safety), the **OData Data Connector** was designed exactly for this — it gives you pre-aggregated daily/monthly tables that scale to any fleet size with the same query speed.
+
+Use the **API** when you need per-trip, per-event, or real-time data for specific vehicles. Use **OData** when you need fleet-wide aggregates. This distinction barely matters on a demo database — but it's the difference between a working app and an unusable one in production.
