@@ -10,7 +10,7 @@
 
 ## Prerequisites
 
-The Data Connector add-in must be enabled on the database. On demo databases (ProPlus plan required), install manually since the Marketplace is not available:
+The Data Connector add-in must be enabled on the database (requires ProPlus plan — free demo databases and most customer databases already include this). On demo databases, install manually since the Marketplace is not available:
 
 1. MyGeotab → **Administration > System Settings > Add-Ins**
 2. Add: `{"url": "https://app.geotab.com/addins/geotab/dataConnector/manifest.json"}`

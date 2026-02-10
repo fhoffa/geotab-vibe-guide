@@ -8,7 +8,7 @@
 
 ### Requirements
 
-- A Geotab database on a **ProPlus plan** (required for Data Connector access)
+- A Geotab database on a **ProPlus plan** — free demo databases include this, and most customer databases already have it
 - Your MyGeotab credentials (database name, email, password)
 
 ### Activating the Data Connector
