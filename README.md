@@ -127,3 +127,9 @@ Vibe coding is about **flow**. Instead of fighting with syntax and documentation
 
 **Ready? [Start with the Google Gem](./guides/GOOGLE_GEM_USER_GUIDE.md) and build your first Add-In by describing (or drawing) what you want!**
 
+---
+
+## Author
+
+Created by [Felipe Hoffa](https://www.linkedin.com/in/hoffa/). To message or subscribe for updates, connect on [LinkedIn](https://www.linkedin.com/in/hoffa/).
+
