@@ -60,7 +60,7 @@ This guide documents multiple verified demo database profiles:
 | Rule | 12 | Safety and compliance rules |
 | Trip | 1,000+ | Completed journeys |
 | ExceptionEvent | 1,000+ | Rule violations (speeding, harsh braking, etc.) |
-| FaultData | 0 | Engine diagnostic codes — **demo vehicles don't generate DTCs** (see [FAULT_MONITORING.md](./FAULT_MONITORING.md) TODO) |
+| FaultData | 0–7,000 | **Varies by database** — some demos have GoDevice faults (GPS antenna, engine hours), others have none. No engine DTCs in any tested demo. See [FAULT_MONITORING.md](./FAULT_MONITORING.md) TODO |
 | DriverChange | 1,000+ | Driver identification events |
 | LogRecord | 100,000+ | GPS breadcrumbs |
 | StatusData | 100,000+ | Sensor readings |

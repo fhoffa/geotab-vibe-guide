@@ -9,15 +9,18 @@
 > - **MyGeotab API:** `FaultData` entity for raw fault events
 > - **Ace:** Natural language queries about vehicle faults
 
-> **TODO — Demo account limitations:** The standard Geotab demo database does not contain fault monitoring data. We tested a USA Daytime demo (50 vehicles, Vans and Trucks) and found:
-> - **FaultMonitoring** — 0 records (OData)
-> - **FaultMonitoring_Daily** — 0 records (OData, with and without date filter)
-> - **FaultData** — 0 records (API, tested across 14-day, 90-day, and no-filter ranges)
-> - **ExceptionEvent** — 0 records via OData, but 50,000 via the API (pipeline delay)
+> **TODO — Demo account data varies.** Fault data availability depends on which demo database you get. We tested two 50-vehicle demo databases (Feb 2026) and found very different results:
 >
-> The tables exist in the schema (confirmed via `$metadata`) but are empty because simulated demo vehicles don't generate Diagnostic Trouble Codes (DTCs). The 50,000 exception events are **rule-based driving behavior detections** (speeding, harsh cornering, hard acceleration) — not diagnostic fault codes. These are different data categories that are easy to confuse.
+> | Data Source | Database 1 (no faults) | Database 2 (has faults) |
+> |---|---|---|
+> | `FaultMonitoring` (OData) | 0 records | 10 fault cycles |
+> | `FaultMonitoring_Daily` (OData) | 0 records | 281 daily records |
+> | `FaultData` (API) | 0 records | 6,962 fault events |
+> | `ExceptionEvent` (API) | 50,000 records | 28,566 records |
 >
-> **To test fault monitoring workflows:** Use a database with real vehicles that generate engine fault codes, or ask Geotab for a demo account type that includes DTC data.
+> Database 2's faults were all **GoDevice faults** (GPS antenna unplugged, engine hours stale) — not engine DTCs (OBD-II/J1939). These still demonstrate the full fault cycle lifecycle (persistent cycles, durations, counts), but won't have breakdown risk scores (those apply to engine DTCs only). Real production fleets will have both GoDevice and engine faults.
+>
+> **If your demo database has no fault data:** Try creating another demo database — fault data availability varies. Exception events (speeding, harsh cornering, etc.) are always available and are a different data category from diagnostic fault codes.
 
 ## Where Do Fault Codes Come From?
 
