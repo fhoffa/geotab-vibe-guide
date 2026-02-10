@@ -50,6 +50,12 @@ Your database lives on server 1 or server 2. The wrong server returns a **406 Ju
 
 ## Prompts to Try
 
+> [!CAUTION]
+> **NEVER paste real production credentials into an AI chat.**
+> If using a real fleet database, ask the AI to write code that loads credentials from a `.env` file instead.
+> Only paste passwords if you are using a **disposable demo database**.
+> See [CREDENTIALS.md](./CREDENTIALS.md) for safe `.env` setup, or [CLAUDE_PROMPTS.md](./CLAUDE_PROMPTS.md) for more prompts that follow this pattern.
+
 ### Prompt 1: "Connect and Explore" (Start Here)
 
 Copy this into Claude, ChatGPT, or your AI assistant:
@@ -60,6 +66,8 @@ I want to explore my fleet data using the Geotab Data Connector (OData API).
 My credentials:
 - Database: [your_database_name]
 - Username: [your_email@example.com]
+# SECURITY: For production databases, use a .env file instead of pasting credentials.
+# Only paste your password if this is a disposable DEMO database:
 - Password: [your_password]
 
 The Data Connector uses HTTP Basic Auth with "database/username" as the username.
