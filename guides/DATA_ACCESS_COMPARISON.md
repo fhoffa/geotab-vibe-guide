@@ -1,4 +1,4 @@
-# Geotab Data Access: OData vs API vs Ace
+# Geotab Data Access: Data Connector vs API vs Ace
 
 > **Three ways to get fleet data, three different tradeoffs.** This guide compares the OData Data Connector, the MyGeotab API, and Geotab Ace using identical questions against the same fleet. Use it to pick the right channel for your project.
 
@@ -22,7 +22,7 @@ We ran 4 identical fleet analytics questions against all three channels on a dem
 
 ## Timing Results
 
-| Question | OData | API | Ace |
+| Question | Data Connector | API | Ace |
 |---|---|---|---|
 | Q1: Total fleet distance (14 days) | 4.87s | 1.29s | ~41s |
 | Q2: Top 5 vehicles by distance | 0s* | 0.01s* | ~46s |
@@ -37,7 +37,7 @@ We ran 4 identical fleet analytics questions against all three channels on a dem
 
 **Question:** *What is the total distance driven by the entire fleet in the last 14 days?*
 
-| Metric | OData | API | Ace |
+| Metric | Data Connector | API | Ace |
 |---|---|---|---|
 | Total distance | 490,906 km | 415,543 km | 304,833 km |
 | Vehicles | 50 | 50 | 50 |
@@ -45,48 +45,48 @@ We ran 4 identical fleet analytics questions against all three channels on a dem
 
 ### Why the numbers differ
 
-- **OData** queries the pre-aggregated `VehicleKpi_Daily` table. It returned 700 records (50 vehicles x 14 days) — complete data, no caps.
+- **Data Connector** queries the pre-aggregated `VehicleKpi_Daily` table. It returned 700 records (50 vehicles x 14 days) — complete data, no caps.
 - **API** returns raw `Trip` objects. The result was capped at 25,000 records (the API's default limit), so the total is an undercount.
 - **Ace** generated SQL against `VehicleKPI_Daily` but applied an `IsTracked = TRUE` filter it inferred on its own, which excluded some historical device assignments and lowered the total.
 
-**Takeaway:** OData gives the most complete pre-aggregated picture. The API is fast but can hit result caps on large fleets — you need pagination. Ace writes good SQL but may apply filters you didn't ask for.
+**Takeaway:** The Data Connector gives the most complete pre-aggregated picture. The API is fast but can hit result caps on large fleets — you need pagination. Ace writes good SQL but may apply filters you didn't ask for.
 
 ---
 
 ## Q2: Top 5 Vehicles by Distance
 
-All three channels agreed on the same top 5 vehicles (same DeviceIds). The absolute distances differed for the same reasons as Q1 — OData highest (complete daily aggregates), API slightly lower (25K trip cap), Ace lowest (implicit `IsTracked` filter).
+All three channels agreed on the same top 5 vehicles (same DeviceIds). The absolute distances differed for the same reasons as Q1 — Data Connector highest (complete daily aggregates), API slightly lower (25K trip cap), Ace lowest (implicit `IsTracked` filter).
 
-Ace helpfully included `DeviceName` by auto-joining the metadata table — something you'd need to do manually with OData or the API.
+Ace helpfully included `DeviceName` by auto-joining the metadata table — something you'd need to do manually with the Data Connector or the API.
 
 ---
 
 ## Q3: Fleet Idle Time Percentage
 
-| Metric | OData | API | Ace |
+| Metric | Data Connector | API | Ace |
 |---|---|---|---|
 | Drive hours | 8,520 hrs | 7,214 hrs | 8,486 hrs |
 | Idle hours | 104 hrs | 88 hrs | 103 hrs |
 | Idle % | **1.2%** | **1.2%** | **1.2%** |
 
-All three agree on 1.2% idle. The ratio is consistent even though absolute hours differ due to result caps (API) and filtering (Ace). OData and Ace query the same underlying `VehicleKPI_Daily` data, so their absolute hours are nearly identical.
+All three agree on 1.2% idle. The ratio is consistent even though absolute hours differ due to result caps (API) and filtering (Ace). The Data Connector and Ace query the same underlying `VehicleKPI_Daily` data, so their absolute hours are nearly identical.
 
 ---
 
 ## Q4: Vehicle Count & Device Health
 
-| Metric | OData | API | Ace |
+| Metric | Data Connector | API | Ace |
 |---|---|---|---|
 | Total vehicles | 150 | 50 | 50 |
 | Communicated (24h) | 50 | 50 | 50 |
 
 ### Why vehicle counts differ
 
-- **OData** (`LatestVehicleMetadata`) returned 150 records because it includes historical device assignments — vehicles with expired date ranges that are no longer active.
+- **Data Connector** (`LatestVehicleMetadata`) returned 150 records because it includes historical device assignments — vehicles with expired date ranges that are no longer active.
 - **API** (`Device` entity) returned 50 active devices. This is the most accurate count for currently active vehicles.
 - **Ace** filtered on active, tracked vehicles, matching the API's count.
 
-**Takeaway:** For active vehicle counts, use the API's `Device` entity. OData's metadata table includes historical records.
+**Takeaway:** For active vehicle counts, use the API's `Device` entity. The Data Connector's metadata table includes historical records.
 
 ---
 
@@ -167,14 +167,14 @@ All three agree on 1.2% idle. The ratio is consistent even though absolute hours
 
 | Your situation | Use this |
 |---|---|
-| Building a Power BI / Tableau dashboard | OData |
-| Building a Python reporting script | OData (if KPI-level data suffices) or API (if you need trip-level detail) |
+| Building a Power BI / Tableau dashboard | Data Connector |
+| Building a Python reporting script | Data Connector (if KPI-level data suffices) or API (if you need trip-level detail) |
 | Building a MyGeotab Add-In | API (or Ace for natural language features) |
 | Need real-time vehicle positions | API (`DeviceStatusInfo`) |
 | Fleet manager wants quick answers | Ace |
-| Need to validate data across sources | Cross-reference API `Device` count with OData KPIs |
-| Analyzing specific trips or routes | API (OData doesn't have trip-level data) |
-| Monthly executive reports | OData (`VehicleKpi_Monthly`) |
+| Need to validate data across sources | Cross-reference API `Device` count with Data Connector KPIs |
+| Analyzing specific trips or routes | API (the Data Connector doesn't have trip-level data) |
+| Monthly executive reports | Data Connector (`VehicleKpi_Monthly`) |
 | Learning what data Geotab has | Ace (ask it questions, read the SQL it generates) |
 
 ---
@@ -184,10 +184,10 @@ All three agree on 1.2% idle. The ratio is consistent even though absolute hours
 Even identical questions can return different numbers across channels:
 
 1. **Result caps:** The API has a default result limit. Always paginate for complete data.
-2. **Historical records:** OData metadata tables include inactive/historical device assignments. The API's `Device` entity returns only active devices.
+2. **Historical records:** Data Connector metadata tables include inactive/historical device assignments. The API's `Device` entity returns only active devices.
 3. **Implicit filters:** Ace may add filters like `IsTracked = TRUE` based on its interpretation of your question.
-4. **Aggregation level:** OData gives you pre-aggregated daily/monthly totals. The API gives you raw per-trip data that you sum yourself. Small rounding differences are normal.
-5. **Unit conversion:** Ace may auto-convert km to miles. OData and API always return metric units.
+4. **Aggregation level:** The Data Connector gives you pre-aggregated daily/monthly totals. The API gives you raw per-trip data that you sum yourself. Small rounding differences are normal.
+5. **Unit conversion:** Ace may auto-convert km to miles. The Data Connector and API always return metric units.
 
 When numbers don't match, it's usually one of these reasons — not a bug.
 
@@ -208,4 +208,4 @@ The API itself scales well for targeted queries — fetching trips for a specifi
 
 **The practical takeaway:** If you're building something that works on a demo database using raw API calls and client-side aggregation, think about whether it will still work at production scale. For fleet-wide KPIs (distance, fuel, idle time, safety), the **OData Data Connector** was designed exactly for this — it gives you pre-aggregated daily/monthly tables that scale to any fleet size with the same query speed.
 
-Use the **API** when you need per-trip, per-event, or real-time data for specific vehicles. Use **OData** when you need fleet-wide aggregates. This distinction barely matters on a demo database — but it's the difference between a working app and an unusable one in production.
+Use the **API** when you need per-trip, per-event, or real-time data for specific vehicles. Use the **Data Connector** when you need fleet-wide aggregates. This distinction barely matters on a demo database — but it's the difference between a working app and an unusable one in production.

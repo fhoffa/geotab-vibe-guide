@@ -37,7 +37,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 ### Data Connector (OData Analytics)
 
 - **[DATA_CONNECTOR.md](./DATA_CONNECTOR.md)** - Query pre-aggregated fleet KPIs, safety scores, and fault data via the OData Data Connector. Includes copy-paste prompts for AI tools.
-- **[DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)** - OData vs MyGeotab API vs Geotab Ace: benchmarks, tradeoffs, and when to use each.
+- **[DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)** - Data Connector vs MyGeotab API vs Geotab Ace: benchmarks, tradeoffs, and when to use each.
 
 ### Building Add-Ins
 

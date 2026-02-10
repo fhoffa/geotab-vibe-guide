@@ -284,7 +284,7 @@ async def my_custom_tool(question: str) -> str:
 ### Ideas for Custom Tools
 
 - **Write operations:** Create zones, update device names, add groups
-- **OData KPIs:** Add a tool that queries the [Data Connector](./DATA_CONNECTOR.md) for pre-aggregated daily/monthly fleet metrics (distance, fuel, idle time, safety scores). Since MCP servers run server-side with credentials, they can use OData — unlike Add-Ins. See [DATA_CONNECTOR skill reference](../skills/geotab/references/DATA_CONNECTOR.md) for the connection pattern.
+- **Data Connector KPIs:** Add a tool that queries the [Data Connector](./DATA_CONNECTOR.md) for pre-aggregated daily/monthly fleet metrics (distance, fuel, idle time, safety scores). Since MCP servers run server-side with credentials, they can use the Data Connector — unlike Add-Ins. See [DATA_CONNECTOR skill reference](../skills/geotab/references/DATA_CONNECTOR.md) for the connection pattern.
 - **Alerts:** Set up notifications when conditions are met
 - **Reports:** Generate formatted reports on demand
 - **Integrations:** Connect to Slack, email, or other systems
@@ -415,7 +415,7 @@ async def get_vehicle_locations() -> str:
 Once you have the basic MCP server running:
 
 1. **Add direct API calls** - Felipe's demo is Ace-only; add real-time data + writes
-2. **Add OData Data Connector** - Query pre-aggregated KPIs for fast fleet-wide metrics (MCP servers run server-side, so they can use OData's Basic Auth)
+2. **Add Data Connector** - Query pre-aggregated KPIs for fast fleet-wide metrics (MCP servers run server-side, so they can use the Data Connector's Basic Auth)
 3. **Try composability** - Install other MCPs and combine with Geotab
 4. **Multi-account setup** - Connect all your Geotab databases
 5. **Build integrations** - Connect MCP responses to Slack, email, dashboards

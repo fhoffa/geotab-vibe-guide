@@ -99,7 +99,7 @@ Pull VehicleKpi_Daily for the last 14 days and show me:
 
 Use pandas for the analysis. Show me a clean summary table.
 
-Reminder: Date filters use ?$search=last_14_day (not OData $filter).
+Reminder: Date filters use ?$search=last_14_day (not $filter).
 If the response has @odata.nextLink, follow it to get all pages.
 ```
 
@@ -241,7 +241,7 @@ Instead of manually explaining the Data Connector's quirks to your AI, give it t
 
 ## Going Deeper
 
-- **OData vs API vs Ace:** See [DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) — benchmarks and tradeoffs for all three data channels
+- **Data Connector vs API vs Ace:** See [DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) — benchmarks and tradeoffs for all three data channels
 - **For AI assistants implementing code:** See the [Data Connector skill reference](../skills/geotab/references/DATA_CONNECTOR.md) for complete code patterns, pagination handling, and all table schemas
 - **Official documentation:** [Data Connector User Guide](https://support.geotab.com/mygeotab/mygeotab-add-ins/doc/data-connector)
 - **For BI tools:** The official docs cover Power BI, Excel, and Tableau setup in detail

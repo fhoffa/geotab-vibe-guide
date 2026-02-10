@@ -27,7 +27,7 @@ When a task needs implementation depth, route through the skill system first:
 1. Open `skills/README.md` to choose the right skill.
 2. Start with `skills/geotab/SKILL.md` for broad Geotab API work.
 3. For focused Add-In work, load `skills/geotab/references/ADDINS.md` (and related Add-In references) from the `geotab` skill.
-4. For Data Connector / OData work, load `skills/geotab/references/DATA_CONNECTOR.md`.
+4. For Data Connector work, load `skills/geotab/references/DATA_CONNECTOR.md`.
 5. Use `skills/agentic-n8n/SKILL.md` for automation workflows.
 6. Use `skills/geotab-custom-mcp/SKILL.md` for MCP server work.
 

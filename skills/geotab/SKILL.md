@@ -22,10 +22,10 @@ Geotab has three ways to get fleet data. Pick based on the task:
 | Natural language questions, ad-hoc exploration | **Geotab Ace** | [ACE_API.md](references/ACE_API.md) | ~30–45s |
 
 **Key constraints:**
-- **OData** requires HTTP Basic Auth on a separate server — **not usable from Add-Ins** (they only get a session token). Use for server-side scripts, Python apps, and BI tools.
-- **API** is the only channel for real-time data (`DeviceStatusInfo`) and works everywhere including Add-Ins. Scales well for targeted queries (one vehicle's trips, one device's location), but **"fetch all trips for the whole fleet and aggregate in code" doesn't scale** to production fleets with thousands of vehicles. Use OData for fleet-wide KPIs at scale.
+- **Data Connector** requires HTTP Basic Auth on a separate server — **not usable from Add-Ins** (they only get a session token). Use for server-side scripts, Python apps, and BI tools.
+- **API** is the only channel for real-time data (`DeviceStatusInfo`) and works everywhere including Add-Ins. Scales well for targeted queries (one vehicle's trips, one device's location), but **"fetch all trips for the whole fleet and aggregate in code" doesn't scale** to production fleets with thousands of vehicles. Use the Data Connector for fleet-wide KPIs at scale.
 - **Ace** is great for exploration but slow, may apply implicit filters, and results can vary between runs.
-- For trip-level or per-event detail, use the **API** — OData only has daily/hourly/monthly aggregates.
+- For trip-level or per-event detail, use the **API** — the Data Connector only has daily/hourly/monthly aggregates.
 
 Full comparison with benchmarks: [DATA_ACCESS_COMPARISON.md](../../guides/DATA_ACCESS_COMPARISON.md)
 
