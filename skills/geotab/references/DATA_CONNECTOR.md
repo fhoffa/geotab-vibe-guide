@@ -109,9 +109,17 @@ GEOTAB_USERNAME=your_email@example.com
 GEOTAB_PASSWORD=your_password
 ```
 
+## Query Options
+
+The Data Connector supports three OData query options: `$search` for date ranges, `$select` for column selection, and `$filter` for row filtering. They can be combined in a single URL.
+
+### Permissions
+
+The Data Connector respects user group access. Non-admin users only see data for the devices and drivers they have permission to access in MyGeotab. Filter values for `GroupId`, `DeviceId`, and `DriverId` must be within the user's access scope; otherwise, those filters are ignored.
+
 ## Date Range Filters
 
-Time-series tables require a `$search` parameter (not `$filter`).
+Time-series tables require a `$search` parameter for date ranges.
 
 ### Relative Dates (Recommended for Dashboards)
 
@@ -158,6 +166,88 @@ def fetch_all(url, auth):
 
 records = fetch_all(f"{base}/VehicleKpi_Daily?$search=last_30_day", auth)
 ```
+
+## Column Selection ($select)
+
+Use `$select` to retrieve only specific columns, reducing data transfer:
+
+```python
+# Fetch only specific columns from DeviceGroups
+url = f"{base}/DeviceGroups?$select=CompanyGuid,GroupId,GroupName,ImmediateGroup,SerialNo,DeviceId"
+r = requests.get(url, auth=auth)
+```
+
+For Power BI and Excel, use the simplified URL: `https://data-connector.geotab.com/odata/v4/svc/[table]?$select=[Column1],[Column2],...`
+
+## Row Filtering ($filter)
+
+Use `$filter` to filter rows server-side on any column. This works like a SQL `WHERE` clause.
+
+**Note:** Date range filtering still uses `$search`, not `$filter`. Use `$filter` for column-level conditions.
+
+### Comparison Operators
+
+| Operator | Meaning | Example |
+|---|---|---|
+| `eq` | Equals | `DeviceId eq 'b14FA'` |
+| `ne` | Not equals | `DeviceId ne 'b14FA1'` |
+| `gt` | Greater than | `LastGps_Speed gt 3` |
+| `ge` | Greater than or equals | `Local_Date ge '2025-01-01'` |
+| `lt` | Less than | `LastGps_Speed lt 100` |
+| `le` | Less than or equals | `Local_Date le '2025-12-31'` |
+| `in` | In a list | `DeviceId in ('b14F9','b14FA')` |
+
+### Logic Operators
+
+Combine expressions with `and`, `or`, and `not`:
+
+```python
+# Multiple conditions
+url = f"{base}/DeviceGroups?$filter=DeviceId in ('b14FA') and ImmediateGroup eq true and DeviceId ne 'b14FA1'"
+
+# Parenthesized OR
+url = f"{base}/LatestVehicleMetadata?$filter=LastGps_Speed gt 3 and (Year ne null or Model ne null) and Engine ne null"
+
+# NOT operator — must wrap expression in parentheses
+url = f"{base}/DeviceGroups?$filter=not (DeviceId eq 'b14FA')"
+```
+
+### Data Types in Filter Values
+
+| Type | Format | Examples |
+|---|---|---|
+| String | Single-quoted | `'b14FA'`, `'O''Reilly'` (escape `'` with `''`) |
+| Date | `YYYY-MM-DD` | `Local_Date ge '2025-01-01'` |
+| Datetime | `YYYY-MM-DDTHH:MM:SSZ` | Prefer `date(column)` for comparisons |
+| Integer | Bare number | `Trip_Count gt 5` |
+| Double | Decimal number | Prefer `round(column)` for comparisons |
+| Boolean | Case-insensitive | `ImmediateGroup eq true` |
+| Null | Case-sensitive | `Year ne null` (only with `eq`/`ne`) |
+
+### Functions in Filters
+
+- **String functions:** For string comparisons
+- **Arithmetic:** `round()`, `ceiling()`, `floor()` — work with double columns
+- **Date/Time:** `second()`, `minute()`, `hour()`, `day()`, `month()`, `year()` return integers; `date()` returns a date; `time()` returns `HH:MM:SS`
+
+### Combining $select, $filter, and $search
+
+```python
+# Select specific columns, filter by DeviceId, with date range
+url = f"{base}/DeviceGroups?$search=from_2025-01-01&$select=CompanyGuid,GroupId,GroupName,ImmediateGroup,SerialNo,DeviceId&$filter=DeviceId in ('b14F9','b14FA')"
+```
+
+### Filter Restrictions
+
+- One `$filter` parameter per query
+- Column names are case-sensitive; operators are lowercase
+- Filtering on `CompanyGuid` is not allowed
+- `GroupId`, `DeviceId`, and `DriverId` filter values must be within the user's access scope (out-of-scope values are silently ignored)
+- Escape single quotes inside values: `'O''Reilly'`
+- Use `not (column in ('xxx'))` instead of `column not in ('xxx')`
+- Special characters must be URL-encoded (e.g., `&` → `%26`)
+- Maximum 100 columns, parameters, or array values per query
+- Column filters cannot override the default `$search` date range
 
 ## Table Overview
 
@@ -596,7 +686,7 @@ print(persistent.groupby("FaultCode")["DeviceId"].count()
 
 ## Critical Rules
 
-1. **Date filters use `$search`, not `$filter`** — this is the most common mistake
+1. **Date range filters use `$search`, not `$filter`** — `$filter` is for column-level conditions (e.g., filtering by DeviceId, speed, etc.)
 2. **`last_` vs `this_`** — `last_` = complete past periods only. `this_` = includes current partial period.
 3. **Auth format is `database/username`** as the Basic Auth username field
 4. **SAML/SSO not supported** — Data Connector requires basic auth credentials (create a service account)
@@ -608,6 +698,8 @@ print(persistent.groupby("FaultCode")["DeviceId"].count()
 10. **Fuel metrics use trip-end-time attribution** — fuel for a long trip appears in the hour/date when the trip ends, not spread across the trip
 11. **LatestVehicleMetadata may have multiple rows per device** — filter `DateTo = '2050-01-01'` for current assignments
 12. **Fault-related columns require Pro plan or higher** — Base and Regulatory plans don't include fault or engine-status data
+13. **User permissions are enforced** — non-admin users only see data for devices/drivers within their group access scope
+14. **Use `$select` and `$filter` to optimize queries** — `$select` reduces data transfer by fetching only needed columns; `$filter` applies server-side row filtering on any column
 
 ## Dependencies
 

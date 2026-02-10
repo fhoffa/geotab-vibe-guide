@@ -43,8 +43,11 @@ The Data Connector exposes an OData v4 endpoint. You query it with HTTP GET requ
 - **Base URL:** `https://odata-connector-{serverNumber}.geotab.com/odata/v4/svc/`
 - **Auth:** HTTP Basic with `database_name/username` as the username and your MyGeotab password
 - **Format:** JSON responses with fleet data in the `value` array
+- **Query options:** `$search` for date ranges, `$select` to choose columns, `$filter` to filter on any column
 
 Your database lives on server 1 or server 2. The wrong server returns a **406 Jurisdiction Mismatch** — try both to find yours.
+
+> **Permissions:** The Data Connector respects user group access. Non-admin users only see data for devices and drivers they have permission to access in MyGeotab.
 
 > **SAML/SSO users:** The Data Connector only supports basic authentication. If your organization uses SAML/SSO to log into MyGeotab, create a service account with basic auth credentials to connect.
 
@@ -99,7 +102,7 @@ Pull VehicleKpi_Daily for the last 14 days and show me:
 
 Use pandas for the analysis. Show me a clean summary table.
 
-Reminder: Date filters use ?$search=last_14_day (not $filter).
+Reminder: Date filters use ?$search=last_14_day (not $filter). Use $filter for column-level conditions.
 If the response has @odata.nextLink, follow it to get all pages.
 ```
 
@@ -228,6 +231,56 @@ When writing prompts, reference these table names:
 | **DeviceGroups** | No | Vehicle-to-group mappings |
 | **DriverGroups** | No | Driver-to-group mappings |
 | **LatestDriverMetadata** | No | Driver names, timezones, account status |
+
+## Selecting Columns and Filtering Data
+
+In addition to `$search` for date ranges, the Data Connector supports `$select` and `$filter` OData query options to customize the data returned.
+
+### $select — Choose Which Columns to Retrieve
+
+Reduce data transfer by fetching only the columns you need:
+
+```
+https://odata-connector-{server}.geotab.com/odata/v4/svc/DeviceGroups?$select=CompanyGuid,GroupId,GroupName,ImmediateGroup,SerialNo,DeviceId
+```
+
+For Power BI and Excel, use the simplified URL: `https://data-connector.geotab.com/odata/v4/svc/[table]?$select=[Column1],[Column2],...`
+
+### $filter — Filter Rows on Any Column
+
+Filter data server-side using comparison operators, similar to a SQL `WHERE` clause:
+
+```
+# Single condition — speed greater than 3
+?$filter=LastGps_Speed gt 3
+
+# Date comparison
+?$filter=Local_Date ge '2025-01-01'
+
+# Multiple conditions with logic operators
+?$filter=LastGps_Speed gt 3 and (Year ne null or Model ne null) and Engine ne null
+
+# IN operator for multiple values
+?$filter=DeviceId in ('b14F9','b14FA')
+
+# NOT operator (must wrap expression in parentheses)
+?$filter=not (DeviceId eq 'b14FA')
+```
+
+**Supported comparison operators:** `eq`, `ne`, `gt`, `ge`, `lt`, `le`, `in`
+**Logic operators:** `and`, `or`, `not`
+
+### Combining $select, $filter, and $search
+
+You can use all three together:
+
+```
+https://odata-connector-{server}.geotab.com/odata/v4/svc/DeviceGroups?$search=from_2025-01-01&$select=CompanyGuid,GroupId,GroupName,ImmediateGroup,SerialNo,DeviceId&$filter=DeviceId in ('b14F9','b14FA')
+```
+
+> **Note:** Date filters still use `$search`, not `$filter`. Use `$filter` for column-level conditions. See the [skill reference](../skills/geotab/references/DATA_CONNECTOR.md) for full `$filter` syntax, data type rules, and known restrictions.
+
+---
 
 ## Give Your AI the Full Context
 

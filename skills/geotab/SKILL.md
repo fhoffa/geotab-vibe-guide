@@ -22,7 +22,7 @@ Geotab has three ways to get fleet data. Pick based on the task:
 | Natural language questions, ad-hoc exploration | **Geotab Ace** | [ACE_API.md](references/ACE_API.md) | ~30–45s |
 
 **Key constraints:**
-- **Data Connector** requires HTTP Basic Auth on a separate server — **not usable from Add-Ins** (they only get a session token). Use for server-side scripts, Python apps, and BI tools. **Returns the full fleet** regardless of user permissions.
+- **Data Connector** requires HTTP Basic Auth on a separate server — **not usable from Add-Ins** (they only get a session token). Use for server-side scripts, Python apps, and BI tools. Supports `$select` (column selection) and `$filter` (row filtering) for server-side query customization. **Respects user permissions** (group/vehicle scope).
 - **API** is the only channel for real-time data (`DeviceStatusInfo`) and works everywhere including Add-Ins. Scales well for targeted queries (one vehicle's trips, one device's location), but **"fetch all trips for the whole fleet and aggregate in code" doesn't scale** to production fleets with thousands of vehicles. Use the Data Connector for fleet-wide KPIs at scale. **Respects user permissions** (group/vehicle scope).
 - **Ace** is great for exploration but slow, may apply implicit filters, and results can vary between runs. **Respects user permissions** (group/vehicle scope).
 - For trip-level or per-event detail, use the **API** — the Data Connector only has daily/hourly/monthly aggregates.
