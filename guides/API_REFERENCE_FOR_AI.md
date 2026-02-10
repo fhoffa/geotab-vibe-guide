@@ -177,3 +177,7 @@ Don't have a Geotab account?
 4. Find your database name in the URL: `my.geotab.com/login.html?database=YOUR_DATABASE`
 5. Use your email as username
 6. Server is `my.geotab.com`
+
+## Other Data Channels
+
+The API is the fastest and most flexible way to get fleet data, but it's not the only one. See [DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) for a benchmark of the API vs the OData Data Connector (pre-aggregated KPIs) vs Geotab Ace (natural language queries).

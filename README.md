@@ -44,7 +44,14 @@ Then use [**CLAUDE PROMPTS**](./guides/CLAUDE_PROMPTS.md) for ready-made prompts
 
 ---
 
-### Path E: Automated Monitoring & Alerts (Agentic Systems)
+### Path E: Fleet Analytics with Data Connector
+**Want pre-built KPIs, safety scores, and fault data without writing API calls?**
+
+[**DATA CONNECTOR GUIDE**](./guides/DATA_CONNECTOR.md) - Query aggregated fleet metrics through the Data Connector endpoint. Works with Python, Excel, Power BI, or any HTTP client.
+
+---
+
+### Path F: Automated Monitoring & Alerts (Agentic Systems)
 **Want autonomous agents that monitor your fleet 24/7 and take action?**
 
 [**AGENTIC OVERVIEW**](./guides/AGENTIC_OVERVIEW.md) - Understand what agentic systems are and choose your approach.

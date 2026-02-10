@@ -21,8 +21,22 @@ Complete guide for Geotab fleet management development.
   - `references/ADDINS.md` - MyGeotab Add-In development
   - `references/ZENITH_STYLING.md` - React + Geotab design system
   - `references/ACE_API.md` - Geotab Ace AI queries
+  - `references/DATA_CONNECTOR.md` - OData Data Connector (pre-aggregated KPIs, safety, faults)
   - Plus: SPEED_DATA, TRIP_ANALYSIS, STORAGE_API, TROUBLESHOOTING, and more
-- **Use Cases:** All Geotab development (Python dashboards, Add-Ins, AI features)
+- **Use Cases:** All Geotab development (Python dashboards, Add-Ins, AI features, Data Connector analytics)
+
+---
+
+### ✅ geotab-data-connector
+**Status:** COMPLETED (part of consolidated `geotab` skill)
+
+Query pre-aggregated fleet KPIs, safety scores, and fault data via the OData Data Connector endpoint.
+
+- **Location:** `skills/geotab/references/DATA_CONNECTOR.md`
+- **Human guide:** `guides/DATA_CONNECTOR.md`
+- **Description:** OData connection patterns, date range filters, pagination, all available tables
+- **Covers:** VehicleKpi (daily/hourly/monthly), DriverKPI, Safety (fleet/vehicle/driver), FaultMonitoring, LatestVehicleMetadata
+- **Use Cases:** Fleet utilization reports, fuel economy analysis, safety dashboards, after-hours detection, fleet health checks
 
 ---
 

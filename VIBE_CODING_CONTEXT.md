@@ -60,6 +60,12 @@ For complex questions ("Which drivers need coaching?", "Fuel efficiency trend"),
 
 **MCP Integration:** For conversational fleet access via Claude Desktop, see [CUSTOM_MCP_GUIDE.md](./guides/CUSTOM_MCP_GUIDE.md)
 
+## Data Connector (OData Analytics)
+
+For pre-aggregated fleet KPIs (daily/monthly distance, fuel, idle time, safety scores), use the **Data Connector** OData endpoint instead of raw API calls. HTTP Basic Auth, no SDK needed.
+
+**Skill reference:** [skills/geotab/references/DATA_CONNECTOR.md](./skills/geotab/references/DATA_CONNECTOR.md) | **Human guide:** [guides/DATA_CONNECTOR.md](./guides/DATA_CONNECTOR.md)
+
 ## Critical Rules
 
 1. **NEVER hardcode credentials** - Always use .env with python-dotenv

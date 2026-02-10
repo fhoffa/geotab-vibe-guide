@@ -10,6 +10,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 | **New to coding/APIs** | [BEGINNER_GLOSSARY.md](./BEGINNER_GLOSSARY.md) |
 | **Using Claude** | [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md) |
 | **Using other AI tools** | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) |
+| **Want pre-built fleet analytics (KPIs, safety)** | [DATA_CONNECTOR.md](./DATA_CONNECTOR.md) |
 | **Want automated monitoring/alerts** | [AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md) |
 | **At a hackathon** | [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md) |
 | **Teaching a workshop** | [slides/README.md](../slides/README.md) |
@@ -32,6 +33,11 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 - **[API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md)** - Complete guide for any AI coding tool (ChatGPT, Copilot, Cursor, etc.).
 - **[GEOTAB_API_REFERENCE.md](./GEOTAB_API_REFERENCE.md)** - Quick reference card for authentication and common API patterns.
 - **[DEMO_DATABASE_REFERENCE.md](./DEMO_DATABASE_REFERENCE.md)** - Complete entity schemas and sample data from demo databases.
+
+### Data Connector (OData Analytics)
+
+- **[DATA_CONNECTOR.md](./DATA_CONNECTOR.md)** - Query pre-aggregated fleet KPIs, safety scores, and fault data via the OData Data Connector. Includes copy-paste prompts for AI tools.
+- **[DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)** - Data Connector vs MyGeotab API vs Geotab Ace: benchmarks, tradeoffs, and when to use each.
 
 ### Building Add-Ins
 

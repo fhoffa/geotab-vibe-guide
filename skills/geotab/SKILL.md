@@ -11,6 +11,24 @@ metadata:
 
 This is the unified skill for all Geotab fleet management development. Navigate to the specific reference you need based on your task.
 
+## Choosing a Data Channel
+
+Geotab has three ways to get fleet data. Pick based on the task:
+
+| Need | Channel | Reference | Speed |
+|------|---------|-----------|-------|
+| Pre-aggregated KPIs (distance, fuel, idle, safety) for dashboards/reports | **OData Data Connector** | [DATA_CONNECTOR.md](references/DATA_CONNECTOR.md) | ~5–11s |
+| Raw entities (trips, devices, GPS, faults) or real-time data | **MyGeotab API** | [API_QUICKSTART.md](references/API_QUICKSTART.md) | ~0.5–2s |
+| Natural language questions, ad-hoc exploration | **Geotab Ace** | [ACE_API.md](references/ACE_API.md) | ~30–45s |
+
+**Key constraints:**
+- **Data Connector** requires HTTP Basic Auth on a separate server — **not usable from Add-Ins** (they only get a session token). Use for server-side scripts, Python apps, and BI tools. **Returns the full fleet** regardless of user permissions.
+- **API** is the only channel for real-time data (`DeviceStatusInfo`) and works everywhere including Add-Ins. Scales well for targeted queries (one vehicle's trips, one device's location), but **"fetch all trips for the whole fleet and aggregate in code" doesn't scale** to production fleets with thousands of vehicles. Use the Data Connector for fleet-wide KPIs at scale. **Respects user permissions** (group/vehicle scope).
+- **Ace** is great for exploration but slow, may apply implicit filters, and results can vary between runs. **Respects user permissions** (group/vehicle scope).
+- For trip-level or per-event detail, use the **API** — the Data Connector only has daily/hourly/monthly aggregates.
+
+Full comparison with benchmarks: [DATA_ACCESS_COMPARISON.md](../../guides/DATA_ACCESS_COMPARISON.md)
+
 ## Quick Navigation
 
 | Task | Reference | Description |
@@ -19,6 +37,7 @@ This is the unified skill for all Geotab fleet management development. Navigate 
 | **Build Add-Ins** | [ADDINS.md](references/ADDINS.md) | Create custom MyGeotab pages (vanilla JS) |
 | **Style with Zenith** | [ZENITH_STYLING.md](references/ZENITH_STYLING.md) | React components matching MyGeotab look |
 | **AI Queries** | [ACE_API.md](references/ACE_API.md) | Natural language fleet queries via Geotab Ace |
+| **Data Connector** | [DATA_CONNECTOR.md](references/DATA_CONNECTOR.md) | OData API for pre-aggregated KPIs, safety, faults |
 
 ## Reference Files
 
@@ -35,6 +54,7 @@ This is the unified skill for all Geotab fleet management development. Navigate 
 
 | Reference | When to Use |
 |-----------|-------------|
+| [DATA_CONNECTOR.md](references/DATA_CONNECTOR.md) | Pre-aggregated fleet KPIs via OData (daily/hourly/monthly distance, fuel, idle, safety) |
 | [SPEED_DATA.md](references/SPEED_DATA.md) | Working with vehicle speed data, LogRecord queries |
 | [TRIP_ANALYSIS.md](references/TRIP_ANALYSIS.md) | Analyzing trip data, fuel efficiency, distance calculations |
 

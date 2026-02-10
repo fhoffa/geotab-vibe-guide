@@ -426,6 +426,8 @@ Ace is Geotab's AI that answers complex fleet questions in natural language. It 
 | Complex analysis questions | Simple data lookups |
 
 > **Live demo:** The `ace-vs-api-comparison` Add-In shows this difference: [GitHub Pages](https://fhoffa.github.io/geotab-vibe-guide/examples/addins/ace-api-comparison.html)
+>
+> **Note:** There's also a third data channel — the [OData Data Connector](./DATA_CONNECTOR.md) — but it requires HTTP Basic Auth on a separate server, so it's **not usable from Add-Ins**. It's great for server-side scripts and BI dashboards. See [DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) for the full benchmark of all three channels.
 
 ### Why Counts Differ
 
