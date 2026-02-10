@@ -131,5 +131,5 @@ Vibe coding is about **flow**. Instead of fighting with syntax and documentation
 
 ## Author
 
-Created by [Felipe Hoffa](https://www.linkedin.com/in/hoffa/). To message or subscribe for updates, connect on [LinkedIn](https://www.linkedin.com/in/hoffa/).
+Created by [Felipe Hoffa](https://www.linkedin.com/in/hoffa/). To message and to subscribe for updates, connect on [LinkedIn](https://www.linkedin.com/in/hoffa/).
 
