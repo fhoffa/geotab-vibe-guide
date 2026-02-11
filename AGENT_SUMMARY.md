@@ -38,7 +38,7 @@ Prefer loading the selected `SKILL.md` and only the specific reference file need
 1. Never hardcode credentials.
 2. Use `.env` + `python-dotenv`; call `load_dotenv()` before reading env vars.
 3. Test authentication once before loops (failed auth can lock the account temporarily).
-4. For Add-Ins, keep compatibility constraints in mind (ES5 patterns and required callback usage).
+4. For Add-Ins, always call `callback()` in initialize and use inline CSS (no `<style>` tags). Modern JavaScript (const, let, arrow functions) is fine.
 
 ## Navigation strategy for agents
 

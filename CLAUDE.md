@@ -71,7 +71,7 @@ API Reference: https://geotab.github.io/sdk/software/api/reference/
 ## Code Standards
 
 When writing code examples or snippets:
-- Follow language style guides and keep Add-In snippets ES5-compatible
+- Follow language style guides; modern JavaScript (const, let, arrow functions) is fine for Add-In snippets
 - Add clear comments and error handling
 - Keep examples beginner-friendly
 

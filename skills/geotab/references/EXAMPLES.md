@@ -28,7 +28,7 @@ When using AI coding tools, request a **single HTML file** with all CSS and Java
     </div>
 
     <script>
-    // All JavaScript inline - ES5 only!
+    // All JavaScript inline
     geotab.addin["your-addin-name"] = function() {
         var apiRef = null;
 
