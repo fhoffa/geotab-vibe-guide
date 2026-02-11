@@ -1,5 +1,7 @@
 # Geotab Vibe Coding: Zero to Hero
 
+> **The Geotab Vibe Coding Challenge is LIVE!** $25,000 in prizes. Build fleet intelligence solutions using AI-assisted development. The sprint runs **Feb 12 -- Mar 2, 2026**. [**Register now**](https://luma.com/h6ldbaxp) to get all the important updates, and check out the [project ideas](./guides/HACKATHON_IDEAS.md) for inspiration.
+
 **Build fleet management apps in minutes using AI.**
 
 This repository is a "Vibe Coding" starter kit. You don't need to be an expert coder. You just need to know how to ask the right questions.
