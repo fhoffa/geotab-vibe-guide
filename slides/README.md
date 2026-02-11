@@ -102,6 +102,7 @@ You need: Database, Username, Password, Server
 - Stragglers can use shared account
 
 > **Detailed setup:** [CREDENTIALS.md](../guides/CREDENTIALS.md)
+> **Complete beginners:** [BEGINNER_GUIDE.md](../guides/BEGINNER_GUIDE.md)
 
 ---
 
@@ -397,6 +398,38 @@ Setup (advanced):
 
 ---
 
+### Slide 14.7: Data Connector - Fleet Analytics Without Code (0:40) *(optional)*
+
+**On Screen:**
+```
+DATA CONNECTOR: PRE-BUILT FLEET ANALYTICS
+
+Three ways to get fleet data:
+
+API        → Raw entities, full control, fast (~1s)
+Ace        → Natural language questions (~30-45s)
+Data       → Pre-aggregated KPIs, safety
+Connector    scores, faults via OData (~5-11s)
+
+Data Connector gives you:
+• Daily/monthly KPIs (distance, idle time, fuel)
+• Safety scores by driver and vehicle
+• Fault monitoring and diagnostics
+• Works with Python, Excel, Power BI, Tableau
+```
+
+**Facilitator Notes:**
+- "The Data Connector is great when you want analytics without computing aggregates yourself"
+- "It's a different tool than the API - choose based on your needs"
+- Show the comparison table from DATA_ACCESS_COMPARISON.md if time permits
+- "Requires ProPlus plan - demo databases include this"
+- Skip this slide if running behind on time
+
+> **Full guide:** [DATA_CONNECTOR.md](../guides/DATA_CONNECTOR.md)
+> **Comparison:** [DATA_ACCESS_COMPARISON.md](../guides/DATA_ACCESS_COMPARISON.md)
+
+---
+
 ### Slide 15: Going Agentic (0:42)
 
 **On Screen:**
@@ -480,6 +513,7 @@ BUILD SOMETHING AWESOME
 🔧 PredictMaint AI - Maintenance before breakdowns
 📊 FleetPulse - Real-time health monitoring
 💬 GeotabGPT - Natural language fleet chatbot
+🔍 FaultWatch - Diagnostic trouble code monitor (Data Connector)
 
 Categories: Optimization | Safety | Environment | Integrations | Tools
 ```
@@ -524,6 +558,7 @@ KEEP BUILDING
 📚 SDK Docs: geotab.github.io/sdk/
 💻 This Repo: github.com/fhoffa/geotab-vibe-guide
 🚀 Instant Start: guides/INSTANT_START_WITH_CLAUDE.md
+📊 Data Connector: guides/DATA_CONNECTOR.md
 🤖 Agentic Guide: guides/AGENTIC_OVERVIEW.md
 💡 Ideas: guides/HACKATHON_IDEAS.md
 
@@ -622,7 +657,11 @@ LEARN MORE
 
 Guides in this repo:
 • CREDENTIALS.md - Setup help
+• BEGINNER_GUIDE.md - New to coding? Start here
 • GEOTAB_API_REFERENCE.md - API details
+• DATA_CONNECTOR.md - Fleet analytics via OData
+• DATA_ACCESS_COMPARISON.md - API vs Ace vs Data Connector
+• FAULT_MONITORING.md - Diagnostic trouble codes
 • GEOTAB_ADDINS.md - Building Add-Ins
 • DEMO_DATABASE_REFERENCE.md - What's in demo data
 
@@ -710,9 +749,13 @@ External:
 | Topic | Guide |
 |-------|-------|
 | Credentials & Setup | [CREDENTIALS.md](../guides/CREDENTIALS.md) |
+| Beginner's Guide | [BEGINNER_GUIDE.md](../guides/BEGINNER_GUIDE.md) |
 | Instant Start | [INSTANT_START_WITH_CLAUDE.md](../guides/INSTANT_START_WITH_CLAUDE.md) |
 | Antigravity IDE | [ANTIGRAVITY_QUICKSTART.md](../guides/ANTIGRAVITY_QUICKSTART.md) |
 | No-Code Add-Ins | [GOOGLE_GEM_USER_GUIDE.md](../guides/GOOGLE_GEM_USER_GUIDE.md) |
+| Data Connector (OData) | [DATA_CONNECTOR.md](../guides/DATA_CONNECTOR.md) |
+| Data Access Comparison | [DATA_ACCESS_COMPARISON.md](../guides/DATA_ACCESS_COMPARISON.md) |
+| Fault Monitoring | [FAULT_MONITORING.md](../guides/FAULT_MONITORING.md) |
 | MCP Server Setup | [CUSTOM_MCP_GUIDE.md](../guides/CUSTOM_MCP_GUIDE.md) |
 | Agentic Systems | [AGENTIC_OVERVIEW.md](../guides/AGENTIC_OVERVIEW.md) |
 | Hackathon Ideas | [HACKATHON_IDEAS.md](../guides/HACKATHON_IDEAS.md) |
