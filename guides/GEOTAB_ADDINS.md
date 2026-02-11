@@ -188,8 +188,7 @@ CRITICAL REQUIREMENTS:
    geotab.addin["fleet-stats"] = function() { return {...}; };
 3. Must implement all three required lifecycle methods: initialize, focus, and blur
 4. Must call callback() in the initialize method
-5. Use ES5 JavaScript only (no arrow functions, const/let, or template literals)
-6. **CRITICAL FOR DEPLOYMENT**: The hosting platform MUST support CORS (Cross-Origin Resource Sharing) and include the "Access-Control-Allow-Origin: *" header in responses. This is essential for MyGeotab to load the add-in.
+5. **CRITICAL FOR DEPLOYMENT**: The hosting platform MUST support CORS (Cross-Origin Resource Sharing) and include the "Access-Control-Allow-Origin: *" header in responses. This is essential for MyGeotab to load the add-in.
 
 FUNCTIONALITY:
 - Display the total number of vehicles in the fleet using the MyGeotab API
@@ -240,7 +239,7 @@ Make sure the HTML includes proper DOCTYPE, meta charset, and the geotab.addin r
 **Why this prompt works:**
 - Explicitly requires single-file output (simpler for AI to generate)
 - Lists all critical patterns AI tools often get wrong
-- Specifies ES5 JavaScript (avoids compatibility issues)
+- Uses clear JavaScript patterns AI tools can follow
 - Warns about common API pitfalls (Driver type, resultsLimit)
 - Requests the config JSON at the end (complete deliverable)
 

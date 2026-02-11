@@ -173,22 +173,16 @@ geotab.addin["name"] = function() { return {...}; }();
 geotab.addin["name"] = function() { return {...}; };
 ```
 
-### 4. Using Modern JS Features
+### 4. Undeclared Variables
 
-**Problem:** MyGeotab may run in older browsers
+**Problem:** Forgetting `const`, `let`, or `var` creates implicit globals
 
 ```javascript
-// Modern JavaScript (may not work)
-const devices = [];
-api.call("Get", {typeName: "Device"}, (devices) => {
-    console.log(`Found ${devices.length} vehicles`);
-});
+// Wrong - implicit global
+devices = [];
 
-// ES5 JavaScript (always works)
-var devices = [];
-api.call("Get", {typeName: "Device"}, function(devices) {
-    console.log("Found " + devices.length + " vehicles");
-});
+// Correct - properly declared
+const devices = [];
 ```
 
 ### 5. Variable Name Collisions with 'state'
@@ -347,7 +341,7 @@ diagnosticSearch: { id: "DiagnosticPostedRoadSpeedId" }
 2. All three lifecycle methods
 3. The `callback()` call in initialize
 4. Error handling for API calls
-5. ES5 JavaScript syntax
+5. Properly declared variables (const/let/var)
 6. Clear comments explaining each part
 
 ### Always Warn About:

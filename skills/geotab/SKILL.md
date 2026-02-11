@@ -152,8 +152,7 @@ api.call("Get", { typeName: "Device" }, function(devices) {
 2. **Always use date ranges for trips** - Never fetch all trips without time bounds
 3. **Test credentials once before loops** - Failed auth locks account 15-30 min
 4. **External CSS for Add-Ins** - Inline `<style>` tags may be stripped
-5. **ES5 JavaScript only** - No arrow functions, const/let, template literals in Add-Ins
-6. **Call `callback()` in initialize** - Or Add-In will hang
+5. **Call `callback()` in initialize** - Or Add-In will hang
 
 ## Entity Types Quick Reference
 

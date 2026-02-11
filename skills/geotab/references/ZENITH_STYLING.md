@@ -360,7 +360,7 @@ For React Add-Ins using Zenith:
 
 1. Bundle React and Zenith into your Add-In
 2. Include CSS in build output
-3. Use ES5-compatible output for browser support
+3. Target modern browsers (ES2020+ is fine)
 
 **Note:** Embedded Add-Ins (vanilla JS) cannot use Zenith components directly. Instead, reference Zenith's design tokens for colors/spacing and mimic the visual style with CSS.
 
