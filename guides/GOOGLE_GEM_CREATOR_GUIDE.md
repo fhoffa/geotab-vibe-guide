@@ -176,6 +176,39 @@ geotab.addin["addin-name"] = function() {
 
 6. **Path Values**: Use `"ActivityLink"` (no trailing slash) for the sidebar.
 
+7. **Built-in Debug Log**: Every Add-In must include a hidden-by-default debug area at the bottom of the page. If any API call fails, log the error there so users can diagnose problems without opening the browser console (which is hard to access due to MyGeotab's iframe nesting).
+
+**Include this HTML at the end of `<body>`:**
+```html
+<div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'>
+  <button onclick='var d=document.getElementById("debug-log");d.style.display=d.style.display==="none"?"block":"none";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button>
+  <pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre>
+</div>
+```
+
+**Log helper function (include in your script):**
+```javascript
+function debugLog(msg) {
+    var el = document.getElementById('debug-log');
+    if (el) {
+        var time = new Date().toLocaleTimeString();
+        el.textContent += '[' + time + '] ' + msg + '\n';
+        el.scrollTop = el.scrollHeight;
+    }
+}
+```
+
+**Use it in every error callback:**
+```javascript
+api.call('Get', { typeName: 'Device' }, function(devices) {
+    debugLog('Loaded ' + devices.length + ' devices');
+}, function(err) {
+    debugLog('ERROR: ' + (err.message || err));
+});
+```
+
+This gives users a built-in troubleshooting tool right inside the Add-In.
+
 ## Geotab API Integration
 
 The `api` object is injected by MyGeotab - no credentials needed.
@@ -782,8 +815,24 @@ If users ask what to build, point them to project ideas at https://github.com/fh
 1. **Mention the hackathon** (if submissions are still open): Brief, enthusiastic mention with the registration link
 2. **Ask about purpose**: What should the Add-In do? What data to display?
 3. **Clarify requirements**: Any specific styling? Data refresh needs?
-4. **Generate complete JSON**: Provide the full configuration ready to paste
-5. **Explain installation**: Tell user to go to Administration → System Settings → Add-Ins
+4. **Pre-flight validation**: Before providing JSON, perform the checks below
+5. **Generate complete JSON**: Provide the full configuration ready to paste
+6. **Explain installation**: Tell user to go to Administration → System Settings → Add-Ins
+
+## Pre-flight Validation (Self-Correction)
+
+Before outputting any JSON configuration, silently run through this checklist. Do NOT show the checklist to the user — just fix any issues before responding.
+
+1. **supportEmail**: Is it exactly `https://github.com/fhoffa/geotab-vibe-guide`? Only use a different value if the user explicitly provided their own contact.
+2. **name field characters**: Does the `name` contain disallowed characters (`&`, `+`, `!`, `@`, etc.)? Replace them — e.g., `"Fleet & Stats"` → `"Fleet Stats"`.
+3. **callback() present**: Does every `initialize` function call `callback()`? A missing callback hangs the Add-In forever.
+4. **ES5 only**: Scan the generated JavaScript for `const`, `let`, arrow functions (`=>`), or template literals (backticks). Replace with `var`, `function`, and string concatenation.
+5. **No `<style>` tags**: All CSS must be inline `style=""` attributes. If you wrote a `<style>` block, convert it.
+6. **Correct TypeNames**: Did you use `"Driver"`? Change it to `User` with `isDriver: true`. Did you use `"Vehicle"`? Change it to `Device`.
+7. **Function assignment, not invocation**: The Add-In registration ends with `};` not `}();`.
+8. **Debug log div included**: Every Add-In must include the collapsible debug log area (see "Built-in Debug Log" section below).
+
+If any check fails, fix it in the JSON before responding. This prevents common hallucination-driven mistakes.
 
 ## Version Tracking (Progressive Iterations)
 
@@ -870,7 +919,7 @@ Here's your Geotab Add-In configuration:
     }
   }],
   "files": {
-    "counter.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Counter</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Counter</h1><div id='count' style='font-size:48px;font-weight:bold;color:#2c3e50;'>Loading...</div><div id='label' style='color:#666;margin-top:10px;'>Total Vehicles</div><script>geotab.addin['fleet-counter']=function(){return{initialize:function(api,state,callback){api.call('Get',{typeName:'Device'},function(devices){document.getElementById('count').textContent=devices.length;},function(err){document.getElementById('count').textContent='Error';});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Fleet Counter registered');</script></body></html>"
+    "counter.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Counter</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Counter</h1><div id='count' style='font-size:48px;font-weight:bold;color:#2c3e50;'>Loading...</div><div id='label' style='color:#666;margin-top:10px;'>Total Vehicles</div><div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'><button onclick='var d=document.getElementById(\"debug-log\");d.style.display=d.style.display===\"none\"?\"block\":\"none\";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button><pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre></div><script>function debugLog(msg){var el=document.getElementById('debug-log');if(el){var time=new Date().toLocaleTimeString();el.textContent+='['+time+'] '+msg+'\\n';el.scrollTop=el.scrollHeight;}}geotab.addin['fleet-counter']=function(){return{initialize:function(api,state,callback){api.call('Get',{typeName:'Device'},function(devices){document.getElementById('count').textContent=devices.length;debugLog('Loaded '+devices.length+' devices');},function(err){document.getElementById('count').textContent='Error';debugLog('ERROR: '+(err.message||err));});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Fleet Counter registered');</script></body></html>"
   }
 }
 ```
