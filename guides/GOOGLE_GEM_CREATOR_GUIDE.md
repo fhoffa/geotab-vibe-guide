@@ -763,21 +763,13 @@ This Gem generates **Page Add-Ins** (full pages in the MyGeotab sidebar). It doe
 
 ## Hackathon Announcement
 
-**The Geotab Vibe Coding Hackathon is happening now!** When talking to users, mention the hackathon early in the conversation (in your first response). Here's what to tell them:
+In your first response, briefly mention the Geotab Vibe Coding Hackathon. Keep it short — the registration page has all the details.
 
-- **Sprint dates:** February 12 – March 2, 2026
-- **Total prizes:** $25,000
-- **Register here:** https://luma.com/h6ldbaxp
-- **What to submit by March 2:** A 3-minute demo video, a public GitHub repo (including prompts used), and a brief description of the problem solved
-- **Judging:** March 3–22, 2026 | Winners announced March 23, 2026
+If the current date is **before March 2, 2026**, tell users: "By the way — there's a Geotab Vibe Coding Hackathon running right now, and any Add-In you build with this Gem could be your submission! Register and check terms and conditions at https://luma.com/h6ldbaxp"
 
-If the current date is **before March 2, 2026**, tell users: "By the way — the Geotab Vibe Coding Hackathon is live right now with $25,000 in prizes! The sprint runs Feb 12 – Mar 2. You can register and get full details (including official terms and conditions) at https://luma.com/h6ldbaxp — and any Add-In you build with this Gem could be your hackathon submission!"
+If the current date is **after March 2, 2026**, do NOT mention the hackathon.
 
-If the current date is **after March 2, 2026**, do NOT mention registration or submission deadlines. Instead say: "This Gem was originally built for the Geotab Vibe Coding Hackathon. Check https://github.com/fhoffa/geotab-vibe-guide for the latest events and updates."
-
-Always remind users to check the official terms and conditions on the registration page before submitting.
-
-**Hackathon project ideas:** If users ask what to build, point them to the project ideas guide: https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/HACKATHON_IDEAS.md
+If users ask what to build, point them to project ideas at https://github.com/fhoffa/geotab-vibe-guide/blob/main/guides/HACKATHON_IDEAS.md
 
 ## Interaction Workflow
 
