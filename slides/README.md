@@ -45,13 +45,13 @@ From Zero to Hackathon Hero in 60 Minutes
 TODAY'S JOURNEY
 
 0:00 - Quick Setup (5 min)
-0:05 - First API Call (13 min)
+0:05 - First API Call + Tips (13 min)
 0:18 - Visual Dashboards (12 min)
 0:30 - AI-Powered Queries (12 min)
 0:42 - Going Agentic (8 min)
 0:50 - Hackathon Ideas (10 min)
 
-You'll leave with: Working code + Project ideas
+You'll leave with: Working code + Project ideas + Confidence to keep building
 ```
 
 **Facilitator Notes:**
@@ -106,29 +106,31 @@ You need: Database, Username, Password, Server
 
 ---
 
-### Slide 5: Geotab API Overview (0:05)
+### Slide 5: Geotab API - The One Pattern (0:05)
 
 **On Screen:**
 ```
-GEOTAB API BASICS
+THE GEOTAB API: ONE PATTERN
 
-Format: JSON-RPC (simpler than REST)
-Auth: Authenticate once → Get session → Make requests
+    Authenticate → Get session → Ask for data
 
-Common Data Types:
-• Device (vehicles)
-• Trip (journeys)
-• LogRecord (GPS points)
-• StatusData (diagnostics)
-• User (drivers)
+That's it. AI handles the details.
 
-Reference: geotab.github.io/sdk/software/api/reference/
+Things you can ask for:
+• "Show me my vehicles"
+• "Get recent trips"
+• "Where are my trucks right now?"
+• "What faults does this vehicle have?"
+
+You describe what you want. AI writes the API calls.
 ```
 
 **Facilitator Notes:**
-- "Don't memorize this - AI knows it"
-- Show API reference briefly (30 seconds max)
-- "The pattern is always: authenticate, then request data"
+- "There's only one pattern to remember: log in, then ask for data"
+- "You do NOT need to memorize data types, endpoints, or parameters"
+- "The AI knows the Geotab API — your job is knowing what questions to ask about your fleet"
+- Do NOT teach JSON-RPC, TypeNames, or response formats here — that's what the AI is for
+- If advanced attendees ask about specifics, point them to the guides: [GEOTAB_API_REFERENCE.md](../guides/GEOTAB_API_REFERENCE.md)
 
 ---
 
@@ -190,7 +192,40 @@ Now try: "Show me recent trips for Truck 42"
 
 ---
 
-### Slide 8: Choose Your Dashboard Path (0:18)
+### Slide 8: Tips for Vibe Coding (0:15)
+
+**On Screen:**
+```
+5 TIPS FOR WORKING WITH AI
+
+1. Give AI the full picture
+   → Credentials + what you want + what data you care about
+
+2. Start small, then build up
+   → Connect → Fetch data → Visualize → Add features
+
+3. When it breaks, paste the error back
+   → Copy the FULL error message. AI fixes it.
+
+4. Describe what you SEE, not what you think is wrong
+   → "The map shows all vehicles at 0,0"
+      beats "the coordinate parser is broken"
+
+5. Keep the conversation going
+   → Build on previous responses. Don't start over.
+```
+
+**Facilitator Notes:**
+- "These are the tips that actually matter. Not code syntax — workflow."
+- "Tip #1 is the biggest unlock: the more context you give AI, the better the code"
+- "Tip #3 is the secret weapon. Most beginners try to fix errors themselves — just paste them back"
+- "Tip #4: you don't need to diagnose the problem, just describe what happened"
+- The AI skills files in `skills/geotab/` already encode technical details like date formats, API limits, and async patterns — your audience doesn't need to know those. The AI does.
+- Reference: [CLAUDE_PROMPTS.md](../guides/CLAUDE_PROMPTS.md) has the "Fix It" prompt pattern
+
+---
+
+### Slide 9: Choose Your Dashboard Path (0:18)
 
 **On Screen:**
 ```
@@ -218,7 +253,7 @@ C. CLI DASHBOARD (Terminal)
 
 ---
 
-### Slide 9: Path A - Google Gem (No-Code) (0:20)
+### Slide 10: Path A - Google Gem (No-Code) (0:20)
 
 **On Screen:**
 ```
@@ -245,7 +280,7 @@ Admin → System Settings → Add-Ins → New → Paste
 
 ---
 
-### Slide 10: Path B - Antigravity IDE (0:20)
+### Slide 11: Path B - Antigravity IDE (0:20)
 
 **On Screen:**
 ```
@@ -271,7 +306,7 @@ VISUAL DASHBOARD WITH ANTIGRAVITY
 
 ---
 
-### Slide 11: Path C - CLI Dashboard (0:20)
+### Slide 12: Path C - CLI Dashboard (0:20)
 
 **On Screen:**
 ```
@@ -294,7 +329,7 @@ Refresh every 30 seconds with colored output."
 
 ---
 
-### Slide 12: Dashboard Checkpoint (0:28)
+### Slide 13: Dashboard Checkpoint (0:28)
 
 **On Screen:**
 ```
@@ -317,7 +352,7 @@ Share a screenshot in chat of your dashboard
 
 ---
 
-### Slide 13: Geotab Ace API (0:30)
+### Slide 14: Geotab Ace API (0:30)
 
 **On Screen:**
 ```
@@ -340,7 +375,7 @@ Ace translates questions → SQL queries → Answers
 
 ---
 
-### Slide 14: Live Coding - Ace Integration (0:33)
+### Slide 15: Live Coding - Ace Integration (0:33)
 
 **On Screen:**
 ```
@@ -366,7 +401,7 @@ Support questions like:
 
 ---
 
-### Slide 14.5: Level Up with MCP (0:38)
+### Slide 16: Level Up with MCP (0:38)
 
 **On Screen:**
 ```
@@ -398,7 +433,7 @@ Setup (advanced):
 
 ---
 
-### Slide 14.7: Data Connector - Fleet Analytics Without Code (0:40) *(optional)*
+### Slide 17: Data Connector - Fleet Analytics Without Code (0:40) *(optional)*
 
 **On Screen:**
 ```
@@ -430,7 +465,7 @@ Data Connector gives you:
 
 ---
 
-### Slide 15: Going Agentic (0:42)
+### Slide 18: Going Agentic (0:42)
 
 **On Screen:**
 ```
@@ -452,7 +487,7 @@ The Loop: MONITOR → DETECT → DECIDE → ACT → repeat
 
 ---
 
-### Slide 16: When to Go Agentic (0:45)
+### Slide 19: When to Go Agentic (0:45)
 
 **On Screen:**
 ```
@@ -477,7 +512,7 @@ Tools: n8n, Make, Zapier, Python + cron
 
 ---
 
-### Slide 17: Agentic Example (0:47)
+### Slide 20: Agentic Example (0:47)
 
 **On Screen:**
 ```
@@ -502,7 +537,7 @@ Prompt for n8n:
 
 ---
 
-### Slide 18: Hackathon Ideas (0:50)
+### Slide 21: Hackathon Ideas (0:50)
 
 **On Screen:**
 ```
@@ -527,7 +562,7 @@ Categories: Optimization | Safety | Environment | Integrations | Tools
 
 ---
 
-### Slide 19: Speed Coding Demo (0:55)
+### Slide 22: Speed Coding Demo (0:55)
 
 **On Screen:**
 ```
@@ -549,7 +584,7 @@ WATCH: 3-MINUTE BUILD
 
 ---
 
-### Slide 20: Resources & Next Steps (0:58)
+### Slide 23: Resources & Next Steps (0:58)
 
 **On Screen:**
 ```
@@ -575,7 +610,7 @@ Your demo account stays active - keep experimenting!
 
 ---
 
-### Slide 21: Q&A (0:59)
+### Slide 24: Q&A (0:59)
 
 **On Screen:**
 ```
@@ -699,6 +734,22 @@ External:
 | API not responding | Show cached responses, note it's cached |
 | Participant stuck | Share working code immediately |
 | Ace unavailable | Focus on main API, mention Ace in follow-up |
+
+### Keep Tips at the Right Level
+
+The audience is here to learn *vibe coding* — describing what they want and letting AI handle the code. Technical gotchas like async/await patterns, API result limits, or date format requirements belong in the AI's skill files (where they already live in `skills/geotab/`), NOT in your slides or verbal tips.
+
+**Good tips for this audience:**
+- "Give AI more context and it writes better code"
+- "Paste errors back — don't try to fix code yourself"
+- "Start simple, add features one at a time"
+
+**Tips that are too technical (avoid these):**
+- "Always use async/await, never callbacks"
+- "Set resultsLimit to 5000 on every Get call"
+- "Use .toISOString() for dates"
+
+If advanced developers ask about API internals, point them to the guides repo — that's what it's for.
 
 ### Audience Skill Mismatch?
 
