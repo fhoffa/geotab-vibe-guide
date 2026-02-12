@@ -1,5 +1,4 @@
-# TODO: This workflow has not been validated end-to-end on the real repo.
-# The zip it would produce is not currently linked from any docs.
+# The zip this workflow produces is not currently linked from any docs.
 # Once validated, re-add download links in skills/README.md and
 # guides/INSTANT_START_WITH_CLAUDE.md.  See skills/SKILLS_TODO.md.
 name: Package Skills
@@ -47,27 +46,22 @@ jobs:
         run: |
           set -euo pipefail
 
-          # Ensure a stable "latest" tag release exists.
-          if gh release view latest >/dev/null 2>&1; then
-            gh release edit latest \
-              --title "Latest Skills" \
-              --notes "Auto-updated on every push to main. Download the zip to get all Geotab agent skills." \
-              --target "${GITHUB_SHA}"
-          else
-            gh release create latest \
-              --title "Latest Skills" \
-              --notes "Auto-updated on every push to main. Download the zip to get all Geotab agent skills." \
-              --target "${GITHUB_SHA}"
-          fi
+          # Delete any existing "latest" release AND its git tag so we
+          # start from a clean state.  Using --cleanup-tag avoids a stale
+          # tag→commit mapping that causes GitHub to show the release as
+          # "untagged-*" when the target SHA changes.
+          gh release delete latest --yes --cleanup-tag 2>/dev/null || true
 
-          # Always replace the zip asset on the stable release.
-          gh release upload latest dist/geotab-skills.zip --clobber
+          # Create a fresh release, attaching the zip in the same call.
+          gh release create latest \
+            --title "Latest Skills" \
+            --notes "Auto-updated on every push to main. Download the zip to get all Geotab agent skills." \
+            --target "${GITHUB_SHA}" \
+            dist/geotab-skills.zip
 
-          # Verify the public stable URL is reachable.
-          curl --fail --silent --show-error --location \
-            --retry 10 --retry-delay 3 --retry-all-errors \
-            --head \
-            "https://github.com/${GITHUB_REPOSITORY}/releases/download/latest/geotab-skills.zip"
+          # Verify the asset is attached (API check — no CDN propagation delay).
+          gh release view latest --json assets --jq '.assets[].name' \
+            | grep -q 'geotab-skills.zip'
  
       - name: Attach to tagged release
         if: github.event_name == 'release'
