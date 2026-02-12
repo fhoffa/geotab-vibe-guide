@@ -81,6 +81,10 @@ bash tests/gem-validation/run.sh
 
 All tests must pass before pushing. If a test fails, fix the issue and re-run.
 
+### LLM review checklist
+
+After editing the Gem guide, also read `tests/gem-review/REVIEW_CHECKLIST.md` and verify each question against the guide content. The checklist covers behavioral, correctness, completeness, and tone — things a regex can't catch.
+
 ## Code Standards
 
 When writing code examples or snippets:
