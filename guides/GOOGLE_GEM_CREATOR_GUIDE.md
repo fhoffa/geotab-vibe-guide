@@ -996,15 +996,12 @@ Here's your Geotab Add-In configuration:
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
-    "url": "page.html",
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/fleet-overview.html",
     "path": "ActivityLink",
     "menuName": {
       "en": "Fleet Overview"
     }
-  }],
-  "files": {
-    "page.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Overview</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Overview</h1><div id='vehicles' style='display:grid;gap:10px;'>Loading...</div><div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'><button onclick='var d=document.getElementById(\"debug-log\");d.style.display=d.style.display===\"none\"?\"block\":\"none\";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button><pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre></div><script>function debugLog(msg){var el=document.getElementById('debug-log');if(el){el.textContent+='['+new Date().toLocaleTimeString()+'] '+msg+'\\n';el.scrollTop=el.scrollHeight;}}geotab.addin['fleet-overview']=function(){return{initialize:function(api,state,callback){callback();},focus:function(api,state){var container=document.getElementById('vehicles');api.call('Get',{typeName:'Device',resultsLimit:20},function(devices){container.innerHTML='';devices.forEach(function(device){var card=document.createElement('div');card.style.cssText='background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;';var link=document.createElement('a');link.textContent=device.name||'Unnamed Vehicle';link.href='#';link.style.cssText='color:#2563eb;font-weight:bold;cursor:pointer;text-decoration:none;';link.onclick=function(e){e.preventDefault();window.parent.location.hash='device,id:'+device.id;};card.appendChild(link);var serial=document.createElement('span');serial.textContent=device.serialNumber||'N/A';serial.style.color='#666';card.appendChild(serial);container.appendChild(card);});debugLog('Loaded '+devices.length+' vehicles');},function(err){container.innerHTML='Error loading vehicles';debugLog('ERROR: '+(err.message||err));});},blur:function(api,state){}};};console.log('Fleet Overview registered');</script></body></html>"
-  }
+  }]
 }
 ```
 
