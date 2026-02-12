@@ -220,7 +220,7 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 | `User` | Users and drivers | Driver management |
 | `DeviceStatusInfo` | Current location/status | Live tracking |
 | `LogRecord` | GPS breadcrumbs | Historical routes |
-| `ExceptionEvent` | Rule violations | Safety monitoring |
+| `ExceptionEvent` | Rule violations (no GPS — use LogRecord; rule/device/driver are reference objects with id only) | Safety monitoring |
 | `FaultData` | Engine fault codes | Maintenance |
 | `Zone` | Geofences | Location monitoring |
 
@@ -612,6 +612,43 @@ trips = api.get('Trip',
     fromDate=datetime.now() - timedelta(days=7),
     toDate=datetime.now()
 )
+```
+
+### Wrong: Assuming ExceptionEvent has GPS coordinates
+```python
+# WRONG - ExceptionEvent has no latitude/longitude fields
+for ex in exceptions:
+    add_marker(ex['latitude'], ex['longitude'])  # KeyError!
+
+# CORRECT - query LogRecord for GPS during the exception time range
+for ex in exceptions:
+    logs = api.get('LogRecord', search={
+        'deviceSearch': {'id': ex['device']['id']},
+        'fromDate': ex['activeFrom'],
+        'toDate': ex['activeTo']
+    })
+    for log in logs:
+        add_marker(log['latitude'], log['longitude'])
+```
+
+### Wrong: Using reference object fields directly
+```python
+# WRONG - rule/device/driver are reference objects with only an 'id'
+for ex in exceptions:
+    print(ex['rule']['name'])    # KeyError! Only 'id' exists
+    print(ex['device']['name'])  # KeyError! Only 'id' exists
+
+# CORRECT - fetch entities first, build lookup maps
+rules = api.get('Rule')
+rule_map = {r['id']: r['name'] for r in rules}
+
+devices = api.get('Device')
+device_map = {d['id']: d['name'] for d in devices}
+
+for ex in exceptions:
+    rule_name = rule_map.get(ex['rule']['id'], 'Unknown')
+    device_name = device_map.get(ex['device']['id'], 'Unknown')
+    print(f"{device_name}: {rule_name} for {ex['duration']}")
 ```
 
 ## Next Steps

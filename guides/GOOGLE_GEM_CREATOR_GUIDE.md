@@ -279,7 +279,7 @@ api.call("Set", {
 - Trip (completed journeys)
 - Zone (geofences)
 - LogRecord (GPS points)
-- ExceptionEvent (rule violations)
+- ExceptionEvent (rule violations — **no GPS**; rule/device/driver are reference objects with id only — see "Reference Objects" section below)
 - Group (organizational hierarchy)
 - Rule (exception rules)
 - FuelTransaction (fuel card data)
@@ -339,6 +339,71 @@ api.call('Get', {
 **Special handling:** `Condition` (access via Rule, no Get), `DutyStatusAvailability` (requires userSearch), `DutyStatusViolation` (requires search params), `DutyStatusLog` (limited write)
 
 > **Speed Data Tip:** Use `DiagnosticSpeedId` for vehicle speed and `DiagnosticPostedRoadSpeedId` for posted limits.
+
+### Reference Objects & Common Data Pitfalls
+
+Many Geotab API responses return **reference objects** — nested objects that contain only an `id` field, not the full entity. You MUST resolve them with a separate API call if you need details.
+
+**Example: ExceptionEvent returns reference objects**
+```javascript
+// An ExceptionEvent looks like this:
+{
+  "id": "a1B2",
+  "device": { "id": "b28" },         // ← reference, NOT the full Device
+  "driver": { "id": "b3A" },         // ← reference, NOT the full User
+  "rule": { "id": "RulePostedSpeedingId" },  // ← reference, NOT the full Rule
+  "activeFrom": "2025-01-15T08:30:00Z",
+  "activeTo": "2025-01-15T08:35:00Z",
+  "duration": "00:05:00",
+  "distance": 2.3
+}
+// NOTICE: No latitude, no longitude, no rule name, no device name!
+```
+
+**⚠️ ExceptionEvent has NO GPS coordinates.** To plot exceptions on a map, you must query LogRecord for the device during the exception's time window:
+
+```javascript
+// WRONG — ExceptionEvent has no .latitude or .longitude
+exceptions.forEach(function(ex) {
+    addMarker(ex.latitude, ex.longitude);  // undefined!
+});
+
+// CORRECT — Get GPS from LogRecord for the exception's time range
+api.call('Get', {
+    typeName: 'LogRecord',
+    search: {
+        deviceSearch: { id: exception.device.id },
+        fromDate: exception.activeFrom,
+        toDate: exception.activeTo
+    }
+}, function(logs) {
+    // Now you have GPS points for this exception
+    logs.forEach(function(log) {
+        addMarker(log.latitude, log.longitude);
+    });
+}, errorCallback);
+```
+
+**⚠️ Rule name must be resolved separately.** The `rule` field is just `{ id: "..." }`:
+
+```javascript
+// WRONG — rule has no .name property
+label.textContent = exception.rule.name;  // undefined!
+
+// CORRECT — fetch rules first, build a lookup map
+api.call('Get', { typeName: 'Rule' }, function(rules) {
+    var ruleMap = {};
+    rules.forEach(function(r) { ruleMap[r.id] = r.name; });
+
+    // Now resolve names
+    exceptions.forEach(function(ex) {
+        var ruleName = ruleMap[ex.rule.id] || 'Unknown Rule';
+        console.log(ruleName + ': ' + ex.duration);
+    });
+}, errorCallback);
+```
+
+**The same pattern applies to all reference objects:** `device.id` → fetch Device for name, `driver.id` → fetch User for name, `diagnostic.id` → fetch Diagnostic for name.
 
 ### Persistent Storage (AddInData)
 
@@ -816,6 +881,9 @@ This Gem generates **Page Add-Ins** (full pages in the MyGeotab sidebar). It doe
 | `typeName: "Driver"` | API errors | Use `User` with `isDriver: true` |
 | `<style>` tags | Styles don't render | Use inline `style=""` attributes |
 | `resultsLimit` for counting | Wrong count | Don't use resultsLimit when counting total |
+| Using `exception.latitude` | `undefined` — ExceptionEvent has no GPS | Query LogRecord for the device during exception's time range |
+| Using `exception.rule.name` | `undefined` — rule is a reference object | Fetch all Rules first, build `ruleMap[id]=name` lookup |
+| Using `exception.device.name` | `undefined` — device is a reference object | Fetch all Devices first, build `deviceMap[id]=name` lookup |
 
 ## Interaction Workflow
 
