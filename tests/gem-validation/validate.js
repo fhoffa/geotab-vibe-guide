@@ -158,7 +158,48 @@ check("vehicle names are clickable links (when listing devices)", function (cfg)
     return { pass: true };
 });
 
-// 11. Variables are declared (spot-check for common patterns)
+// 12. No arrow functions (ES5 required)
+check("no arrow functions (ES5 required)", function (cfg) {
+    var pages = htmlContents(cfg);
+    var bad = pages.filter(function (html) {
+        // Strip string literals to avoid false positives from text content
+        var stripped = html.replace(/'[^']*'/g, "''").replace(/"[^"]*"/g, '""');
+        // Match arrow function patterns: => (but not inside strings)
+        return /=>\s*[{(]/.test(stripped) || /=>\s*[a-zA-Z]/.test(stripped);
+    });
+    if (bad.length) return { pass: false, message: "Arrow functions (=>) break in MyGeotab ES5 environment. Use function() instead" };
+    return { pass: true };
+});
+
+// 13. No template literals (ES5 required)
+check("no template literals (ES5 required)", function (cfg) {
+    var pages = htmlContents(cfg);
+    var bad = pages.filter(function (html) {
+        // Check for backtick characters which indicate template literals
+        return /`/.test(html);
+    });
+    if (bad.length) return { pass: false, message: "Template literals (backticks) break in MyGeotab ES5 environment. Use string concatenation instead" };
+    return { pass: true };
+});
+
+// 14. copyDebugData truncates large arrays
+check("copyDebugData truncates large arrays", function (cfg) {
+    var pages = htmlContents(cfg);
+    if (!pages.length) return { pass: true };
+    var hasCopyDebug = pages.filter(function (html) {
+        return /copyDebugData/.test(html);
+    });
+    if (!hasCopyDebug.length) return { pass: true }; // Caught by check 10
+    var missingTruncation = hasCopyDebug.filter(function (html) {
+        return !/slice\s*\(/.test(html) || !/count|length/.test(html);
+    });
+    if (missingTruncation.length) {
+        return { pass: false, message: "copyDebugData should truncate large arrays (use .slice() and include counts) to prevent browser freezes with high-volume fleet data" };
+    }
+    return { pass: true };
+});
+
+// 15. Variables are declared (spot-check for common patterns)
 check("variables are declared with var/let/const", function (cfg) {
     var pages = htmlContents(cfg);
     // Look for obvious undeclared assignments at statement start:

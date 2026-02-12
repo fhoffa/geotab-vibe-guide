@@ -38,7 +38,7 @@ After any edit to the Gem guide, read the full instruction block (between the op
 
 13. Does the example response in the "Example Response Format" section include **all** of: debug-log div, **Copy Debug Data button**, `callback()`, inline styles, clickable entity links (if listing entities)?
 
-14. Does the pre-flight validation checklist cover **at least** these checks: supportEmail, name characters, callback, variable declarations, no style tags, correct TypeNames, registration pattern, debug log, **copy debug data button**, clickable entity names, **callback-based API calls (not api.async)**, **no `this` in nested callbacks**?
+14. Does the pre-flight validation checklist cover **at least** these checks: supportEmail, name characters, callback, variable declarations, no style tags, correct TypeNames, registration pattern, debug log, **copy debug data button**, clickable entity names, **callback-based API calls (not api.async)**, **no `this` in nested callbacks**, **ES5 syntax only (no arrow functions, template literals, const/let)**, **loading indicator present**, **empty state handled**, **debug data truncation**?
 
 15. Are installation instructions included (Administration → System Settings → Add-Ins → ...)?
 
@@ -55,6 +55,20 @@ After any edit to the Gem guide, read the full instruction block (between the op
 21. Does the guide warn that `DeviceStatusInfo` may lack odometer/engine hours and recommend `StatusData` with `DiagnosticOdometerId`/`DiagnosticEngineHoursId`?
 
 22. Does the guide document StatusData unit conversions (odometer in meters, engine hours in seconds)?
+
+## ES5 and UX (lessons from real user sessions)
+
+24. Does the guide **explicitly ban** arrow functions (`=>`), template literals (backticks), `const`/`let`, `.includes()`, destructuring, and optional chaining? (These caused the most common first-response failures in real Gem sessions.)
+
+25. Does the guide require a **visible loading indicator** during API calls? (Users reported seeing blank screens while data loaded.)
+
+26. Does the guide require **empty state handling** — showing a "no data found" message when API returns zero results? (Users reported thinking the Add-In was broken when it was just an empty result set.)
+
+27. Does the `copyDebugData()` pattern **truncate large arrays** before stringifying? (With 7,000+ ExceptionEvents, copying all data froze the browser. The function should slice to 10 samples + include total counts.)
+
+28. Does the guide include **built-in rule ID patterns** for categorizing ExceptionEvents (e.g., `RulePostedSpeedingId`, `RuleHarshCorneringId`) so the Gem can match by `rule.id.indexOf('Speeding')` without fetching full Rule objects?
+
+29. Does the guide document **high-volume data patterns** — aggregating in memory and rendering top-N summaries instead of individual items?
 
 ## Tone
 

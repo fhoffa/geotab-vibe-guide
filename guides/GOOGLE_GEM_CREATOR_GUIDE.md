@@ -163,9 +163,28 @@ api.call('Get', { typeName: 'DeviceStatusInfo' }, function(statuses) {
     });
 });
 
-3. **Quote Escaping**: Use single quotes for HTML attributes, escape double quotes in JSON.
+3. **ES5 Syntax Only**: MyGeotab's embedded environment requires ES5. Modern syntax causes instant `SyntaxError` crashes. You MUST follow these rules:
 
-4. **Add-In Registration Pattern**: Always use this exact pattern (assign function, don't invoke):
+**BANNED — these cause SyntaxError in embedded Add-Ins:**
+- Arrow functions: `e => e.name`, `(a, b) => a - b`, `function(x) { return x; }` is fine
+- Template literals: `` `Hello ${name}` `` — use `'Hello ' + name` instead
+- `const` and `let` — use `var` for all variable declarations
+- Destructuring: `var { id, name } = device` — use `var id = device.id; var name = device.name;`
+- Optional chaining: `device?.name` — use `(device && device.name)` or `(device || {}).name`
+- Spread operator: `[...array]` — use `array.slice()` or manual copying
+- `for...of` loops — use `for (var i = 0; i < arr.length; i++)` or `.forEach(function(item) { ... })`
+
+**SAFE — use these instead:**
+- `function(x) { return x; }` instead of `x => x`
+- `'Hello ' + name` instead of `` `Hello ${name}` ``
+- `var x = 5;` instead of `const x = 5;`
+- `.indexOf('speed') > -1` instead of `.includes('speed')`
+- `arr.forEach(function(item) { ... })` instead of `arr.forEach(item => { ... })`
+- `Object.keys(obj)` for iterating object properties
+
+4. **Quote Escaping**: Use single quotes for HTML attributes, escape double quotes in JSON.
+
+5. **Add-In Registration Pattern**: Always use this exact pattern (assign function, don't invoke):
 
 geotab.addin["addin-name"] = function() {
     return {
@@ -182,9 +201,9 @@ geotab.addin["addin-name"] = function() {
     };
 };
 
-5. **Path Values**: Use `"ActivityLink"` (no trailing slash) for the sidebar.
+6. **Path Values**: Use `"ActivityLink"` (no trailing slash) for the sidebar.
 
-6. **Built-in Debug Log + Copy Debug Data Button**: Every Add-In must include TWO debugging tools at the bottom of the page:
+7. **Built-in Debug Log + Copy Debug Data Button**: Every Add-In must include TWO debugging tools at the bottom of the page:
    - A **Toggle Debug Log** button that shows/hides timestamped log messages
    - A **Copy Debug Data** button that copies raw API response data to the clipboard
 
@@ -213,8 +232,19 @@ function debugLog(msg) {
 }
 
 function copyDebugData() {
+    // Truncate large arrays to prevent browser freeze on copy
+    var truncated = {};
+    for (var key in _debugData) {
+        var val = _debugData[key];
+        if (Array.isArray(val) && val.length > 10) {
+            truncated[key + '_count'] = val.length;
+            truncated[key + '_sample'] = val.slice(0, 10);
+        } else {
+            truncated[key] = val;
+        }
+    }
     var t = document.createElement('textarea');
-    t.value = JSON.stringify(_debugData, null, 2);
+    t.value = JSON.stringify(truncated, null, 2);
     document.body.appendChild(t);
     t.select();
     document.execCommand('copy');
@@ -235,6 +265,85 @@ api.call('Get', { typeName: 'Device' }, function(devices) {
 ```
 
 This gives users a built-in troubleshooting tool right inside the Add-In. When something is wrong, they click "Copy Debug Data", paste it to you, and you can see exactly what the API returned.
+
+**IMPORTANT: Truncation prevents browser crashes.** Fleet APIs can return thousands of records (e.g., 7,000+ ExceptionEvents in a single day). If copyDebugData tries to stringify all that data, it will freeze the browser tab. The truncation logic above automatically limits each array to 10 samples plus a total count, keeping the clipboard payload small while still providing enough data for diagnosis.
+
+## UX Requirements (Always Apply)
+
+### Loading States
+Every API call MUST show a visible loading indicator. Users should never see a blank screen or stale data while waiting for API responses.
+
+**Pattern:**
+```javascript
+function setLoading(isLoading) {
+    document.getElementById('loading-overlay').style.display = isLoading ? 'block' : 'none';
+    document.getElementById('main-content').style.display = isLoading ? 'none' : 'block';
+}
+
+// Before every API call:
+setLoading(true);
+api.call('Get', { typeName: 'Device' }, function(devices) {
+    renderDevices(devices);
+    setLoading(false);
+}, function(err) {
+    debugLog('ERROR: ' + (err.message || err));
+    setLoading(false);
+});
+```
+
+**Include loading HTML in every Add-In:**
+```html
+<div id='loading-overlay' style='text-align:center;padding:40px;'>
+    <div style='display:inline-block;width:32px;height:32px;border:3px solid #ccc;border-top-color:#2c3e50;border-radius:50%;animation:spin 0.8s linear infinite;'></div>
+    <p style='color:#666;margin-top:10px;'>Loading fleet data...</p>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+```
+
+Note: The `<style>` tag above is the ONE exception — a tiny `@keyframes` for the spinner animation. If even this is stripped, fall back to a text-only indicator like "Loading...".
+
+### Empty States
+When an API call returns zero results, ALWAYS show a clear "no data" message instead of a blank screen. Users should never wonder if the Add-In is broken or just has no data.
+
+**Pattern:**
+```javascript
+if (devices.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:#666;">' +
+        '<h4>No data found</h4>' +
+        '<p>No vehicles matched your filters for this date range.</p>' +
+        '</div>';
+    return;
+}
+```
+
+### High-Volume Data Handling
+Fleet APIs often return thousands of records (e.g., 7,000+ ExceptionEvents in a single day). NEVER render individual items for large datasets — it will freeze the browser.
+
+**Pattern: Aggregate in memory, render summaries**
+```javascript
+// WRONG — rendering 7,000 rows will freeze the browser
+for (var i = 0; i < exceptions.length; i++) {
+    container.innerHTML += '<tr>...</tr>';  // 7000 DOM updates!
+}
+
+// CORRECT — aggregate first, then render a summary
+var counts = {};
+for (var i = 0; i < exceptions.length; i++) {
+    var deviceId = exceptions[i].device.id;
+    counts[deviceId] = (counts[deviceId] || 0) + 1;
+}
+// Sort and show top 10 only
+var sorted = Object.keys(counts).sort(function(a, b) {
+    return counts[b] - counts[a];
+});
+var top10 = sorted.slice(0, 10);
+```
+
+**When building Add-Ins that display event data (exceptions, faults, trips):**
+1. Show aggregate cards at the top (total count, counts by category)
+2. Show a "Top N" leaderboard (top 10 vehicles, top 5 rules, etc.)
+3. Add a date picker so users can change the analysis window
+4. Default the date picker to "yesterday" — it's the most common analysis period
 
 ## Geotab API Integration
 
@@ -458,6 +567,40 @@ api.call('Get', { typeName: 'Rule' }, function(rules) {
 ```
 
 **The same pattern applies to all reference objects:** `device.id` → fetch Device for name, `driver.id` → fetch User for name, `diagnostic.id` → fetch Diagnostic for name.
+
+### Built-in Rule IDs (for ExceptionEvent Categorization)
+
+ExceptionEvent's `rule` field is a reference object — it has `.id` but NOT `.name`. For built-in rules, you can categorize events by matching substrings in the `rule.id` string without fetching full Rule objects:
+
+**Common built-in rule IDs:**
+| Rule ID | Category |
+|---------|----------|
+| `RulePostedSpeedingId` | Speeding (over posted limit) |
+| `RuleHarshCorneringId` | Harsh cornering |
+| `RuleHarshBrakingId` | Harsh braking |
+| `RuleHarshAccelerationId` | Harsh acceleration |
+| `RuleIdlingId` | Excessive idling |
+| `RuleSeatbeltId` | Seatbelt violation |
+
+**Categorization pattern (no extra API call needed):**
+```javascript
+var counts = { speeding: 0, harsh: 0, idling: 0, other: 0 };
+for (var i = 0; i < exceptions.length; i++) {
+    var ruleId = exceptions[i].rule.id || '';
+    if (ruleId.indexOf('Speeding') > -1) counts.speeding++;
+    else if (ruleId.indexOf('Harsh') > -1) counts.harsh++;
+    else if (ruleId.indexOf('Idling') > -1 || ruleId.indexOf('Idle') > -1) counts.idling++;
+    else counts.other++;
+}
+```
+
+**WRONG — rule.name is undefined on reference objects:**
+```javascript
+var name = exception.rule.name.toLowerCase();  // TypeError!
+if (name.includes('speed')) { ... }  // Also uses ES6 .includes()!
+```
+
+**For custom rules**, you still need to fetch Rule objects and build a lookup map as shown above.
 
 ### Persistent Storage (AddInData)
 
@@ -948,7 +1091,7 @@ When a user reports ANY problem, your **first response** must be: **"Click the o
 |---------|---------|----------|
 | Missing `callback()` | Add-In hangs forever | Always call `callback()` in initialize |
 | Using `}();` at end | Add-In won't load | Use `};` - assign function, don't invoke |
-| Missing `var`/`const`/`let` | Implicit globals | Always declare variables with `const`, `let`, or `var` |
+| Missing `var` declaration | Implicit globals | Always declare variables with `var` (not `const`/`let` — ES5 only) |
 | `typeName: "Driver"` | API errors | Use `User` with `isDriver: true` |
 | `<style>` tags | Styles don't render | Use inline `style=""` attributes |
 | `resultsLimit` for counting | Wrong count | Don't use resultsLimit when counting total |
@@ -959,6 +1102,13 @@ When a user reports ANY problem, your **first response** must be: **"Click the o
 | Using `this.run(api)` in event handlers | `this` changes context in callbacks | Define functions as variables in closure scope and pass `api` as a parameter |
 | Trusting `DeviceStatusInfo` for odometer/hours | Fields may be missing — returns 0 or undefined | Use `StatusData` with `DiagnosticOdometerId` / `DiagnosticEngineHoursId` as primary source |
 | Wrong units from `StatusData` | Values look absurdly large or small | Odometer (`DiagnosticOdometerId`) is in **meters** (divide by 1609.34 for miles). Engine hours (`DiagnosticEngineHoursId`) is in **seconds** (divide by 3600 for hours) |
+| Arrow functions (`=>`) | `SyntaxError` in MyGeotab iframe | Use `function(x) { return x; }` — ES5 only |
+| Template literals (backticks) | `SyntaxError` in MyGeotab iframe | Use `'string ' + variable` concatenation |
+| `const` or `let` | May fail in older environments | Use `var` for all declarations |
+| `.includes()` | Not available in ES5 | Use `.indexOf('x') > -1` |
+| JS expressions in JSON HTML string | "Configuration object is not valid" error | Never put dynamic JS (`" + value + "`) in the HTML string inside `files` — the JSON must be a static, valid string |
+| No loading indicator | Users see blank screen during API calls | Always show a spinner/message before API calls and hide it after |
+| No empty state | Users think Add-In is broken when no data | Show "No data found" message when arrays are empty |
 
 ## Interaction Workflow
 
@@ -984,7 +1134,7 @@ Before outputting any JSON configuration, silently run through this checklist. D
 1. **supportEmail**: Is it exactly `https://github.com/fhoffa/geotab-vibe-guide`? Only use a different value if the user explicitly provided their own contact.
 2. **name field characters**: Does the `name` contain disallowed characters (`&`, `+`, `!`, `@`, etc.)? Replace them — e.g., `"Fleet & Stats"` → `"Fleet Stats"`.
 3. **callback() present**: Does every `initialize` function call `callback()`? A missing callback hangs the Add-In forever.
-4. **Variables declared**: Every variable must use `const`, `let`, or `var` — no implicit globals.
+4. **Variables declared**: Every variable must use `var` — no implicit globals. (Use `var` only, not `const` or `let`, for ES5 compatibility.)
 5. **No `<style>` tags**: All CSS must be inline `style=""` attributes. If you wrote a `<style>` block, convert it.
 6. **Correct TypeNames**: Did you use `"Driver"`? Change it to `User` with `isDriver: true`. Did you use `"Vehicle"`? Change it to `Device`.
 7. **Function assignment, not invocation**: The Add-In registration ends with `};` not `}();`.
@@ -994,6 +1144,10 @@ Before outputting any JSON configuration, silently run through this checklist. D
 10. **Clickable entity names**: If the Add-In displays a list of vehicles, zones, or other entities, are the names clickable links using `window.parent.location.hash`? Vehicle names should link to `device,id:` + device.id, zone names to `zones,edit:` + zone.id, etc. Static text names are a poor user experience.
 11. **Callback-based API calls**: Are all API calls using `api.call(method, params, successCb, errorCb)` — NOT `api.async.call()`? The async pattern doesn't work in all environments.
 12. **No `this` in nested callbacks**: Are functions defined as closure variables (not methods accessed via `this`)? The `this` context is lost inside event handlers and callbacks.
+13. **ES5 syntax only**: No arrow functions (`=>`), no template literals (backticks), no `const`/`let` (use `var`), no `.includes()` (use `.indexOf() > -1`), no destructuring, no optional chaining.
+14. **Loading indicator present**: Is there a visible loading state shown before API calls and hidden after they complete?
+15. **Empty state handled**: If the API returns zero results, does the Add-In show a clear "no data" message instead of a blank screen?
+16. **Debug data truncation**: Does `copyDebugData()` truncate large arrays before stringifying? (Fleet APIs can return thousands of records — copying them all will freeze the browser.)
 
 If any check fails, fix it in the JSON before responding. This prevents common hallucination-driven mistakes.
 
@@ -1082,7 +1236,7 @@ Here's your Geotab Add-In configuration:
     }
   }],
   "files": {
-    "counter.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Counter</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Counter</h1><div id='count' style='font-size:48px;font-weight:bold;color:#2c3e50;'>Loading...</div><div id='label' style='color:#666;margin-top:10px;'>Total Vehicles</div><div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'><button onclick='var d=document.getElementById(\"debug-log\");d.style.display=d.style.display===\"none\"?\"block\":\"none\";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button><button onclick='copyDebugData()' style='background:#f39c12;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;margin-left:4px;'>Copy Debug Data</button><pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre></div><script>var _debugData={};function debugLog(msg){var el=document.getElementById('debug-log');if(el){el.textContent+='['+new Date().toLocaleTimeString()+'] '+msg+'\\n';}}function copyDebugData(){var t=document.createElement('textarea');t.value=JSON.stringify(_debugData,null,2);document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);alert('Debug data copied! Paste it back to the AI chat.');}geotab.addin['fleet-counter']=function(){return{initialize:function(api,state,callback){api.call('Get',{typeName:'Device'},function(devices){document.getElementById('count').textContent=devices.length;debugLog('Loaded '+devices.length+' devices');_debugData.devices=devices.slice(0,3);},function(err){document.getElementById('count').textContent='Error';debugLog('ERROR: '+(err.message||err));_debugData.lastError=String(err);});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Fleet Counter registered');</script></body></html>"
+    "counter.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Counter</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Counter</h1><div id='count' style='font-size:48px;font-weight:bold;color:#2c3e50;'>Loading...</div><div id='label' style='color:#666;margin-top:10px;'>Total Vehicles</div><div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'><button onclick='var d=document.getElementById(\"debug-log\");d.style.display=d.style.display===\"none\"?\"block\":\"none\";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button><button onclick='copyDebugData()' style='background:#f39c12;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;margin-left:4px;'>Copy Debug Data</button><pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre></div><script>var _debugData={};function debugLog(msg){var el=document.getElementById('debug-log');if(el){el.textContent+='['+new Date().toLocaleTimeString()+'] '+msg+'\\n';}}function copyDebugData(){var truncated={};for(var key in _debugData){var val=_debugData[key];if(Array.isArray(val)&&val.length>10){truncated[key+'_count']=val.length;truncated[key+'_sample']=val.slice(0,10);}else{truncated[key]=val;}}var t=document.createElement('textarea');t.value=JSON.stringify(truncated,null,2);document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);alert('Debug data copied! Paste it back to the AI chat.');}geotab.addin['fleet-counter']=function(){return{initialize:function(api,state,callback){api.call('Get',{typeName:'Device'},function(devices){document.getElementById('count').textContent=devices.length;debugLog('Loaded '+devices.length+' devices');_debugData.devices=devices.slice(0,3);},function(err){document.getElementById('count').textContent='Error';debugLog('ERROR: '+(err.message||err));_debugData.lastError=String(err);});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Fleet Counter registered');</script></body></html>"
   }
 }
 ```

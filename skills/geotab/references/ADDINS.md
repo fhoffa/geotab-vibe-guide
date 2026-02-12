@@ -192,6 +192,7 @@ api.multiCall([
 });
 
 **Embedded Add-In Rules:**
+- **ES5 syntax only** — no arrow functions (`=>`), no template literals (backticks), no `const`/`let` (use `var`), no `.includes()` (use `.indexOf() > -1`), no destructuring, no optional chaining. MyGeotab's iframe environment does not transpile modern JS.
 - `<style>` tags ARE stripped - use inline `style=""` or load CSS dynamically via JS
 - CDN JS libraries WORK via `<script src="https://cdn...">`
 - CDN CSS works via dynamic loading: `var link=document.createElement('link');link.rel='stylesheet';link.href='https://cdn.../bootstrap.min.css';document.head.appendChild(link);`
@@ -761,6 +762,12 @@ link.onclick = function(e) {
 | Using `this.method()` in callbacks | `this` context lost | Define functions as `var fn = function(){}` in closure scope |
 | Trusting DeviceStatusInfo for odometer | Returns 0 or undefined | Use StatusData with `DiagnosticOdometerId` |
 | Wrong StatusData units | Values look absurdly large | Odometer is meters (÷1609.34→miles), hours is seconds (÷3600→hours) |
+| Arrow functions (`=>`) | `SyntaxError` in MyGeotab iframe | Use `function(x) { return x; }` — ES5 only |
+| Template literals (backticks) | `SyntaxError` in MyGeotab iframe | Use `'string ' + variable` concatenation |
+| `const` or `let` | May fail in older environments | Use `var` for all declarations in embedded Add-Ins |
+| `.includes()` | Not available in ES5 | Use `.indexOf('x') > -1` |
+| No loading indicator | Users see blank screen during API calls | Show spinner before API calls, hide after |
+| No empty state | Users think Add-In is broken | Show "No data found" when arrays are empty |
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for complete debugging guide.
 

@@ -50,6 +50,7 @@ Instead of hosting files externally, you can embed everything directly in the JS
 - Remove trailing slash from path: `"ActivityLink"` not `"ActivityLink/"`
 - **All CSS and JavaScript MUST be inlined** in the HTML
 - **Cannot use separate file references** like `<script src="app.js">` - they cause 404 errors
+- **ES5 syntax only** — no arrow functions (`=>`), no template literals (backticks), no `const`/`let` (use `var`), no `.includes()` (use `.indexOf() > -1`). These cause `SyntaxError` in the MyGeotab iframe.
 
 ## Complete Working Example
 
@@ -127,4 +128,15 @@ If you must use React in embedded add-ins:
 2. When ready, convert to embedded format
 3. Minify JavaScript to reduce size
 4. Escape quotes and special characters
-5. Test in MyGeotab
+5. Verify ES5 compliance: no `=>`, no backticks, no `const`/`let`, no `.includes()`
+6. Test in MyGeotab
+
+## Common Embedded Pitfalls (from Real Sessions)
+
+| Problem | Cause | Fix |
+|---------|-------|-----|
+| `SyntaxError: Unexpected token` | Arrow functions or template literals | Use `function(){}` and string concatenation |
+| "Configuration object is not valid" | Invalid JSON (often from JS expressions in the HTML string) | Ensure the HTML inside `files` is a static string with no dynamic JS |
+| Browser freezes on Copy Debug | `copyDebugData()` stringifying 7000+ records | Truncate arrays to 10 samples + total count before stringify |
+| Blank screen while loading | No loading indicator during API calls | Add spinner div, show/hide around `api.call()` |
+| Users think Add-In is broken | No empty state when API returns `[]` | Show "No data found" message for zero-length results |

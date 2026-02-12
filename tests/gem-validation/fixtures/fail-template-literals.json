@@ -1,0 +1,13 @@
+{
+  "name": "Template Test",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "1.0",
+  "items": [{
+    "url": "page.html",
+    "path": "ActivityLink",
+    "menuName": { "en": "Template Test" }
+  }],
+  "files": {
+    "page.html": "<!DOCTYPE html><html><body style='padding:20px;'><div id='app'></div><div id='debug-toggle'><button onclick='copyDebugData()'>Copy Debug Data</button><pre id='debug-log'></pre></div><script>var _debugData={};function debugLog(msg){}function copyDebugData(){var truncated={};for(var key in _debugData){var val=_debugData[key];if(Array.isArray(val)&&val.length>10){truncated[key+'_count']=val.length;truncated[key+'_sample']=val.slice(0,10);}else{truncated[key]=val;}}var t=document.createElement('textarea');t.value=JSON.stringify(truncated,null,2);document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);}geotab.addin['test']=function(){return{initialize:function(api,state,callback){api.call('Get',{typeName:'Device'},function(devices){var html=`Found ${devices.length} vehicles`;document.getElementById('app').innerHTML=html;},function(err){});callback();},focus:function(){},blur:function(){}};};console.log('registered');</script></body></html>"
+  }
+}
