@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <script src='https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'></script>
+  <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+  <script src='https://leaflet.github.io/Leaflet.heat/dist/leaflet-heat.js'></script>
+  <script>
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css';
+    document.head.appendChild(link);
+
+    var mapLink = document.createElement('link');
+    mapLink.rel = 'stylesheet';
+    mapLink.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(mapLink);
+  </script>
+</head>
+<body style='background:#f4f7f9; padding:20px;'>
+
+  <div class='container-fluid'>
+    <div class='row mb-4 bg-white p-3 shadow-sm' style='border-radius:8px;'>
+      <div class='col-md-8'>
+        <h3>Fleet Exception Heatmap</h3>
+        <p class='text-muted' id='status-text'>Loading real data...</p>
+      </div>
+      <div class='col-md-4 d-flex align-items-center justify-content-end'>
+        <select id='dayRange' class='form-select me-2' style='width:auto;'>
+          <option value='1'>Last 24 hours</option>
+          <option value='3'>Last 3 days</option>
+          <option value='7' selected>Last 7 days</option>
+          <option value='14'>Last 14 days</option>
+        </select>
+        <button id='refreshBtn' class='btn btn-danger'>Refresh</button>
+      </div>
+    </div>
+
+    <div id='map' style='height: 500px; width: 100%; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);'></div>
+
+    <div class='row'>
+      <div class='col-md-12'>
+        <div class='card shadow-sm p-3'>
+          <canvas id='exceptionChart' style='max-height: 200px;'></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'>
+    <button onclick='var d=document.getElementById("debug-log");d.style.display=d.style.display==="none"?"block":"none";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button>
+    <pre id='debug-log' style='display:block;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:300px;overflow-y:auto;text-align:left;font-size:11px;'></pre>
+  </div>
+
+  <script>
+    // Debug logger — visible in the on-page panel
+    function dbg(msg) {
+      var el = document.getElementById('debug-log');
+      if (el) {
+        var ts = new Date().toISOString().substring(11, 23);
+        el.textContent += '[' + ts + '] ' + msg + '\n';
+        el.scrollTop = el.scrollHeight;
+      }
+      console.log('[heatmap] ' + msg);
+    }
+
+    geotab.addin["exception-heatmap"] = function() {
+      var map, chart, heatLayer, apiRef;
+
+      // ── Helpers ──────────────────────────────────────────────
+
+      // Wrap api.call in a Promise for cleaner sequencing
+      function apiGet(typeName, search) {
+        return new Promise(function(resolve, reject) {
+          dbg('API call: Get ' + typeName + ' — search: ' + JSON.stringify(search));
+          apiRef.call('Get', {
+            typeName: typeName,
+            search: search || {}
+          }, function(result) {
+            dbg('  ✓ ' + typeName + ' returned ' + (result ? result.length : 0) + ' records');
+            resolve(result || []);
+          }, function(err) {
+            dbg('  ✗ ' + typeName + ' ERROR: ' + err);
+            reject(err);
+          });
+        });
+      }
+
+      function apiMultiCall(calls) {
+        return new Promise(function(resolve, reject) {
+          dbg('API multiCall: ' + calls.length + ' calls');
+          apiRef.multiCall(calls, function(results) {
+            dbg('  ✓ multiCall returned ' + results.length + ' result sets');
+            resolve(results);
+          }, function(err) {
+            dbg('  ✗ multiCall ERROR: ' + err);
+            reject(err);
+          });
+        });
+      }
+
+      // ── Main data fetch ──────────────────────────────────────
+
+      function loadData() {
+        var days = parseInt(document.getElementById('dayRange').value, 10);
+        var fromDate = new Date();
+        fromDate.setDate(fromDate.getDate() - days);
+        var toDate = new Date();
+
+        dbg('════════════════════════════════════════');
+        dbg('Starting data load — last ' + days + ' days');
+        dbg('From: ' + fromDate.toISOString());
+        dbg('To:   ' + toDate.toISOString());
+        document.getElementById('status-text').textContent = 'Fetching exceptions…';
+
+        // Step 1: Fetch ExceptionEvents + Rules in parallel
+        Promise.all([
+          apiGet('ExceptionEvent', {
+            fromDate: fromDate.toISOString(),
+            toDate: toDate.toISOString()
+          }),
+          apiGet('Rule')
+        ]).then(function(results) {
+          var exceptions = results[0];
+          var rules = results[1];
+
+          dbg('────────────────────────────────────────');
+          dbg('Exceptions received: ' + exceptions.length);
+          dbg('Rules received: ' + rules.length);
+
+          // Build a rule-name lookup
+          var ruleNames = {};
+          rules.forEach(function(r) {
+            ruleNames[r.id] = r.name || r.id;
+          });
+          dbg('Rule name map built (' + Object.keys(ruleNames).length + ' entries)');
+
+          // Log first 5 exceptions for debugging
+          exceptions.slice(0, 5).forEach(function(ex, i) {
+            dbg('  Exception[' + i + ']: rule=' + (ex.rule ? ex.rule.id : 'N/A') +
+                ' device=' + (ex.device ? ex.device.id : 'N/A') +
+                ' from=' + ex.activeFrom +
+                ' to=' + (ex.activeTo || 'ongoing'));
+          });
+          if (exceptions.length > 5) {
+            dbg('  … and ' + (exceptions.length - 5) + ' more');
+          }
+
+          if (exceptions.length === 0) {
+            dbg('⚠ No exceptions found. Try a wider date range.');
+            document.getElementById('status-text').textContent =
+              'No exceptions found for the last ' + days + ' days.';
+            updateChart({});
+            if (heatLayer) map.removeLayer(heatLayer);
+            return;
+          }
+
+          // Step 2: For each exception, fetch the nearest LogRecord to get GPS
+          return fetchGPSForExceptions(exceptions, ruleNames);
+        }).catch(function(err) {
+          dbg('FATAL ERROR: ' + err);
+          document.getElementById('status-text').textContent = 'Error: ' + err;
+        });
+      }
+
+      // ── GPS lookup ───────────────────────────────────────────
+
+      function fetchGPSForExceptions(exceptions, ruleNames) {
+        // Cap at 200 exceptions to avoid massive multiCall
+        var capped = exceptions.slice(0, 200);
+        dbg('Will fetch GPS for ' + capped.length + ' exceptions (capped at 200)');
+
+        // Build multiCall: for each exception, get LogRecords for that device
+        // in a ±60-second window around activeFrom
+        var calls = [];
+        capped.forEach(function(ex) {
+          var start = new Date(ex.activeFrom);
+          var end = new Date(ex.activeTo || ex.activeFrom);
+          // Widen window: 60s before start, 60s after end
+          start.setSeconds(start.getSeconds() - 60);
+          end.setSeconds(end.getSeconds() + 60);
+
+          calls.push(['Get', {
+            typeName: 'LogRecord',
+            search: {
+              deviceSearch: { id: ex.device.id },
+              fromDate: start.toISOString(),
+              toDate: end.toISOString()
+            }
+          }]);
+        });
+
+        // multiCall in batches of 50 to avoid payload limits
+        var batchSize = 50;
+        var batches = [];
+        for (var i = 0; i < calls.length; i += batchSize) {
+          batches.push(calls.slice(i, i + batchSize));
+        }
+        dbg('Batched into ' + batches.length + ' multiCall(s) of up to ' + batchSize);
+
+        // Execute batches sequentially
+        var allLogResults = [];
+        var chain = Promise.resolve();
+        batches.forEach(function(batch, batchIdx) {
+          chain = chain.then(function() {
+            dbg('Sending batch ' + (batchIdx + 1) + '/' + batches.length + ' (' + batch.length + ' calls)');
+            return apiMultiCall(batch);
+          }).then(function(batchResults) {
+            allLogResults = allLogResults.concat(batchResults);
+          });
+        });
+
+        return chain.then(function() {
+          dbg('────────────────────────────────────────');
+          dbg('All GPS batches complete. Processing results…');
+
+          var heatPoints = [];
+          var counts = {};
+          var matched = 0;
+          var unmatched = 0;
+
+          capped.forEach(function(ex, idx) {
+            var logs = allLogResults[idx] || [];
+            var ruleId = ex.rule ? ex.rule.id : 'Unknown';
+            var ruleName = ruleNames[ruleId] || ruleId;
+
+            // Count by rule name
+            counts[ruleName] = (counts[ruleName] || 0) + 1;
+
+            if (logs.length === 0) {
+              unmatched++;
+              if (unmatched <= 10) {
+                dbg('  No GPS for exception ' + idx + ' (device=' + ex.device.id +
+                    ' rule=' + ruleId + ' at ' + ex.activeFrom + ')');
+              }
+              return;
+            }
+
+            // Pick the LogRecord closest to activeFrom
+            var targetTime = new Date(ex.activeFrom).getTime();
+            var best = logs[0];
+            var bestDelta = Math.abs(new Date(best.dateTime).getTime() - targetTime);
+            for (var j = 1; j < logs.length; j++) {
+              var delta = Math.abs(new Date(logs[j].dateTime).getTime() - targetTime);
+              if (delta < bestDelta) {
+                best = logs[j];
+                bestDelta = delta;
+              }
+            }
+
+            // Skip invalid GPS (0,0 means no fix)
+            if (best.latitude === 0 && best.longitude === 0) {
+              unmatched++;
+              return;
+            }
+
+            heatPoints.push([best.latitude, best.longitude, 0.6]);
+            matched++;
+          });
+
+          dbg('────────────────────────────────────────');
+          dbg('Results: ' + matched + ' with GPS, ' + unmatched + ' without GPS');
+          dbg('Rule breakdown:');
+          Object.keys(counts).forEach(function(name) {
+            dbg('  ' + name + ': ' + counts[name]);
+          });
+
+          document.getElementById('status-text').textContent =
+            matched + ' exceptions plotted (' + unmatched + ' had no GPS) — ' +
+            capped.length + ' of ' + exceptions.length + ' total';
+
+          // Update map
+          if (heatLayer) map.removeLayer(heatLayer);
+          if (heatPoints.length > 0) {
+            heatLayer = L.heatLayer(heatPoints, {
+              radius: 25, blur: 15, maxZoom: 12,
+              gradient: {0.2: 'blue', 0.4: 'lime', 0.6: 'yellow', 0.8: 'orange', 1: 'red'}
+            }).addTo(map);
+
+            // Auto-fit map to data bounds
+            var lats = heatPoints.map(function(p) { return p[0]; });
+            var lngs = heatPoints.map(function(p) { return p[1]; });
+            var bounds = [
+              [Math.min.apply(null, lats), Math.min.apply(null, lngs)],
+              [Math.max.apply(null, lats), Math.max.apply(null, lngs)]
+            ];
+            dbg('Map bounds: ' + JSON.stringify(bounds));
+            map.fitBounds(bounds, { padding: [40, 40] });
+          } else {
+            dbg('⚠ No points to display on map');
+          }
+
+          // Update chart
+          updateChart(counts);
+        });
+      }
+
+      // ── Chart ────────────────────────────────────────────────
+
+      function updateChart(counts) {
+        if (chart) chart.destroy();
+        var labels = Object.keys(counts);
+        var data = labels.map(function(k) { return counts[k]; });
+
+        if (labels.length === 0) {
+          labels = ['No data'];
+          data = [0];
+        }
+
+        chart = new Chart(document.getElementById('exceptionChart'), {
+          type: 'bar',
+          data: {
+            labels: labels,
+            datasets: [{
+              label: 'Exceptions by Rule',
+              data: data,
+              backgroundColor: '#e74c3c'
+            }]
+          },
+          options: {
+            indexAxis: 'y',
+            plugins: { legend: { display: false } }
+          }
+        });
+      }
+
+      // ── Lifecycle ────────────────────────────────────────────
+
+      return {
+        initialize: function(api, state, callback) {
+          apiRef = api;
+          dbg('Add-in initialize called');
+
+          // Log session info
+          api.getSession(function(session) {
+            dbg('Session — user: ' + session.userName + ', db: ' + session.database);
+          });
+
+          map = L.map('map').setView([43.65, -79.38], 5);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+          }).addTo(map);
+
+          document.getElementById('refreshBtn').onclick = loadData;
+          document.getElementById('dayRange').onchange = loadData;
+
+          loadData();
+          callback();
+        },
+        focus: function(api, state) {
+          apiRef = api;
+          dbg('focus() called');
+          // Refresh map size in case container resized
+          if (map) setTimeout(function() { map.invalidateSize(); }, 200);
+        },
+        blur: function() {
+          dbg('blur() called');
+        }
+      };
+    };
+  </script>
+</body>
+</html>
