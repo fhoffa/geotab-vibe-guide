@@ -3,10 +3,13 @@
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
-    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/embedded-fleet.html",
+    "url": "embedded-fleet.html",
     "path": "ActivityLink",
     "menuName": {
       "en": "Embedded Fleet Stats"
     }
-  }]
+  }],
+  "files": {
+    "embedded-fleet.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Embedded Fleet Stats</title><style>body{font-family:Arial,sans-serif;padding:20px;background:#f5f5f5;}h1{color:#333;margin-top:0;}.card{background:white;border-radius:8px;padding:20px;box-shadow:0 2px 4px rgba(0,0,0,0.1);max-width:600px;margin:20px auto;}.info{margin:15px 0;padding:10px;background:#e8f4f8;border-radius:4px;}.stat{font-size:2em;font-weight:bold;color:#2c3e50;margin:10px 0;}.success{color:#28a745;font-weight:bold;}.error{color:#d9534f;padding:10px;background:#f8d7da;border-radius:4px;}</style></head><body><div class='card'><h1>🚗 Embedded Fleet Stats</h1><div id='status'>Initializing...</div><div id='info'></div></div><script>geotab.addin['embedded-fleet-stats']=function(){return{initialize:function(api,state,callback){var statusEl=document.getElementById('status');var infoEl=document.getElementById('info');statusEl.className='success';statusEl.textContent='✅ Connected to MyGeotab!';api.getSession(function(session){var html='<div class=\"info\"><strong>User:</strong> '+session.userName+'<br><strong>Database:</strong> '+session.database+'</div>';infoEl.innerHTML=html;api.call('Get',{typeName:'Device'},function(vehicles){html+='<div class=\"info\"><div class=\"stat\">'+vehicles.length+'</div><strong>Total Vehicles</strong></div>';infoEl.innerHTML=html;},function(error){html+='<div class=\"error\">Error loading vehicles: '+error+'</div>';infoEl.innerHTML=html;});});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Embedded Fleet Stats registered');</script></body></html>"
+  }
 }
