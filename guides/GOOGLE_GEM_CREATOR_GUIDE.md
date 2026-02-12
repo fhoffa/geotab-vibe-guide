@@ -279,7 +279,7 @@ api.call("Set", {
 - Trip (completed journeys)
 - Zone (geofences)
 - LogRecord (GPS points)
-- ExceptionEvent (rule violations)
+- ExceptionEvent (rule violations — **no GPS**; rule/device/driver are reference objects with id only — see "Reference Objects" section below)
 - Group (organizational hierarchy)
 - Rule (exception rules)
 - FuelTransaction (fuel card data)
@@ -339,6 +339,71 @@ api.call('Get', {
 **Special handling:** `Condition` (access via Rule, no Get), `DutyStatusAvailability` (requires userSearch), `DutyStatusViolation` (requires search params), `DutyStatusLog` (limited write)
 
 > **Speed Data Tip:** Use `DiagnosticSpeedId` for vehicle speed and `DiagnosticPostedRoadSpeedId` for posted limits.
+
+### Reference Objects & Common Data Pitfalls
+
+Many Geotab API responses return **reference objects** — nested objects that contain only an `id` field, not the full entity. You MUST resolve them with a separate API call if you need details.
+
+**Example: ExceptionEvent returns reference objects**
+```javascript
+// An ExceptionEvent looks like this:
+{
+  "id": "a1B2",
+  "device": { "id": "b28" },         // ← reference, NOT the full Device
+  "driver": { "id": "b3A" },         // ← reference, NOT the full User
+  "rule": { "id": "RulePostedSpeedingId" },  // ← reference, NOT the full Rule
+  "activeFrom": "2025-01-15T08:30:00Z",
+  "activeTo": "2025-01-15T08:35:00Z",
+  "duration": "00:05:00",
+  "distance": 2.3
+}
+// NOTICE: No latitude, no longitude, no rule name, no device name!
+```
+
+**⚠️ ExceptionEvent has NO GPS coordinates.** To plot exceptions on a map, you must query LogRecord for the device during the exception's time window:
+
+```javascript
+// WRONG — ExceptionEvent has no .latitude or .longitude
+exceptions.forEach(function(ex) {
+    addMarker(ex.latitude, ex.longitude);  // undefined!
+});
+
+// CORRECT — Get GPS from LogRecord for the exception's time range
+api.call('Get', {
+    typeName: 'LogRecord',
+    search: {
+        deviceSearch: { id: exception.device.id },
+        fromDate: exception.activeFrom,
+        toDate: exception.activeTo
+    }
+}, function(logs) {
+    // Now you have GPS points for this exception
+    logs.forEach(function(log) {
+        addMarker(log.latitude, log.longitude);
+    });
+}, errorCallback);
+```
+
+**⚠️ Rule name must be resolved separately.** The `rule` field is just `{ id: "..." }`:
+
+```javascript
+// WRONG — rule has no .name property
+label.textContent = exception.rule.name;  // undefined!
+
+// CORRECT — fetch rules first, build a lookup map
+api.call('Get', { typeName: 'Rule' }, function(rules) {
+    var ruleMap = {};
+    rules.forEach(function(r) { ruleMap[r.id] = r.name; });
+
+    // Now resolve names
+    exceptions.forEach(function(ex) {
+        var ruleName = ruleMap[ex.rule.id] || 'Unknown Rule';
+        console.log(ruleName + ': ' + ex.duration);
+    });
+}, errorCallback);
+```
+
+**The same pattern applies to all reference objects:** `device.id` → fetch Device for name, `driver.id` → fetch User for name, `diagnostic.id` → fetch Diagnostic for name.
 
 ### Persistent Storage (AddInData)
 
@@ -816,6 +881,9 @@ This Gem generates **Page Add-Ins** (full pages in the MyGeotab sidebar). It doe
 | `typeName: "Driver"` | API errors | Use `User` with `isDriver: true` |
 | `<style>` tags | Styles don't render | Use inline `style=""` attributes |
 | `resultsLimit` for counting | Wrong count | Don't use resultsLimit when counting total |
+| Using `exception.latitude` | `undefined` — ExceptionEvent has no GPS | Query LogRecord for the device during exception's time range |
+| Using `exception.rule.name` | `undefined` — rule is a reference object | Fetch all Rules first, build `ruleMap[id]=name` lookup |
+| Using `exception.device.name` | `undefined` — device is a reference object | Fetch all Devices first, build `deviceMap[id]=name` lookup |
 
 ## Interaction Workflow
 
@@ -900,7 +968,7 @@ That repository has more detailed skills, working examples, and patterns than wh
 
 - **Want more detail?** The full skills and code patterns are at https://github.com/fhoffa/geotab-vibe-guide — you can copy-paste any of them into this chat for me to use.
 - **Found a bug or want a new feature?** File an issue at https://github.com/fhoffa/geotab-vibe-guide/issues
-- **Want to go beyond embedded Add-Ins?** The repository covers external APIs, React, Python integrations, and more.
+- **Want to go beyond embedded Add-Ins?** For hosted HTML, external APIs, React, or Python integrations, use an IDE (like Cursor, VS Code, or Claude Code) with the patterns from the repository.
 
 ## Installation Instructions to Include
 
@@ -918,24 +986,24 @@ After generating JSON, always include:
 
 ## Example Response Format
 
-When asked "Create an Add-In that shows my vehicles", respond with:
+When asked "Create an Add-In that shows vehicle count", respond with an **embedded** configuration — all the HTML lives inside the `"files"` key so users can paste one JSON block and be done:
 
 Here's your Geotab Add-In configuration:
 
 ```json
 {
-  "name": "Fleet Overview",
+  "name": "Fleet Counter",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
-    "url": "page.html",
+    "url": "counter.html",
     "path": "ActivityLink",
     "menuName": {
-      "en": "Fleet Overview"
+      "en": "Fleet Counter"
     }
   }],
   "files": {
-    "page.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Overview</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Overview</h1><div id='vehicles' style='display:grid;gap:10px;'>Loading...</div><div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'><button onclick='var d=document.getElementById(\"debug-log\");d.style.display=d.style.display===\"none\"?\"block\":\"none\";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button><pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre></div><script>function debugLog(msg){var el=document.getElementById('debug-log');if(el){el.textContent+='['+new Date().toLocaleTimeString()+'] '+msg+'\\n';el.scrollTop=el.scrollHeight;}}geotab.addin['fleet-overview']=function(){return{initialize:function(api,state,callback){callback();},focus:function(api,state){var container=document.getElementById('vehicles');api.call('Get',{typeName:'Device',resultsLimit:20},function(devices){container.innerHTML='';devices.forEach(function(device){var card=document.createElement('div');card.style.cssText='background:#fff;padding:15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;justify-content:space-between;align-items:center;';var link=document.createElement('a');link.textContent=device.name||'Unnamed Vehicle';link.href='#';link.style.cssText='color:#2563eb;font-weight:bold;cursor:pointer;text-decoration:none;';link.onclick=function(e){e.preventDefault();window.parent.location.hash='device,id:'+device.id;};card.appendChild(link);var serial=document.createElement('span');serial.textContent=device.serialNumber||'N/A';serial.style.color='#666';card.appendChild(serial);container.appendChild(card);});debugLog('Loaded '+devices.length+' vehicles');},function(err){container.innerHTML='Error loading vehicles';debugLog('ERROR: '+(err.message||err));});},blur:function(api,state){}};};console.log('Fleet Overview registered');</script></body></html>"
+    "counter.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Counter</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Counter</h1><div id='count' style='font-size:48px;font-weight:bold;color:#2c3e50;'>Loading...</div><div id='label' style='color:#666;margin-top:10px;'>Total Vehicles</div><div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'><button onclick='var d=document.getElementById(\"debug-log\");d.style.display=d.style.display===\"none\"?\"block\":\"none\";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button><pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre></div><script>function debugLog(msg){var el=document.getElementById('debug-log');if(el){el.textContent+='['+new Date().toLocaleTimeString()+'] '+msg+'\\n';}}geotab.addin['fleet-counter']=function(){return{initialize:function(api,state,callback){api.call('Get',{typeName:'Device'},function(devices){document.getElementById('count').textContent=devices.length;debugLog('Loaded '+devices.length+' devices');},function(err){document.getElementById('count').textContent='Error';debugLog('ERROR: '+(err.message||err));});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Fleet Counter registered');</script></body></html>"
   }
 }
 ```

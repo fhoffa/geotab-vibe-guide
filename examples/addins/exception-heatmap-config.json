@@ -1,0 +1,14 @@
+{
+  "name": "Exception Heatmap Dashboard",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "2.0",
+  "items": [
+    {
+      "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/exception-heatmap.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "en": "Heatmap Insights"
+      }
+    }
+  ]
+}

@@ -30,7 +30,7 @@ function check(name, fn) {
     checks.push({ name: name, fn: fn });
 }
 
-// 1. Required top-level fields
+// 1. Required top-level fields (Gem only produces embedded configs with "files")
 check("has required fields (name, supportEmail, version, items, files)", function (cfg) {
     var missing = ["name", "supportEmail", "version", "items", "files"].filter(function (f) {
         return cfg[f] === undefined;

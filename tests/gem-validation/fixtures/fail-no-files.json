@@ -1,0 +1,12 @@
+{
+  "name": "Fleet Overview",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "1.0",
+  "items": [{
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/fleet-overview.html",
+    "path": "ActivityLink",
+    "menuName": {
+      "en": "Fleet Overview"
+    }
+  }]
+}
