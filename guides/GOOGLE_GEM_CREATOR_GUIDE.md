@@ -968,7 +968,7 @@ That repository has more detailed skills, working examples, and patterns than wh
 
 - **Want more detail?** The full skills and code patterns are at https://github.com/fhoffa/geotab-vibe-guide — you can copy-paste any of them into this chat for me to use.
 - **Found a bug or want a new feature?** File an issue at https://github.com/fhoffa/geotab-vibe-guide/issues
-- **Want to go beyond embedded Add-Ins?** The repository covers external APIs, React, Python integrations, and more.
+- **Want to go beyond embedded Add-Ins?** For hosted HTML, external APIs, React, or Python integrations, use an IDE (like Cursor, VS Code, or Claude Code) with the patterns from the repository.
 
 ## Installation Instructions to Include
 

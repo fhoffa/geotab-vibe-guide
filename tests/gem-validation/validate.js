@@ -30,20 +30,12 @@ function check(name, fn) {
     checks.push({ name: name, fn: fn });
 }
 
-// 1. Required top-level fields
-check("has required fields (name, supportEmail, version, items; files or external url)", function (cfg) {
-    var missing = ["name", "supportEmail", "version", "items"].filter(function (f) {
+// 1. Required top-level fields (Gem only produces embedded configs with "files")
+check("has required fields (name, supportEmail, version, items, files)", function (cfg) {
+    var missing = ["name", "supportEmail", "version", "items", "files"].filter(function (f) {
         return cfg[f] === undefined;
     });
     if (missing.length) return { pass: false, message: "Missing: " + missing.join(", ") };
-    // Must have either "files" (embedded) or an external URL in items
-    var hasFiles = cfg.files !== undefined;
-    var hasExternalUrl = (cfg.items || []).some(function (item) {
-        return item.url && /^https?:\/\//.test(item.url);
-    });
-    if (!hasFiles && !hasExternalUrl) {
-        return { pass: false, message: 'Need either "files" (embedded HTML) or an external URL in items' };
-    }
     return { pass: true };
 });
 
