@@ -70,6 +70,17 @@ actionsCell.appendChild(tripsLink);
 - Multiple IDs: `devices:!(b12,b13,b14)`
 - Always call `e.preventDefault()` in click handlers
 
+**Common mistakes — these DO NOT work:**
+```javascript
+// WRONG — none of these are real MyGeotab APIs:
+state.setState({ page: 'map', deviceId: device.id });
+state.gotoPage('map', { deviceId: device.id });
+window.location.hash = 'map';  // Wrong window — must use window.parent
+
+// CORRECT:
+window.parent.location.hash = 'map,liveVehicleIds:!(' + device.id + ')';
+```
+
 ### Navigate to Exception with Video Tab
 
 ```javascript

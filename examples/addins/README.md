@@ -54,6 +54,21 @@ Demonstrates integrating Geotab Ace with DuckDB in the browser for in-memory SQL
 - Includes workaround for GCS CORS restrictions (blob fetch)
 - Documents engineering improvements Geotab could make
 
+### vehicle-dashboard-map.* (Vehicle Navigator + Ace)
+Dashboard with vehicle list, map navigation, and Ace AI integration.
+
+**Features:**
+- Vehicle list with clickable names (device detail) and Map buttons (live map)
+- Real Ace AI integration using the 3-step GetAceResults pattern
+- Pre-built question buttons for fleet queries
+- Debug panel with log toggle and copy data
+
+**Files:**
+- `vehicle-dashboard-map.html` - Main HTML page
+- `vehicle-dashboard-map-config.json` - Embedded config (no hosting needed)
+
+**Type:** Both external hosted and embedded versions available
+
 ### ace-api-comparison.* (Ace vs Direct API)
 Side-by-side comparison of Ace natural language queries vs direct API calls.
 

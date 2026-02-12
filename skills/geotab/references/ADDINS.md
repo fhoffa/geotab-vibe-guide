@@ -761,6 +761,12 @@ link.onclick = function(e) {
 | Using `this.method()` in callbacks | `this` context lost | Define functions as `var fn = function(){}` in closure scope |
 | Trusting DeviceStatusInfo for odometer | Returns 0 or undefined | Use StatusData with `DiagnosticOdometerId` |
 | Wrong StatusData units | Values look absurdly large | Odometer is meters (÷1609.34→miles), hours is seconds (÷3600→hours) |
+| Arrow functions / const / template literals in embedded Add-Ins | `SyntaxError` in MyGeotab iframe | Embedded Add-Ins require ES5: use `var`, `function`, string `+` concatenation |
+| Using `state.setState()` for navigation | Silently fails | Use `window.parent.location.hash` (see [INTEGRATIONS.md](INTEGRATIONS.md)) |
+| Mocking Ace with `setTimeout` | Ace never actually called | Use real 3-step GetAceResults API (see [ACE_API.md](ACE_API.md)) |
+| Rendering thousands of rows | Browser freezes | Aggregate by category, show top-N summary |
+| No loading indicator | Blank screen, user thinks it's broken | Show "Loading..." before every API call |
+| Storing full arrays in debug data | Copy Debug Data freezes browser | Use `arr.slice(0, 10)` samples + total count |
 
 See [TROUBLESHOOTING.md](TROUBLESHOOTING.md) for complete debugging guide.
 
