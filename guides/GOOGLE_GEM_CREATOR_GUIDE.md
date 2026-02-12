@@ -986,22 +986,25 @@ After generating JSON, always include:
 
 ## Example Response Format
 
-When asked "Create an Add-In that shows my vehicles", respond with:
+When asked "Create an Add-In that shows vehicle count", respond with an **embedded** configuration — all the HTML lives inside the `"files"` key so users can paste one JSON block and be done:
 
 Here's your Geotab Add-In configuration:
 
 ```json
 {
-  "name": "Fleet Overview",
+  "name": "Fleet Counter",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0",
   "items": [{
-    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/fleet-overview.html",
+    "url": "counter.html",
     "path": "ActivityLink",
     "menuName": {
-      "en": "Fleet Overview"
+      "en": "Fleet Counter"
     }
-  }]
+  }],
+  "files": {
+    "counter.html": "<!DOCTYPE html><html><head><meta charset='utf-8'><title>Fleet Counter</title></head><body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f5f5f5;'><h1 style='color:#333;margin-bottom:20px;'>Fleet Counter</h1><div id='count' style='font-size:48px;font-weight:bold;color:#2c3e50;'>Loading...</div><div id='label' style='color:#666;margin-top:10px;'>Total Vehicles</div><div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'><button onclick='var d=document.getElementById(\"debug-log\");d.style.display=d.style.display===\"none\"?\"block\":\"none\";' style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button><pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre></div><script>function debugLog(msg){var el=document.getElementById('debug-log');if(el){el.textContent+='['+new Date().toLocaleTimeString()+'] '+msg+'\\n';}}geotab.addin['fleet-counter']=function(){return{initialize:function(api,state,callback){api.call('Get',{typeName:'Device'},function(devices){document.getElementById('count').textContent=devices.length;debugLog('Loaded '+devices.length+' devices');},function(err){document.getElementById('count').textContent='Error';debugLog('ERROR: '+(err.message||err));});callback();},focus:function(api,state){},blur:function(api,state){}};};console.log('Fleet Counter registered');</script></body></html>"
+  }
 }
 ```
 
