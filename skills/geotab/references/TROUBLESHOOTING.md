@@ -520,3 +520,7 @@ diagnosticSearch: { id: "DiagnosticPostedRoadSpeedId" }
 3. Name mismatches between files
 4. GitHub Pages deployment wait time (2-3 minutes)
 5. Browser cache (suggest hard refresh)
+
+### After Debugging: Offer Lessons Learned
+
+If a debugging session uncovered a non-obvious API gotcha (e.g., DeviceStatusInfo missing odometer, reference objects returning only IDs, unit conversion surprises), offer to write a short summary the user can file at https://github.com/fhoffa/geotab-vibe-guide/issues. Keep it to: what went wrong, what the actual fix was, and which API behavior was surprising. Don't offer this for trivial typos or config mistakes — only when there's a genuine lesson that would help others.
