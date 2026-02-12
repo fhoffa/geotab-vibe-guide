@@ -1,0 +1,12 @@
+{
+  "name": "Exception Heatmap (Zenith)",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "1.0.0",
+  "items": [{
+    "url": "https://yourusername.github.io/repo/exception-heatmap.html",
+    "path": "ActivityLink/",
+    "menuName": {
+      "en": "Heatmap Insights"
+    }
+  }]
+}

@@ -63,6 +63,25 @@ Side-by-side comparison of Ace natural language queries vs direct API calls.
 
 **Type:** External hosted
 
+### exception-heatmap-zenith/ (Zenith: React + Heatmap)
+Exception heatmap dashboard using React, Zenith design system, Leaflet, and Chart.js with real Geotab API data.
+
+**Features:**
+- Fetches real ExceptionEvent data from the Geotab API
+- Resolves GPS coordinates via LogRecord lookups
+- Leaflet heatmap showing where exceptions occur
+- Bar chart breaking down exceptions by rule type
+- Zenith components (Button, Alert, Waiting) for native MyGeotab look
+
+**Setup:**
+```bash
+cd examples/addins/exception-heatmap-zenith
+npm install
+npm run build
+```
+
+**Type:** External hosted (requires HTTPS hosting + webpack build)
+
 ### embedded-* (No Hosting Required!)
 Embedded add-in with everything in the JSON configuration.
 
