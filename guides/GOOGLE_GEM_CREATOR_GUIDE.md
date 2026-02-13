@@ -1,7 +1,7 @@
 # How to Create a Google Gem for Geotab Add-Ins
 
 <!-- AI MAINTAINER NOTE: When editing the Gem instructions, update the
-     "last updated" date inside GEM_INSTRUCTIONS.txt (not this file).
+     "last updated" date inside resources/GEM_INSTRUCTIONS.txt (not this file).
      Look for: **These instructions were last updated on: ...** -->
 
 This guide shows you how to create a **Google Gem** (a custom AI assistant in Google Gemini) that generates MyGeotab Add-In configurations users can copy-paste directly into their Geotab system.
@@ -32,16 +32,16 @@ A Google Gem called **"Geotab Add-In Architect"** that:
 
 **Name:** `Geotab Add-In Architect`
 
-**Instructions:** Copy the entire contents of [`GEM_INSTRUCTIONS.txt`](../GEM_INSTRUCTIONS.txt) and paste them into the Gem's instruction field.
+**Instructions:** Copy the entire contents of [`resources/GEM_INSTRUCTIONS.txt`](../resources/resources/GEM_INSTRUCTIONS.txt) and paste them into the Gem's instruction field.
 
 > **The complete instructions live in a separate file so you can copy them easily.**
-> Open [`GEM_INSTRUCTIONS.txt`](../GEM_INSTRUCTIONS.txt) in the repository root, select all (Ctrl+A), copy (Ctrl+C), and paste into the Gem's instruction field.
+> Open [`resources/GEM_INSTRUCTIONS.txt`](../resources/resources/GEM_INSTRUCTIONS.txt) in the repository root, select all (Ctrl+A), copy (Ctrl+C), and paste into the Gem's instruction field.
 
 ---
 
 ## What's in the Instructions
 
-The instruction file (`GEM_INSTRUCTIONS.txt`) teaches the Gem to:
+The instruction file (`resources/GEM_INSTRUCTIONS.txt`) teaches the Gem to:
 
 - Generate complete, ready-to-paste JSON Add-In configurations
 - Follow all MyGeotab embedded Add-In constraints (inline CSS, ES5 syntax, etc.)
@@ -66,13 +66,13 @@ The instruction file (`GEM_INSTRUCTIONS.txt`) teaches the Gem to:
 | Pre-flight Validation | 18-point checklist the Gem runs before every response |
 | Version Tracking | Auto-increment name/version/menuName on each iteration |
 
-For the full details, read [`GEM_INSTRUCTIONS.txt`](../GEM_INSTRUCTIONS.txt) directly.
+For the full details, read [`resources/GEM_INSTRUCTIONS.txt`](../resources/resources/GEM_INSTRUCTIONS.txt) directly.
 
 ---
 
 ## Editing the Instructions
 
-When you need to update the Gem's behavior, edit `GEM_INSTRUCTIONS.txt` in the repository root (not this guide). Then:
+When you need to update the Gem's behavior, edit `resources/GEM_INSTRUCTIONS.txt` in the repository root (not this guide). Then:
 
 1. Update the "last updated" date at the top of the instructions
 2. Re-paste the updated instructions into your Gem in Gemini
