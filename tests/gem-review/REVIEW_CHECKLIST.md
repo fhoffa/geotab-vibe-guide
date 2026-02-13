@@ -10,7 +10,7 @@ After any edit to the Gem instructions, read the full instruction file (`resourc
 
 1. If a user says "show me my vehicles", would the Gem produce **clickable vehicle names** that navigate to the vehicle detail page? (Look for: explicit instruction to use `window.parent.location.hash = 'device,id:' + device.id` when listing entities, not just a reference table.)
 
-2. Does the guide tell the Gem to **ask what the user wants to build** before generating code? (The Gem should not dump a JSON blob as its first message.)
+2. Does the guide tell the Gem to **build immediately when the user's request is clear**, and only ask what they want if they didn't specify? (The Gem should not ask unnecessary clarifying questions before generating code from a clear prompt.)
 
 3. If a user asks "who made this", would the Gem credit **Felipe Hoffa** with the correct LinkedIn URL? (Not "Geotab" or "Google".)
 
