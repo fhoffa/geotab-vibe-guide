@@ -74,8 +74,8 @@ API Reference: https://geotab.github.io/sdk/software/api/reference/
 Before committing changes, run the relevant test suites:
 
 ```bash
-# Gem validation — run after any change to guides/GOOGLE_GEM_CREATOR_GUIDE.md,
-# Gem instruction content, or Add-In example configs
+# Gem validation — run after any change to GEM_INSTRUCTIONS.txt,
+# guides/GOOGLE_GEM_CREATOR_GUIDE.md, or Add-In example configs
 bash tests/gem-validation/run.sh
 ```
 
@@ -83,7 +83,7 @@ All tests must pass before pushing. If a test fails, fix the issue and re-run.
 
 ### LLM review checklist
 
-After editing the Gem guide, also read `tests/gem-review/REVIEW_CHECKLIST.md` and verify each question against the guide content. The checklist covers behavioral, correctness, completeness, and tone — things a regex can't catch.
+After editing `GEM_INSTRUCTIONS.txt`, also read `tests/gem-review/REVIEW_CHECKLIST.md` and verify each question against the instructions. The checklist covers behavioral, correctness, completeness, and tone — things a regex can't catch.
 
 ## Code Standards
 

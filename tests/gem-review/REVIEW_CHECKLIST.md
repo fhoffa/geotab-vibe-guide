@@ -1,8 +1,8 @@
 # Gem Instructions Review Checklist
 
-**For: AI assistants reviewing changes to `guides/GOOGLE_GEM_CREATOR_GUIDE.md`**
+**For: AI assistants reviewing changes to `GEM_INSTRUCTIONS.txt`**
 
-After any edit to the Gem guide, read the full instruction block (between the opening and closing `` ``` `` on lines ~42–933) and answer every question below. If any answer is "no", fix the guide before committing.
+After any edit to the Gem instructions, read the full instruction file (`GEM_INSTRUCTIONS.txt` in the repository root) and answer every question below. If any answer is "no", fix the instructions before committing.
 
 ---
 
@@ -66,8 +66,8 @@ After any edit to the Gem guide, read the full instruction block (between the op
 
 ## How to use this checklist
 
-**AI assistants:** After editing the Gem guide, read the full instruction block and verify each item. You can do this by reading the file and answering each question — no tooling needed.
+**AI assistants:** After editing `GEM_INSTRUCTIONS.txt`, read the full file and verify each item. You can do this by reading the file and answering each question — no tooling needed.
 
 **Humans:** Copy these questions into a conversation with the Gem itself. If the Gem answers any of them wrong, the instructions need fixing.
 
-**Automation:** Feed the Gem instructions + this checklist to any LLM and ask it to answer each question with pass/fail + evidence. A single "fail" means the guide needs work.
+**Automation:** Feed `GEM_INSTRUCTIONS.txt` + this checklist to any LLM and ask it to answer each question with pass/fail + evidence. A single "fail" means the instructions need work.

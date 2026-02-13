@@ -5,7 +5,7 @@
  *
  * Validates a Geotab Add-In configuration JSON (as produced by the
  * "Geotab Add-In Architect" Gem) against the rules in
- * guides/GOOGLE_GEM_CREATOR_GUIDE.md.
+ * GEM_INSTRUCTIONS.txt (and guides/GOOGLE_GEM_CREATOR_GUIDE.md).
  *
  * Usage:
  *   node validate.js <config.json>            # validate one file

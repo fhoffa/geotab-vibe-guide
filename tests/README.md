@@ -6,7 +6,7 @@ Validation tests for the Geotab Vibe Guide project. Each subdirectory is an inde
 
 ### `gem-validation/`
 
-Validates JSON configurations produced by the **Geotab Add-In Architect** Gem against the rules in [`guides/GOOGLE_GEM_CREATOR_GUIDE.md`](../guides/GOOGLE_GEM_CREATOR_GUIDE.md).
+Validates JSON configurations produced by the **Geotab Add-In Architect** Gem against the rules in [`GEM_INSTRUCTIONS.txt`](../GEM_INSTRUCTIONS.txt) (see also [`guides/GOOGLE_GEM_CREATOR_GUIDE.md`](../guides/GOOGLE_GEM_CREATOR_GUIDE.md)).
 
 **Run:**
 ```bash
@@ -40,9 +40,9 @@ node tests/gem-validation/validate.js my-addin.json
 
 ### `gem-review/`
 
-LLM-oriented review checklist for the Gem guide. Not code — a set of 17 questions an AI assistant (or human) should answer after editing `guides/GOOGLE_GEM_CREATOR_GUIDE.md`. Covers behavioral expectations ("would the Gem make vehicle names clickable?"), technical correctness, completeness, and tone.
+LLM-oriented review checklist for the Gem instructions. Not code — a set of 17 questions an AI assistant (or human) should answer after editing `GEM_INSTRUCTIONS.txt`. Covers behavioral expectations ("would the Gem make vehicle names clickable?"), technical correctness, completeness, and tone.
 
-**Run:** Read `tests/gem-review/REVIEW_CHECKLIST.md` and verify each question against the guide.
+**Run:** Read `tests/gem-review/REVIEW_CHECKLIST.md` and verify each question against `GEM_INSTRUCTIONS.txt`.
 
 ## Adding New Test Suites
 
