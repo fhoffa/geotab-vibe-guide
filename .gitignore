@@ -208,3 +208,7 @@ __marimo__/
 
 # Beta tester sandbox - personal experiments go here
 sandbox/
+
+# Node.js
+node_modules/
+package-lock.json
