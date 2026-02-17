@@ -14,9 +14,11 @@ Vibe coding is AI-assisted development where you describe your idea in plain Eng
 
 The term was coined by Andrej Karpathy in early 2025:
 
-> "Fully giving in to the vibes, embracing exponentials, and forgetting that the code even exists."
+> "There's a new kind of coding I call 'vibe coding', where you fully give in to the vibes, embrace exponentials, and forget that the code even exists."
 
 **You are the architect. AI is the contractor.** You bring the domain expertise, the branding, the vision. AI handles the syntax, the packages, the boilerplate.
+
+![Code Generation vs Vibe Coding](../resources/google-guide/slide-evolution-of-ai.png)
 
 ### What Vibe Coding is NOT
 
@@ -40,6 +42,8 @@ Every vibe coding project follows this flow:
 
 The middle is a continuous feedback loop. You iterate, you refine, you tell the AI "change this button to green" and it does.
 
+![The Vibe Coding Lifecycle](../resources/google-guide/slide-vibe-coding-lifecycle.png)
+
 ---
 
 ## The Google Tools Spectrum
@@ -52,9 +56,11 @@ Google offers tools across a range of complexity. Pick the one that matches wher
 | **AI Studio (Build Mode)** | Developer prototyping with model access | Low-Medium | Multi-file prototypes |
 | **Firebase Studio** | Full web/mobile apps with deployment | Medium | Production apps with URLs |
 | **Gemini CLI** | Terminal-native developers | Medium | Code changes in your repo |
-| **Project Astra (Antigravity)** | Complex multi-agent applications | Highest | Multi-file apps with planning |
+| **Google Antigravity** | Complex multi-agent applications | Highest | Multi-file apps with planning |
 
 > **You don't have to pick just one.** A common workflow: sketch in Gemini Canvas → prototype in AI Studio → deploy with Firebase Studio.
+
+![Google Tools Comparison](../resources/google-guide/slide-tools-comparison.png)
 
 ---
 
@@ -63,6 +69,8 @@ Google offers tools across a range of complexity. Pick the one that matches wher
 **Your AI sketchbook.**
 
 Gemini Canvas is the simplest starting point. It lives inside the [Gemini app](https://gemini.google.com/) and lets you build single-file applications by describing what you want.
+
+![Gemini Canvas](../resources/google-guide/slide-gemini-canvas.png)
 
 ### When to Use It
 
@@ -115,6 +123,8 @@ Canvas will:
 **The fastest path from prototype to something real.**
 
 [AI Studio](https://aistudio.google.com/) is a developer-oriented environment where you get access to all Gemini models, pre-built components, and a build mode for creating multi-file applications.
+
+![AI Studio Build Mode](../resources/google-guide/slide-ai-studio.png)
 
 ### When to Use It
 
@@ -184,6 +194,8 @@ AI Studio supports the same annotation workflow as Canvas:
 
 [Firebase Studio](https://firebase.studio/) is a fully integrated IDE with a managed development and deployment environment. It's the tool you use when you're ready to ship.
 
+![Firebase Studio](../resources/google-guide/slide-firebase-studio.png)
+
 ### When to Use It
 
 - You want to build web or mobile applications
@@ -194,7 +206,7 @@ AI Studio supports the same annotation workflow as Canvas:
 ### How It Works
 
 1. Go to [firebase.studio](https://firebase.studio/)
-2. Choose **Prototyper mode** (AI-driven) or **Code mode** (VS Code-like editor)
+2. Choose **Prototyper mode** (AI-driven, currently generates Next.js apps) or **Code mode** (VS Code-like editor)
 3. Build your application using AI or code
 4. Click **Publish** to deploy
 5. Share the URL with anyone
@@ -221,7 +233,7 @@ When you click Publish:
 
 ### Cost
 
-- Firebase Studio itself is free to use
+- Firebase Studio is free during preview (3 workspaces at no cost; join the [Google Developer Program](https://developers.google.com/profile) for more)
 - Hosting costs are usage-based through your GCP billing account
 - Token costs for Gemini API calls depend on your usage tier
 - Containers are paused when not in use (you're not charged for idle time)
@@ -241,6 +253,8 @@ You can manage multiple versions of your app:
 
 [Gemini CLI](https://github.com/google-gemini/gemini-cli) is a lightweight, open-source command-line tool that brings Gemini into your existing development workflow. It's not a chatbot — it's an active development assistant.
 
+![Gemini CLI](../resources/google-guide/slide-gemini-cli.png)
+
 ### When to Use It
 
 - You're comfortable with terminals and CLIs
@@ -255,11 +269,17 @@ npm install -g @google/gemini-cli
 gemini
 ```
 
+Or, if you use Homebrew:
+
+```bash
+brew install gemini-cli
+```
+
 That's it. Two commands and you have access.
 
 ### Key Features
 
-- **Open source** — Free, no license required
+- **Open source** — Free, Apache 2.0 licensed
 - **Works in your repo** — Understands your codebase context
 - **Extensions** — Add Google Search grounding, Maps, MCP servers
 - **Lightweight** — No UI, no browser, just your terminal
@@ -279,11 +299,13 @@ gemini "refactor the dashboard component to use React hooks"
 
 ---
 
-## Tool 5: Project Astra (Google Antigravity)
+## Tool 5: Google Antigravity
 
 **The most powerful tool in the lineup.**
 
-Project Astra (internally called "Jules", publicly available as Google Antigravity) is a complete agent development platform. It doesn't just generate code — it plans, reasons, builds, tests, and deploys multi-file applications using multiple AI agents working in parallel.
+[Google Antigravity](https://antigravity.google/) is an agent-first desktop IDE announced in November 2025 alongside Gemini 3. Built as a modified fork of VS Code, it doesn't just generate code — it plans, reasons, builds, tests, and deploys multi-file applications using multiple AI agents working in parallel.
+
+![Google Antigravity](../resources/google-guide/slide-antigravity.png)
 
 ### When to Use It
 
@@ -294,22 +316,25 @@ Project Astra (internally called "Jules", publicly available as Google Antigravi
 
 ### How It Works
 
-1. Open Project Astra / Antigravity
-2. Describe your application (or use voice prompts)
-3. Choose a mode:
+1. [Download and install](https://antigravity.google/) Antigravity (available for macOS, Windows, and Linux)
+2. Open your project in Antigravity
+3. Describe your application (or use voice prompts)
+4. Choose a mode:
    - **Fast mode** — Quick, one-off tasks
    - **Planning mode** — Detailed implementation plans using Gemini 3 Pro reasoning
-4. Review the implementation plan
-5. Approve and watch the agents build
+5. Review the implementation plan
+6. Approve and watch the agents build
 
 ### Key Features
 
-- **Agent-first UI** — Multiple agents work on your project simultaneously
+- **Two views:**
+  - **Editor view** — A familiar VS Code-style interface with an AI agent sidebar for synchronous coding
+  - **Manager view** — A control center for orchestrating multiple agents working in parallel across workspaces
 - **Implementation plans** — See exactly what will be built before any code is written. Review and edit the plan before proceeding.
-- **Inbox system** — Manage notifications from different agents. Kick off 10 agents in the morning, check your inbox for results.
-- **Browser mode** — Powered by Gemini 3.5 computer use. The AI can interact with your app in a real browser, clicking buttons, testing flows, capturing screenshots.
-- **Reasoning mode** — Uses Gemini 3 Pro's thinking capabilities to break down complex tasks into steps
-- **Voice prompting** — Describe your idea by speaking instead of typing
+- **Artifacts** — Agents generate verifiable deliverables (task lists, plans, screenshots, browser recordings) so you can inspect what was done
+- **Browser subagent** — Powered by Gemini 2.5 Computer Use. The AI can interact with your app in a real browser, clicking buttons, testing flows, capturing screenshots.
+- **Reasoning mode** — Uses Gemini 3 Deep Think capabilities to break down complex tasks into steps
+- **Multi-model support** — Defaults to Gemini 3 Pro but also supports Anthropic Claude and other models
 - **Model selection** — Choose between Gemini 3 Pro high/low thinking budgets
 
 ### Example: Personal Finance Dashboard
@@ -328,9 +353,9 @@ What happens:
 4. You get a working app with charts, filters, and interactive elements
 5. Total time: ~10-12 minutes for a complete application
 
-### Browser Mode: AI That Clicks
+### Browser Subagent: AI That Clicks
 
-Browser mode uses **Gemini 3.5 computer use** to interact with your running app:
+The browser subagent uses **Gemini 2.5 Computer Use** to interact with your running app:
 
 - Navigate pages by clicking
 - Test user flows visually
@@ -353,7 +378,7 @@ Do you have a specific idea?
     ├── Multi-file app, want to prototype → AI Studio
     ├── Need to deploy with a URL → Firebase Studio
     ├── Terminal developer, existing codebase → Gemini CLI
-    └── Complex app, need planning & multi-agent → Project Astra
+    └── Complex app, need planning & multi-agent → Antigravity
 ```
 
 ### Common Workflow
@@ -367,7 +392,7 @@ Many projects flow through multiple tools:
 Or for technical developers:
 
 1. **Gemini CLI** — Generate initial code in your local repo
-2. **Project Astra** — Scale up to a full application with planning and multi-agent support
+2. **Antigravity** — Scale up to a full application with planning and multi-agent support
 
 ---
 
@@ -378,6 +403,8 @@ The biggest factor in vibe coding quality isn't the tool — it's the **context*
 ### What is Context Engineering?
 
 Context engineering is the art of giving your AI agent enough information to accomplish a task accurately. It's the evolution of prompt engineering — instead of crafting the perfect sentence, you're assembling the right package of information.
+
+![Context Engineering](../resources/google-guide/slide-context-engineering.png)
 
 ### What to Include in Your Context
 
@@ -425,11 +452,13 @@ What features should I include?
 What details should I provide to get the best result?
 ```
 
-Gemini will suggest features, KPIs, design patterns, and technical details you might not have thought of. Then use that expanded prompt in AI Studio or Project Astra.
+Gemini will suggest features, KPIs, design patterns, and technical details you might not have thought of. Then use that expanded prompt in AI Studio or Antigravity.
 
 ---
 
 ## From Idea to Production: The Full Journey
+
+![From Visual Idea to a Working App](../resources/google-guide/slide-idea-to-app.png)
 
 ### Step 1: Blueprint
 
@@ -482,7 +511,7 @@ As vibe coding matures, the best practice is moving toward **spec-driven develop
 
 This produces more consistent, higher-quality results — especially for team projects and production applications.
 
-> **Don't be the monkey. Be the architect, and let the contractor build.**
+> **Don't be a code monkey. Be the Architect. Let Antigravity be the contractor.**
 > — Mahin Sheth, Geotab Connect 2026
 
 ---
@@ -495,6 +524,7 @@ This produces more consistent, higher-quality results — especially for team pr
 | AI Studio | [aistudio.google.com](https://aistudio.google.com/) |
 | Firebase Studio | [firebase.studio](https://firebase.studio/) |
 | Gemini CLI | [Open source on GitHub](https://github.com/google-gemini/gemini-cli) |
+| Google Antigravity | [antigravity.google](https://antigravity.google/) |
 
 ---
 
