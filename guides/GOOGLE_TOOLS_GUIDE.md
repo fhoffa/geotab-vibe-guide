@@ -18,7 +18,7 @@ The term was coined by Andrej Karpathy in early 2025:
 
 **You are the architect. AI is the contractor.** You bring the domain expertise, the branding, the vision. AI handles the syntax, the packages, the boilerplate.
 
-![Code Generation vs Vibe Coding](assets/slide-evolution-of-ai.png)
+![Code Generation vs Vibe Coding](../resources/google-guide/slide-evolution-of-ai.png)
 
 ### What Vibe Coding is NOT
 
@@ -42,7 +42,7 @@ Every vibe coding project follows this flow:
 
 The middle is a continuous feedback loop. You iterate, you refine, you tell the AI "change this button to green" and it does.
 
-![The Vibe Coding Lifecycle](assets/slide-vibe-coding-lifecycle.png)
+![The Vibe Coding Lifecycle](../resources/google-guide/slide-vibe-coding-lifecycle.png)
 
 ---
 
@@ -60,7 +60,7 @@ Google offers tools across a range of complexity. Pick the one that matches wher
 
 > **You don't have to pick just one.** A common workflow: sketch in Gemini Canvas → prototype in AI Studio → deploy with Firebase Studio.
 
-![Google Tools Comparison](assets/slide-tools-comparison.png)
+![Google Tools Comparison](../resources/google-guide/slide-tools-comparison.png)
 
 ---
 
@@ -70,7 +70,7 @@ Google offers tools across a range of complexity. Pick the one that matches wher
 
 Gemini Canvas is the simplest starting point. It lives inside the [Gemini app](https://gemini.google.com/) and lets you build single-file applications by describing what you want.
 
-![Gemini Canvas](assets/slide-gemini-canvas.png)
+![Gemini Canvas](../resources/google-guide/slide-gemini-canvas.png)
 
 ### When to Use It
 
@@ -124,7 +124,7 @@ Canvas will:
 
 [AI Studio](https://aistudio.google.com/) is a developer-oriented environment where you get access to all Gemini models, pre-built components, and a build mode for creating multi-file applications.
 
-![AI Studio Build Mode](assets/slide-ai-studio.png)
+![AI Studio Build Mode](../resources/google-guide/slide-ai-studio.png)
 
 ### When to Use It
 
@@ -194,7 +194,7 @@ AI Studio supports the same annotation workflow as Canvas:
 
 [Firebase Studio](https://firebase.studio/) is a fully integrated IDE with a managed development and deployment environment. It's the tool you use when you're ready to ship.
 
-![Firebase Studio](assets/slide-firebase-studio.png)
+![Firebase Studio](../resources/google-guide/slide-firebase-studio.png)
 
 ### When to Use It
 
@@ -253,7 +253,7 @@ You can manage multiple versions of your app:
 
 [Gemini CLI](https://github.com/google-gemini/gemini-cli) is a lightweight, open-source command-line tool that brings Gemini into your existing development workflow. It's not a chatbot — it's an active development assistant.
 
-![Gemini CLI](assets/slide-gemini-cli.png)
+![Gemini CLI](../resources/google-guide/slide-gemini-cli.png)
 
 ### When to Use It
 
@@ -305,7 +305,7 @@ gemini "refactor the dashboard component to use React hooks"
 
 [Google Antigravity](https://antigravity.google/) is an agent-first desktop IDE announced in November 2025 alongside Gemini 3. Built as a modified fork of VS Code, it doesn't just generate code — it plans, reasons, builds, tests, and deploys multi-file applications using multiple AI agents working in parallel.
 
-![Google Antigravity](assets/slide-antigravity.png)
+![Google Antigravity](../resources/google-guide/slide-antigravity.png)
 
 ### When to Use It
 
@@ -404,7 +404,7 @@ The biggest factor in vibe coding quality isn't the tool — it's the **context*
 
 Context engineering is the art of giving your AI agent enough information to accomplish a task accurately. It's the evolution of prompt engineering — instead of crafting the perfect sentence, you're assembling the right package of information.
 
-![Context Engineering](assets/slide-context-engineering.png)
+![Context Engineering](../resources/google-guide/slide-context-engineering.png)
 
 ### What to Include in Your Context
 
@@ -458,7 +458,7 @@ Gemini will suggest features, KPIs, design patterns, and technical details you m
 
 ## From Idea to Production: The Full Journey
 
-![From Visual Idea to a Working App](assets/slide-idea-to-app.png)
+![From Visual Idea to a Working App](../resources/google-guide/slide-idea-to-app.png)
 
 ### Step 1: Blueprint
 
