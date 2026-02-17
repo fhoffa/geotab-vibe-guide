@@ -239,7 +239,7 @@ You can manage multiple versions of your app:
 
 **For developers who live in the terminal.**
 
-[Gemini CLI](https://github.com/anthropics/gemini-cli) is a lightweight, open-source command-line tool that brings Gemini into your existing development workflow. It's not a chatbot — it's an active development assistant.
+[Gemini CLI](https://github.com/google-gemini/gemini-cli) is a lightweight, open-source command-line tool that brings Gemini into your existing development workflow. It's not a chatbot — it's an active development assistant.
 
 ### When to Use It
 
@@ -251,7 +251,7 @@ You can manage multiple versions of your app:
 ### How It Works
 
 ```bash
-npm install -g @anthropic-ai/gemini-cli
+npm install -g @google/gemini-cli
 gemini
 ```
 
