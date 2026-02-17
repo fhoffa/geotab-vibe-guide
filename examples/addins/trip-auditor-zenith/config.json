@@ -1,0 +1,17 @@
+{
+  "name": "Trip Auditor (Zenith)",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "1.0.0",
+  "items": [
+    {
+      "url": "dist/trip-auditor.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "en": "Trip Auditor"
+      }
+    }
+  ],
+  "files": {
+    "dist/trip-auditor.html": "<!DOCTYPE html><html><head><meta charset='utf-8'></head><body style='margin:0;'><div id='tripAuditorRoot'></div><script src='trip-auditor.js'></script></body></html>"
+  }
+}
