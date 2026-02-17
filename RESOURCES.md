@@ -420,6 +420,29 @@ Quick reference documents in this repository:
 
 ---
 
+## 🏗️ Community-Contributed Guides
+
+Practical guides from competition participants, based on real problems solved during the hackathon.
+
+### Geotab Integration Patterns
+- **[MyGeotab Add-In Gotchas](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/05-mygeotab-addin-gotchas.md)** — 9 undocumented issues that will bite you building Add-Ins (CSS injection, IIFE-only builds, session auth, `<head>` stripping)
+- **[Ace AI Integration Patterns](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/06-ace-ai-integration.md)** — The 3-step async API (CreateAceChatAsync → GetAceResults → poll) and how to use Ace context in multi-turn conversations
+- **[OData Data Connector Recipes](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/07-odata-data-connector.md)** — Query patterns for fleet-wide analytics, KPIs, and safety metrics
+
+### Architecture & Infrastructure
+- **[Cloud Run GPU on a Budget](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/08-cloud-run-gpu-on-a-budget.md)** — Scale-to-zero NVIDIA L4 GPU inference at ~$0.004/request, including quota gotchas and in-process model caching
+- **[The Five-Cent Pipeline](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/09-the-five-cent-pipeline.md)** — How to estimate per-unit costs for AI pipelines (LLM + TTS + GPU + STT + storage)
+- **[MCP Server Patterns](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/10-mcp-server-patterns.md)** — Building a FastMCP server to query Geotab data from Claude Desktop
+
+### Vibe Coding Process
+- **[The 18,920-Line First Commit](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/01-the-18920-line-first-commit.md)** — How to prompt for a full-stack architecture in one shot
+- **[Server-Side Safety Net](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/04-server-side-safety-net.md)** — Deterministic overrides for LLM outputs (don't trust the model alone for safety-critical decisions)
+- **[When to Correct the AI](https://github.com/robertlagrasse/geotab-geoff/blob/main/guides/11-when-to-correct-the-ai.md)** — Four categories of human corrections that AI can't self-identify
+
+*From the [Geotab Geoff](https://github.com/robertlagrasse/geotab-geoff) project — AI fleet safety coaching with lip-synced avatar, built for the Vibe Coding Competition. [Browse all 12 guides](https://github.com/robertlagrasse/geotab-geoff/tree/main/guides).*
+
+---
+
 ## 🙏 Acknowledgments
 
 - Geotab for providing free demo accounts and comprehensive APIs
