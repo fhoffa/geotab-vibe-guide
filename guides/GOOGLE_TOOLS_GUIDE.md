@@ -14,7 +14,7 @@ Vibe coding is AI-assisted development where you describe your idea in plain Eng
 
 The term was coined by Andrej Karpathy in early 2025:
 
-> "Fully giving in to the vibes, embracing exponentials, and forgetting that the code even exists."
+> "There's a new kind of coding I call 'vibe coding', where you fully give in to the vibes, embrace exponentials, and forget that the code even exists."
 
 **You are the architect. AI is the contractor.** You bring the domain expertise, the branding, the vision. AI handles the syntax, the packages, the boilerplate.
 
@@ -52,7 +52,7 @@ Google offers tools across a range of complexity. Pick the one that matches wher
 | **AI Studio (Build Mode)** | Developer prototyping with model access | Low-Medium | Multi-file prototypes |
 | **Firebase Studio** | Full web/mobile apps with deployment | Medium | Production apps with URLs |
 | **Gemini CLI** | Terminal-native developers | Medium | Code changes in your repo |
-| **Project Astra (Antigravity)** | Complex multi-agent applications | Highest | Multi-file apps with planning |
+| **Google Antigravity** | Complex multi-agent applications | Highest | Multi-file apps with planning |
 
 > **You don't have to pick just one.** A common workflow: sketch in Gemini Canvas → prototype in AI Studio → deploy with Firebase Studio.
 
@@ -259,7 +259,7 @@ That's it. Two commands and you have access.
 
 ### Key Features
 
-- **Open source** — Free, no license required
+- **Open source** — Free, Apache 2.0 licensed
 - **Works in your repo** — Understands your codebase context
 - **Extensions** — Add Google Search grounding, Maps, MCP servers
 - **Lightweight** — No UI, no browser, just your terminal
@@ -279,11 +279,13 @@ gemini "refactor the dashboard component to use React hooks"
 
 ---
 
-## Tool 5: Project Astra (Google Antigravity)
+## Tool 5: Google Antigravity
 
 **The most powerful tool in the lineup.**
 
-Project Astra (internally called "Jules", publicly available as Google Antigravity) is a complete agent development platform. It doesn't just generate code — it plans, reasons, builds, tests, and deploys multi-file applications using multiple AI agents working in parallel.
+[Google Antigravity](https://antigravity.google/) is an agent-first development platform announced in November 2025 alongside Gemini 3. It doesn't just generate code — it plans, reasons, builds, tests, and deploys multi-file applications using multiple AI agents working in parallel.
+
+> **Note:** Antigravity is a separate product from [Jules](https://jules.google.com/) (Google's asynchronous AI code agent for GitHub) and [Project Astra](https://deepmind.google/models/project-astra/) (Google DeepMind's universal AI assistant research prototype). All three are part of Google's broader AI agent ecosystem but serve different purposes.
 
 ### When to Use It
 
@@ -294,7 +296,7 @@ Project Astra (internally called "Jules", publicly available as Google Antigravi
 
 ### How It Works
 
-1. Open Project Astra / Antigravity
+1. Open [Antigravity](https://antigravity.google/)
 2. Describe your application (or use voice prompts)
 3. Choose a mode:
    - **Fast mode** — Quick, one-off tasks
@@ -307,8 +309,8 @@ Project Astra (internally called "Jules", publicly available as Google Antigravi
 - **Agent-first UI** — Multiple agents work on your project simultaneously
 - **Implementation plans** — See exactly what will be built before any code is written. Review and edit the plan before proceeding.
 - **Inbox system** — Manage notifications from different agents. Kick off 10 agents in the morning, check your inbox for results.
-- **Browser mode** — Powered by Gemini 3.5 computer use. The AI can interact with your app in a real browser, clicking buttons, testing flows, capturing screenshots.
-- **Reasoning mode** — Uses Gemini 3 Pro's thinking capabilities to break down complex tasks into steps
+- **Browser subagent** — Powered by Gemini 2.5 Computer Use. The AI can interact with your app in a real browser, clicking buttons, testing flows, capturing screenshots.
+- **Reasoning mode** — Uses Gemini 3 Deep Think capabilities to break down complex tasks into steps
 - **Voice prompting** — Describe your idea by speaking instead of typing
 - **Model selection** — Choose between Gemini 3 Pro high/low thinking budgets
 
@@ -328,9 +330,9 @@ What happens:
 4. You get a working app with charts, filters, and interactive elements
 5. Total time: ~10-12 minutes for a complete application
 
-### Browser Mode: AI That Clicks
+### Browser Subagent: AI That Clicks
 
-Browser mode uses **Gemini 3.5 computer use** to interact with your running app:
+The browser subagent uses **Gemini 2.5 Computer Use** to interact with your running app:
 
 - Navigate pages by clicking
 - Test user flows visually
@@ -353,7 +355,7 @@ Do you have a specific idea?
     ├── Multi-file app, want to prototype → AI Studio
     ├── Need to deploy with a URL → Firebase Studio
     ├── Terminal developer, existing codebase → Gemini CLI
-    └── Complex app, need planning & multi-agent → Project Astra
+    └── Complex app, need planning & multi-agent → Antigravity
 ```
 
 ### Common Workflow
@@ -367,7 +369,7 @@ Many projects flow through multiple tools:
 Or for technical developers:
 
 1. **Gemini CLI** — Generate initial code in your local repo
-2. **Project Astra** — Scale up to a full application with planning and multi-agent support
+2. **Antigravity** — Scale up to a full application with planning and multi-agent support
 
 ---
 
@@ -425,7 +427,7 @@ What features should I include?
 What details should I provide to get the best result?
 ```
 
-Gemini will suggest features, KPIs, design patterns, and technical details you might not have thought of. Then use that expanded prompt in AI Studio or Project Astra.
+Gemini will suggest features, KPIs, design patterns, and technical details you might not have thought of. Then use that expanded prompt in AI Studio or Antigravity.
 
 ---
 
@@ -495,6 +497,7 @@ This produces more consistent, higher-quality results — especially for team pr
 | AI Studio | [aistudio.google.com](https://aistudio.google.com/) |
 | Firebase Studio | [firebase.studio](https://firebase.studio/) |
 | Gemini CLI | [Open source on GitHub](https://github.com/google-gemini/gemini-cli) |
+| Google Antigravity | [antigravity.google](https://antigravity.google/) |
 
 ---
 
