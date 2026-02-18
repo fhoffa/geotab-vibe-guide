@@ -32,10 +32,10 @@ A Google Gem called **"Geotab Add-In Architect"** that:
 
 **Name:** `Geotab Add-In Architect`
 
-**Instructions:** Copy the entire contents of [`resources/GEM_INSTRUCTIONS.txt`](../resources/resources/GEM_INSTRUCTIONS.txt) and paste them into the Gem's instruction field.
+**Instructions:** Copy the entire contents of [`resources/GEM_INSTRUCTIONS.txt`](../resources/GEM_INSTRUCTIONS.txt) and paste them into the Gem's instruction field.
 
 > **The complete instructions live in a separate file so you can copy them easily.**
-> Open [`resources/GEM_INSTRUCTIONS.txt`](../resources/resources/GEM_INSTRUCTIONS.txt) in the repository root, select all (Ctrl+A), copy (Ctrl+C), and paste into the Gem's instruction field.
+> Open [`resources/GEM_INSTRUCTIONS.txt`](../resources/GEM_INSTRUCTIONS.txt) in the repository root, select all (Ctrl+A), copy (Ctrl+C), and paste into the Gem's instruction field.
 
 ---
 
@@ -66,7 +66,7 @@ The instruction file (`resources/GEM_INSTRUCTIONS.txt`) teaches the Gem to:
 | Pre-flight Validation | 18-point checklist the Gem runs before every response |
 | Version Tracking | Auto-increment name/version/menuName on each iteration |
 
-For the full details, read [`resources/GEM_INSTRUCTIONS.txt`](../resources/resources/GEM_INSTRUCTIONS.txt) directly.
+For the full details, read [`resources/GEM_INSTRUCTIONS.txt`](../resources/GEM_INSTRUCTIONS.txt) directly.
 
 ---
 
