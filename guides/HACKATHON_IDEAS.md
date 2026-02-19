@@ -2,7 +2,7 @@
 
 > **The hackathon is LIVE!** The sprint runs **Feb 12 -- Mar 2, 2026**, with **$25,000 in total prizes**. [**Register now**](https://luma.com/h6ldbaxp) for full details, prizes, rules, and terms and conditions.
 >
-> **Kickoff webinar:** Watch Felipe and Aaron discuss hackathon strategy, judging criteria, and what makes a winning submission: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
+> **Kickoff webinar:** Watch Felipe and Aaron discuss hackathon strategy, judging criteria, and what makes a winning submission ([33:50](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030)): [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
 
 ## How to Use This Guide
 - Each idea includes: concept, key APIs to use, difficulty level, and vibe prompts to get started

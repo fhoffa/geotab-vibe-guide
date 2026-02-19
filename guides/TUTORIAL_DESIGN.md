@@ -14,7 +14,7 @@
 - Node.js or Python installed (or willingness to install)
 
 > [!NOTE]
-> **This tutorial was delivered live!** Watch the [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg) with Felipe and Aaron covering demo account setup, live Gem and Claude demos, and hackathon Q&A with participants.
+> **This tutorial was delivered live!** Watch the [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg) with Felipe and Aaron covering demo account setup ([0:17](https://www.youtube.com/watch?v=Zuazi88lBeg&t=17)), live Gem and Claude demos ([2:35](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155), [22:40](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360)), and hackathon Q&A with participants.
 
 **Key Learning Outcomes:**
 - **Part 1:** Explore API using web-based AI (Claude/ChatGPT).

@@ -3,7 +3,7 @@
 > [!IMPORTANT]
 > **The Geotab Vibe Coding Challenge is LIVE!** $25,000 in prizes. Build fleet intelligence solutions using AI-assisted development. The sprint runs **Feb 12 -- Mar 2, 2026**. [**Register now**](https://luma.com/h6ldbaxp) to get all the important updates, and check out the [project ideas](./guides/HACKATHON_IDEAS.md) for inspiration. See the [registration page](https://luma.com/h6ldbaxp) for official terms and conditions.
 >
-> **New to the Geotab API?** Watch the kickoff webinar with Felipe and Aaron to get started with the API and vibe coding tools: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
+> **New to the Geotab API?** Watch the kickoff webinar with Felipe and Aaron: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA) — jump to [live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&t=17), [building an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155), [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360), or [winning strategy](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030)
 
 **Build fleet management apps in minutes using AI.**
 

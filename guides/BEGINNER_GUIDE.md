@@ -4,6 +4,7 @@
 
 > [!TIP]
 > **Start here:** Watch the kickoff webinar where Felipe and Aaron walk through the Geotab API and vibe coding tools — everything you need to get going: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
+> Jump to: [Live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&t=17) · [Build an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155) · [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360) · [Safety tips](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1696)
 
 ---
 

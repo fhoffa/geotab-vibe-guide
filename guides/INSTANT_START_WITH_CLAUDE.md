@@ -39,7 +39,7 @@ Before Claude can connect to the Geotab API, you need to allow network egress to
 **For learning and hackathons:** Create a separate demo account or ask your IT team for test environment credentials specifically for this purpose.
 
 > [!TIP]
-> **See Claude + Geotab in action:** In our [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg), Felipe uses Claude Code to rename 50 vehicles and create drivers — all through the Geotab API in real time.
+> **See Claude + Geotab in action:** In our [kickoff webinar (22:40)](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360), Felipe uses Claude Code to rename 50 vehicles and create drivers — all through the Geotab API in real time.
 
 ## Step 1: Give Claude the Geotab Skill (10 seconds)
 

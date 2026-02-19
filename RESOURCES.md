@@ -8,6 +8,7 @@ Complete reference guide for participants and instructors.
 
 ### Getting Started
 - **Kickoff Webinar**: Watch Felipe and Aaron walk through the Geotab API and vibe coding tools — [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
+  - Key moments: [Live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&t=17) · [Building add-ins with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155) · [Deployment](https://www.youtube.com/watch?v=Zuazi88lBeg&t=268) · [Skills vs Guides](https://www.youtube.com/watch?v=Zuazi88lBeg&t=950) · [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360) · [Permissions & safety](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1696) · [Winning strategy](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030) · [Zenith styling](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2688) · [Cold chain case study](https://www.youtube.com/watch?v=Zuazi88lBeg&t=3230)
 - **Create Demo Account**: https://my.geotab.com/registration.html
   > **Important:** Click **"Create a Demo Database"** (not "I'm a New Customer") to get pre-populated sample data.
 - **MyGeotab Login**: https://my.geotab.com/
