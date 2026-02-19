@@ -29,6 +29,9 @@ Before you can use Add-Ins, you need a MyGeotab account to install them in.
 
 Once you have your account, you're ready to create Add-Ins.
 
+> [!TIP]
+> **See the Gem in action first:** In our [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg), Felipe live-demos the Gem — building a trip auditor and an animal-speed fleet map from scratch in minutes.
+
 ### Step 1: Open the Gem
 
 Go to [Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO)

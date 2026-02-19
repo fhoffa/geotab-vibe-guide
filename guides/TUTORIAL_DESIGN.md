@@ -13,6 +13,9 @@
 - Modern web browser
 - Node.js or Python installed (or willingness to install)
 
+> [!NOTE]
+> **This tutorial was delivered live!** Watch the [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg) with Felipe and Aaron covering demo account setup, live Gem and Claude demos, and hackathon Q&A with participants.
+
 **Key Learning Outcomes:**
 - **Part 1:** Explore API using web-based AI (Claude/ChatGPT).
 - **Part 2:** Build an interactive app using Google Antigravity IDE.

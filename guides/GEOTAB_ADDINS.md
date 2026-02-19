@@ -35,6 +35,9 @@ Copy-paste this into MyGeotab to see a working Add-In:
 
 You'll see your username, database, and vehicle count. This proves Add-Ins work!
 
+> [!TIP]
+> **Watch Add-Ins built live:** Our [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg) walks through creating Add-Ins with the Google Gem, embedding Geotab ACE, and upgrading to Senith styling — all from scratch.
+
 ---
 
 ## What Are Add-Ins?
