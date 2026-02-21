@@ -829,7 +829,7 @@ See [EMBEDDED.md](EMBEDDED.md) for complete embedded add-in guide.
 2. Enable GitHub Pages (Settings > Pages > main branch)
 3. Wait 2-3 minutes for deployment
 4. Test URL directly in browser first
-5. In MyGeotab: Administration > System Settings > Add-Ins
+5. In MyGeotab: click user profile icon (top-right) > Administration > System Settings > Add-Ins
 6. Enable "Allow unverified Add-Ins" > Yes (required for custom Add-Ins)
 7. Add your Add-In configuration JSON
 8. Hard refresh (Ctrl+Shift+R) if add-in doesn't appear

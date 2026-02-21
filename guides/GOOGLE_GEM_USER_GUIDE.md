@@ -23,7 +23,7 @@ Before you can use Add-Ins, you need a MyGeotab account to install them in.
 1. Go to [my.geotab.com/registration.html](https://my.geotab.com/registration.html)
 2. **Click "Create a Demo Database"** (not "I'm a New Customer") — this gives you pre-populated sample data
 3. Fill out the form (takes ~2 minutes)
-4. Check your email for confirmation
+4. **Check your email and click the verification link** before trying to log in — you'll get an "Invalid user name or password" error if you skip this step
 
 > **Geotab employees:** Use a personal Gmail or other external email address to create your demo account. Internal Geotab accounts may have different permissions that could affect these tutorials.
 
@@ -65,8 +65,8 @@ The Gem will output a JSON configuration block. Select and copy the entire JSON 
 ### Step 4: Install in MyGeotab
 
 1. Log into **MyGeotab**
-2. Go to: **Administration → System → System Settings → Add-Ins**
-3. Enable **"Allow unverified Add-Ins"** → Yes (required for custom Add-Ins)
+2. Go to: Click your **user profile icon** (top-right corner) → **Administration → System → System Settings → Add-Ins**
+3. Enable **"Allow unverified Add-Ins"** → Yes (required for custom Add-Ins — without this, your Add-In won't load)
 4. Click **"New Add-In"**
 5. Click the **"Configuration"** tab
 6. **Paste** the JSON you copied
@@ -555,7 +555,7 @@ Make it look professional with a dark header and white cards.
 ```
 
 ### 3. You paste into MyGeotab:
-Administration → System Settings → Add-Ins → New Add-In → Configuration → Paste → Save
+User profile icon (top-right) → Administration → System Settings → Add-Ins → New Add-In → Configuration → Paste → Save
 
 ### 4. You see your new page:
 Find "Fleet Dashboard" in the left sidebar and click it.

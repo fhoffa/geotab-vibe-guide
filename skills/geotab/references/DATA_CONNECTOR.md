@@ -14,13 +14,13 @@
 
 The Data Connector add-in must be enabled on the database. On demo databases, install manually since the Marketplace is not available:
 
-1. MyGeotab → **Administration > System Settings > Add-Ins**
+1. MyGeotab → click **user profile icon** (top-right) → **Administration > System Settings > Add-Ins**
 2. Add: `{"url": "https://app.geotab.com/addins/geotab/dataConnector/manifest.json"}`
 3. Save and refresh
 
 Without this: 412 (`"Database cannot be subscribed"`) or 403.
 
-**Can't see the Add-In?** The Data Connector page is under MyGeotab Administration. The user account needs these security clearances: **Launch Custom Reports or Add-Ins** and **View "Geotab Data Connector" Add-In**. An admin can grant these under Administration > Users.
+**Can't see the Add-In?** The Data Connector page is under MyGeotab Administration. The user account needs these security clearances: **Launch Custom Reports or Add-Ins** and **View "Geotab Data Connector" Add-In**. An admin can grant these under Administration > Users (via user profile icon, top-right).
 
 **New databases:** KPI/safety tables are empty for ~2–3 hours after activation while the pipeline backfills. `LatestVehicleMetadata` populates immediately.
 

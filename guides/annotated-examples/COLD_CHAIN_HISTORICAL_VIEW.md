@@ -7,7 +7,7 @@
 This Add-In lets fleet managers filter vehicles by group, pick which temperature signals to plot (across multiple reefer zones), set a date range, and see historical charts with PDF and Excel export. It supports multiple languages and includes reefer unit status tracking.
 
 > **Try it yourself:** Paste [cold-chain-configuration.json](cold-chain-configuration.json) into MyGeotab.
-> Go to Administration → System Settings → Add-Ins → New Add-In → Configuration tab.
+> Click your user profile icon (top-right corner) → Administration → System Settings → Add-Ins → New Add-In → Configuration tab.
 >
 > **Read the code:** [coldchain.html](coldchain.html) is the formatted, commented source. The configuration JSON has the same code minified into one line.
 

@@ -693,7 +693,7 @@ In tools like n8n, you build workflows by connecting nodes:
 Now that you understand the basics, here's where to go next:
 
 1. **Get credentials:** [Create a free demo database](https://my.geotab.com/registration.html) (takes 2 minutes)
-   > **Important:** Click **"Create a Demo Database"** (not "I'm a New Customer") to get pre-populated sample data.
+   > **Important:** Click **"Create a Demo Database"** (not "I'm a New Customer") to get pre-populated sample data. After registering, **check your email and click the verification link** before trying to log in — you'll get a login error if you skip this.
 
 2. **Brand new to coding?**
    - Start with [GOOGLE_GEM_USER_GUIDE.md](GOOGLE_GEM_USER_GUIDE.md) - Build a MyGeotab Add-In in minutes using Google Gemini's Gem

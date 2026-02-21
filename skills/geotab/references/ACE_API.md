@@ -2,7 +2,7 @@
 
 Geotab Ace is an AI-powered query interface that lets you ask natural language questions about fleet data. It automatically generates SQL queries, aggregates data, and returns analyzed results.
 
-> **Enable Ace First:** Ace must be enabled by an admin in **Administration > Beta Features**. It's graduating from beta soon but may still require admin activation. With a demo account, you're the admin - just enable it yourself!
+> **Enable Ace First:** Ace must be enabled by an admin in **Administration > Beta Features** (click your user profile icon in the top-right to find Administration). It's graduating from beta soon but may still require admin activation. With a demo account, you're the admin - just enable it yourself!
 
 > **Reference Implementation:** [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) - Full working code for Ace queries, polling, DuckDB caching, and more.
 

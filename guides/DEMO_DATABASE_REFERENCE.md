@@ -26,6 +26,8 @@ Demo databases are fully functional Geotab environments with simulated fleet dat
 
 > **Tip:** Choose **60 days** expiration for maximum development time.
 
+> **Important:** After registering, **check your email and click the verification link** before trying to log in. You'll get an "Invalid user name or password" error if you skip this step.
+
 The demo simulates realistic vehicle movement, driver behavior, and telematics data for your selected configuration. The **Location** determines which data center hosts your database, while the simulated vehicle routes are based on the vocation and region.
 
 **Vocation affects data patterns:**

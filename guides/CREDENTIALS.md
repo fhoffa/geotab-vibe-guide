@@ -10,7 +10,7 @@ If you don't have a Geotab account yet:
 1. Go to https://my.geotab.com/registration.html
 2. **Click "Create a Demo Database"** (not "I'm a New Customer") — this gives you pre-populated sample data
 3. Fill out the form to complete registration
-4. Check your email for confirmation
+4. **Check your email and click the verification link** before trying to log in — you'll get an "Invalid user name or password" error if you skip this step
 5. Log in to MyGeotab
 6. Note your credentials:
    - **Database name** (shown in URL: my.geotab.com/login.html?database=YOUR_DATABASE)
@@ -101,6 +101,7 @@ Once the `.env` file is created and tested, the agent (that will build the Pytho
 ## Troubleshooting
 
 ### "Authentication failed"
+- ✓ **Did you verify your email?** After creating your account, you must click the verification link in your email before you can log in
 - ✓ Check database name (case-sensitive!)
 - ✓ Verify username (usually your email)
 - ✓ Double-check password (no typos)
