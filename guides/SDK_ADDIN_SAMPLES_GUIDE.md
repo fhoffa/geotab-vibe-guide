@@ -13,7 +13,7 @@ The [Geotab/sdk-addin-samples](https://github.com/Geotab/sdk-addin-samples) repo
 The repo includes a single JSON config block that installs every sample under one "Add-In Samples" menu group. No coding, no hosting — just paste and go.
 
 **Steps:**
-1. Go to **Administration → System → System Settings → Add-Ins**
+1. Click your **user profile icon** (top-right corner) → **Administration → System → System Settings → Add-Ins**
 2. Enable **"Allow unverified Add-Ins" → Yes**
 3. Click **"New Add-In" → "Configuration" tab**
 4. Copy the batch install JSON from the [sdk-addin-samples README](https://github.com/Geotab/sdk-addin-samples#how-to-run-the-examples)

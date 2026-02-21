@@ -19,7 +19,7 @@ Complete working Add-In showing:
 
 **Try it:**
 1. Copy content of `simple-test-config.json`
-2. Go to MyGeotab: Administration → System → System Settings → Add-Ins
+2. In MyGeotab, click your user profile icon (top-right corner) → Administration → System → System Settings → Add-Ins
 3. Enable "Allow unverified Add-Ins" → Yes
 4. Click "New Add-In" → "Configuration" tab
 5. Paste and save
@@ -96,7 +96,7 @@ Embedded add-in with everything in the JSON configuration.
 
 **Try it:**
 1. Copy entire contents of `embedded-config.json`
-2. Go to MyGeotab: Administration → System → System Settings → Add-Ins
+2. In MyGeotab, click your user profile icon (top-right corner) → Administration → System → System Settings → Add-Ins
 3. Enable "Allow unverified Add-Ins" → Yes
 4. Click "New Add-In" → "Configuration" tab
 5. Paste and save

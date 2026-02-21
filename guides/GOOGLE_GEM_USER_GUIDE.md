@@ -65,7 +65,7 @@ The Gem will output a JSON configuration block. Select and copy the entire JSON 
 ### Step 4: Install in MyGeotab
 
 1. Log into **MyGeotab**
-2. Go to: **Administration → System → System Settings → Add-Ins**
+2. Go to: Click your **user profile icon** (top-right corner) → **Administration → System → System Settings → Add-Ins**
 3. Enable **"Allow unverified Add-Ins"** → Yes (required for custom Add-Ins)
 4. Click **"New Add-In"**
 5. Click the **"Configuration"** tab
@@ -555,7 +555,7 @@ Make it look professional with a dark header and white cards.
 ```
 
 ### 3. You paste into MyGeotab:
-Administration → System Settings → Add-Ins → New Add-In → Configuration → Paste → Save
+User profile icon (top-right) → Administration → System Settings → Add-Ins → New Add-In → Configuration → Paste → Save
 
 ### 4. You see your new page:
 Find "Fleet Dashboard" in the left sidebar and click it.

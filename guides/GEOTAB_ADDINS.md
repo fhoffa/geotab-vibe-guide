@@ -10,7 +10,7 @@ This guide shows you how to use AI to build Add-Ins that extend MyGeotab with cu
 
 Copy-paste this into MyGeotab to see a working Add-In:
 
-**1. Go to:** Administration → System → System Settings → Add-Ins
+**1. Go to:** Click your **user profile icon** (top-right corner) → Administration → System → System Settings → Add-Ins
 **2. Enable:** "Allow unverified Add-Ins" → Yes (required for custom Add-Ins)
 **3. Click:** "New Add-In" → "Configuration" tab
 **4. Paste this:**

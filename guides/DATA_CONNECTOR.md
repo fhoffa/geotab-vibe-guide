@@ -17,7 +17,7 @@
 
 The Data Connector is a MyGeotab add-in. On production databases you install it from the Geotab Marketplace. On **demo databases** (and some sales channels), the Marketplace isn't available — you need to install it manually:
 
-1. In MyGeotab, go to **Administration > System Settings > Add-Ins**
+1. In MyGeotab, click your **user profile icon** (top-right corner) → **Administration > System Settings > Add-Ins**
 2. Add a new add-in with this configuration:
    ```json
    {
@@ -28,11 +28,11 @@ The Data Connector is a MyGeotab add-in. On production databases you install it 
 
 Without this step, queries will return **412** or **403** errors.
 
-> **Can't see the Add-In after activation?** The Data Connector page is under MyGeotab **Administration**. If it doesn't appear, ensure your user account has these security clearances:
+> **Can't see the Add-In after activation?** The Data Connector page is under MyGeotab **Administration** (click your user profile icon in the top-right to find it). If it doesn't appear, ensure your user account has these security clearances:
 > - **Launch Custom Reports or Add-Ins**
 > - **View "Geotab Data Connector" Add-In**
 >
-> An administrator can grant these under **Administration > Users**, then editing the user's security clearances.
+> An administrator can grant these under **Administration > Users** (via the user profile icon), then editing the user's security clearances.
 
 > **Full setup docs:** [Data Connector Partner Setup](https://support.geotab.com/mygeotab/mygeotab-add-ins/doc/data-conn-partner#h.wiq7fzud3vwa) and [Data Connector User Guide](https://support.geotab.com/mygeotab/mygeotab-add-ins/doc/data-connector)
 

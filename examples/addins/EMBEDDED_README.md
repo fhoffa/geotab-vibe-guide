@@ -16,7 +16,7 @@ This example shows how to create a Geotab Add-In **without any external hosting*
 
 1. Open `embedded-config.json`
 2. Copy the entire file contents
-3. In MyGeotab, go to: **Administration → System → System Settings → Add-Ins**
+3. In MyGeotab, click your **user profile icon** (top-right corner) → **Administration → System → System Settings → Add-Ins**
 4. Enable **"Allow unverified Add-Ins"** → Yes (required for custom Add-Ins)
 5. Click **"New Add-In"**
 6. Click the **"Configuration"** tab
