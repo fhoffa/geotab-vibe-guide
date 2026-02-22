@@ -539,6 +539,47 @@ zone = api.add('Zone', {
 print(f"Created zone: {zone}")
 ```
 
+### Add a Fuel Transaction
+
+FuelTransaction is one of the few writable entity types — you can create records via the API or through the **Fuel Transaction Import** Add-In in MyGeotab.
+
+```python
+# Add a fuel transaction record
+fuel_tx = api.add('FuelTransaction', {
+    'dateTime': '2026-02-21T12:00:00.000Z',
+    'volume': 50.5,         # Liters
+    'cost': 75.25,
+    'currencyCode': 'USD',
+    'device': {'id': device_id},   # Replace with your device ID
+    'location': {'x': -79.4, 'y': 43.6},  # Longitude, Latitude
+    'sourceId': 'Manual'
+})
+print(f"Created fuel transaction: {fuel_tx}")
+```
+
+**JavaScript (MyGeotab Add-In):**
+
+```javascript
+api.call("Add", {
+  typeName: "FuelTransaction",
+  entity: {
+    "dateTime": "2026-02-21T12:00:00.000Z",
+    "volume": 50.5,
+    "cost": 75.25,
+    "currencyCode": "USD",
+    "device": { "id": "b123" },
+    "location": { "x": -79.4, "y": 43.6 },
+    "sourceId": "Manual"
+  }
+}, function(result) {
+  console.log("Fuel Transaction Created:", result);
+}, function(e) {
+  console.error("Error:", e);
+});
+```
+
+> **Context:** This came up during the [Feb 2026 hackathon](https://www.reddit.com/r/GEOTAB/comments/1r242zb/comment/o6o7o2e/) — a Geotab PM confirmed `Add<FuelTransaction>` works. You can also import fuel data in bulk through the **Fuel Transaction Import** Add-In available in the Geotab Marketplace.
+
 ### Batch Operations (multi_call)
 
 ```python

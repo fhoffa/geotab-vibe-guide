@@ -500,7 +500,11 @@ Simple driver performance leaderboard.
 Visual calendar showing upcoming maintenance.
 **Prompt:** "Build a calendar view using FullCalendar.js that displays scheduled maintenance and predicted maintenance dates from Geotab."
 
-### Mini Idea 5: Geofence Manager
+### Mini Idea 5: Fuel Transaction Tracker
+Log fuel fill-ups via the API and reconcile them against actual fuel consumption.
+**Prompt:** "Build a web form that lets fleet managers log fuel fill-ups to Geotab using Add<FuelTransaction>. Show a table of recent transactions with cost per liter and flag any vehicles where fuel consumption doesn't match recorded fill-ups (possible fuel theft)."
+
+### Mini Idea 6: Geofence Manager
 Simple UI to create and manage geofences.
 **Head start:** Study the [Import KML Zones sample](./SDK_ADDIN_SAMPLES_GUIDE.md#3-import-kml-zones--file-upload-and-write-operations) to see how zones are created via the API.
 **Prompt:** "Create a map interface where users can draw geofences (polygons) and save them to Geotab using the Zone API."

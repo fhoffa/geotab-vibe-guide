@@ -753,6 +753,52 @@ Diagnostic type definition (metadata about sensor readings).
 
 ---
 
+### 14. FuelTransaction
+
+Fuel card or manual fuel transaction record. Unlike most telematics data, FuelTransaction is **writable** — you can create records via `Add<FuelTransaction>` or import them through the **Fuel Transaction Import** Add-In in MyGeotab.
+
+**Key Fields:**
+
+| Field | Type | Description | Example |
+|-------|------|-------------|---------|
+| `id` | string | Unique identifier | `"a1B2c3D4"` |
+| `dateTime` | datetime | Transaction timestamp | `"2026-02-21T12:00:00.000Z"` |
+| `device` | object | Vehicle reference | `{"id": "b123"}` |
+| `volume` | float | Fuel volume (liters) | `50.5` |
+| `cost` | float | Transaction cost | `75.25` |
+| `currencyCode` | string | Currency code | `"USD"` |
+| `location` | object | Transaction location (x=lon, y=lat) | `{"x": -79.4, "y": 43.6}` |
+| `sourceId` | string | Data source | `"Manual"` |
+
+**Writing a FuelTransaction:**
+
+```python
+fuel_tx = api.add('FuelTransaction', {
+    'dateTime': '2026-02-21T12:00:00.000Z',
+    'volume': 50.5,
+    'cost': 75.25,
+    'currencyCode': 'USD',
+    'device': {'id': device_id},
+    'location': {'x': -79.4, 'y': 43.6},
+    'sourceId': 'Manual'
+})
+```
+
+**Reading FuelTransactions:**
+
+```python
+fuel_txns = api.get('FuelTransaction',
+    fromDate=datetime.now() - timedelta(days=30),
+    toDate=datetime.now()
+)
+for tx in fuel_txns:
+    print(f"Vehicle {tx['device']['id']}: {tx.get('volume', 0)}L at ${tx.get('cost', 0)}")
+```
+
+> **Note:** Demo databases may not have pre-existing FuelTransaction records. You can create your own using the `Add` method above.
+
+---
+
 ## Fetching Demo Data
 
 ### Python Examples
