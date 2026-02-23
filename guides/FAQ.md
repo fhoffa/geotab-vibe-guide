@@ -53,3 +53,18 @@ Replace `device_id` / `"b123"` with an actual device ID from your database. You 
 **Through the UI:** MyGeotab has had Add-Ins for fuel data import (Fuel Tracker, Fuel Transaction Import). Check the Geotab Marketplace or your MyGeotab Add-Ins page for availability.
 
 > **Source:** [Hackathon Q&A on Reddit](https://www.reddit.com/r/GEOTAB/comments/1r242zb/comment/o6o7o2e/) — confirmed by [Mehant Parkash](https://www.linkedin.com/in/mehantparkash), Geotab PM. See also the [FuelTransaction API reference](https://geotab.github.io/sdk/software/api/reference/#FuelTransaction).
+
+### What about FillUp records — can I create those through the API?
+
+No — not through the standard MyGeotab API. `FillUp` is a **read-only** entity. The system generates FillUp records automatically by analyzing engine fuel-level data over time; you cannot insert them directly via `Add`.
+
+If you need to inject the underlying **StatusData** records (engine fuel-level readings that the system uses to detect fill-ups), you can use the **Data Intake Gateway (DIG)**.
+
+**Important:** DIG is a separate service that requires a **MyAdmin account** with the `DIG-Access` role — your regular MyGeotab credentials won't work. Contact your Reseller or [Geotab Support](mailto:integrations@geotab.com) to get set up.
+
+**DIG resources:**
+
+- [DIG API Endpoint support article](https://support.geotab.com/en-GB/software-integration/doc/dig-api-endpoint)
+- [Data Intake Gateway integrator guide](https://docs.google.com/document/d/15uNuPqwFcPLe6vKs_JgY5nPTy2isQ3WYUu4oyQ3cEfQ/edit)
+
+> **Source:** [Hackathon Q&A on Reddit](https://www.reddit.com/r/GEOTAB/comments/1r242zb/comment/o6o7o2e/) — community follow-up confirmed by Geotab support.
