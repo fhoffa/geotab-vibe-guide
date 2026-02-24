@@ -56,9 +56,35 @@ Replace `device_id` / `"b123"` with an actual device ID from your database. You 
 
 ### What about FillUp records — can I create those through the API?
 
-No — not through the standard MyGeotab API. `FillUp` is a **read-only** entity. The system generates FillUp records automatically by analyzing engine fuel-level data over time; you cannot insert them directly via `Add`.
+Yes — the `FillUp` entity supports `Add` via the MyGeotab API, but it **requires system-level permissions**. Regular MyGeotab user accounts will get an `InvalidPermissionsException` ("Action not supported for non system user").
 
-If you need to inject the underlying **StatusData** records (engine fuel-level readings that the system uses to detect fill-ups), you can use the **Data Intake Gateway (DIG)**.
+The [FillUp API reference](https://developers.geotab.com/myGeotab/apiReference/objects/FillUp/index.html) documents Add support with a rate limit of 100 requests per minute.
+
+**Example API call:**
+
+```javascript
+api.call("Add", {
+    typeName: "FillUp",
+    entity: {
+        "device": { "id": "<DEVICE_ID>" },
+        "driver": { "id": "<DRIVER_ID>" },
+        "dateTime": "2026-02-24T10:30:00.000Z",
+        "volume": 45.5,
+        "cost": 85.50,
+        "currencyCode": "AUD",
+        "odometer": 125000,
+        "distance": 450000,
+        "productType": "Regular",
+        "location": { "x": 138.6007, "y": -34.9285 }
+    }
+}, function(result) {
+    console.log("FillUp Created:", result);
+}, function(e) {
+    console.error("Error:", e);
+});
+```
+
+**If you don't have system-level permissions**, the system also generates FillUp records automatically by analyzing engine fuel-level data over time. To inject the underlying **StatusData** records (engine fuel-level readings that the system uses to detect fill-ups), you can use the **Data Intake Gateway (DIG)**.
 
 **Important:** DIG is a separate service that requires a **MyAdmin account** with the `DIG-Access` role — your regular MyGeotab credentials won't work. Contact your Reseller or [Geotab Support](mailto:integrations@geotab.com) to get set up.
 
@@ -67,4 +93,4 @@ If you need to inject the underlying **StatusData** records (engine fuel-level r
 - [DIG API Endpoint support article](https://support.geotab.com/en-GB/software-integration/doc/dig-api-endpoint)
 - [Data Intake Gateway integrator guide](https://docs.google.com/document/d/15uNuPqwFcPLe6vKs_JgY5nPTy2isQ3WYUu4oyQ3cEfQ/edit)
 
-> **Source:** [Hackathon Q&A on Reddit](https://www.reddit.com/r/GEOTAB/comments/1r242zb/comment/o6o7o2e/) — community follow-up confirmed by Geotab support.
+> **Source:** [FillUp API reference](https://developers.geotab.com/myGeotab/apiReference/objects/FillUp/index.html) confirms Add support. Tested Feb 2026 — regular users get `InvalidPermissionsException`; system-level accounts are required. See also [Hackathon Q&A on Reddit](https://www.reddit.com/r/GEOTAB/comments/1r242zb/comment/o6o7o2e/).

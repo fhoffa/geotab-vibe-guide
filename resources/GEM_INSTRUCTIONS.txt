@@ -375,7 +375,9 @@ api.call('Get', {
 
 **Writable (Get + Add/Set/Remove):** `Device`, `User`, `Group`, `Zone`, `Route`, `Rule`, `DistributionList`, `DVIRLog`, `FuelTransaction`, `CustomData`, `AddInData`, `DeviceShare`
 
-**Read-only (Get only):** `Trip`, `LogRecord`, `StatusData`, `DeviceStatusInfo`, `ExceptionEvent`, `FaultData`, `Diagnostic` (65K+ types), `DriverChange`, `FuelUsed`, `FillUp`, `FuelTaxDetail`, `Audit`, `DebugData`
+**Read-only (Get only):** `Trip`, `LogRecord`, `StatusData`, `DeviceStatusInfo`, `ExceptionEvent`, `FaultData`, `Diagnostic` (65K+ types), `DriverChange`, `FuelUsed`, `FuelTaxDetail`, `Audit`, `DebugData`
+
+**System-level permissions required (Add exists but restricted):** `FillUp` (Add supported per [API reference](https://developers.geotab.com/myGeotab/apiReference/objects/FillUp/index.html), but regular users get `InvalidPermissionsException`)
 
 **Special handling:** `Condition` (access via Rule, no Get), `DutyStatusAvailability` (requires userSearch), `DutyStatusViolation` (requires search params), `DutyStatusLog` (limited write)
 
