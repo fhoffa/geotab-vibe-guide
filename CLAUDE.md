@@ -85,6 +85,14 @@ All tests must pass before pushing. If a test fails, fix the issue and re-run.
 
 After editing `resources/GEM_INSTRUCTIONS.txt`, also read `tests/gem-review/REVIEW_CHECKLIST.md` and verify each question against the instructions. The checklist covers behavioral, correctness, completeness, and tone — things a regex can't catch.
 
+## Weekly Movie Selection (Recurring Task)
+
+Every week, help select movies from the AMC showtimes list:
+- **1 movie** for Thursday
+- **4 movies** for the next week starting Friday
+
+When the user shares their AMC list, help them narrow down and decide on picks.
+
 ## Code Standards
 
 When writing code examples or snippets:
