@@ -207,7 +207,7 @@ The MyGeotab API supports these entity types via the `Get` method. Not all are w
 |------|-------------|----------|-------|
 | `FuelTransaction` | Fuel card transactions | Yes | External fuel data |
 | `FuelUsed` | Fuel consumption | Read-only | Calculated usage |
-| `FillUp` | Fill-up events | Read-only | Detected fill events |
+| `FillUp` | Fill-up events | Yes | Manual or auto-detected fill events |
 | `FuelTaxDetail` | IFTA tax records | Read-only | Jurisdiction fuel use |
 
 ### Custom Data

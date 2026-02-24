@@ -373,9 +373,9 @@ api.call('Get', {
 
 ### Entity Type Capabilities
 
-**Writable (Get + Add/Set/Remove):** `Device`, `User`, `Group`, `Zone`, `Route`, `Rule`, `DistributionList`, `DVIRLog`, `FuelTransaction`, `CustomData`, `AddInData`, `DeviceShare`
+**Writable (Get + Add/Set/Remove):** `Device`, `User`, `Group`, `Zone`, `Route`, `Rule`, `DistributionList`, `DVIRLog`, `FuelTransaction`, `FillUp`, `CustomData`, `AddInData`, `DeviceShare`
 
-**Read-only (Get only):** `Trip`, `LogRecord`, `StatusData`, `DeviceStatusInfo`, `ExceptionEvent`, `FaultData`, `Diagnostic` (65K+ types), `DriverChange`, `FuelUsed`, `FillUp`, `FuelTaxDetail`, `Audit`, `DebugData`
+**Read-only (Get only):** `Trip`, `LogRecord`, `StatusData`, `DeviceStatusInfo`, `ExceptionEvent`, `FaultData`, `Diagnostic` (65K+ types), `DriverChange`, `FuelUsed`, `FuelTaxDetail`, `Audit`, `DebugData`
 
 **Special handling:** `Condition` (access via Rule, no Get), `DutyStatusAvailability` (requires userSearch), `DutyStatusViolation` (requires search params), `DutyStatusLog` (limited write)
 
