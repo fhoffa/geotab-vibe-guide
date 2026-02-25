@@ -671,41 +671,64 @@ function pollAce(chatId, mgId, attempt) {
 // CRITICAL: Always call callback() or the page hangs.
 
 geotab.addin["fleet-tco-calc"] = function () {
-  return {
-    initialize: function (api, state, callback) {
-      dbg("TCO Calculator: initialize called");
-      refresh(api);
 
-      // Wire up controls (null-safe — elements may not exist if DOM
-      // hasn't fully loaded or if running in a minimal test harness)
-      function bind(id, evt, fn) { var el = document.getElementById(id); if (el) el[evt] = fn; }
-      bind("saveBtn", "onclick", function () { refresh(api); });
-      bind("dateRange", "onchange", function () { refresh(api); });
-      bind("csvBtn", "onclick", exportCsv);
-      bind("focusClose", "onclick", closeFocus);
-      bind("aceClose", "onclick", function () {
-        var el = document.getElementById("aceResult");
-        if (el) el.style.display = "none";
-      });
-      bind("aceBtn", "onclick", function () {
+  // MyGeotab may call initialize() before the iframe DOM is fully loaded.
+  // This helper waits for a key element to exist before proceeding.
+  // It retries every 200ms, up to 25 times (5 seconds total).
+  function whenReady(fn, attempt) {
+    attempt = attempt || 0;
+    if (document.getElementById("tco-body") || attempt > 25) {
+      fn();
+    } else {
+      dbg("DOM not ready, retrying... (" + attempt + ")");
+      setTimeout(function () { whenReady(fn, attempt + 1); }, 200);
+    }
+  }
+
+  function wireControls(api) {
+    function bind(id, evt, fn) { var el = document.getElementById(id); if (el) el[evt] = fn; }
+    bind("saveBtn", "onclick", function () { refresh(api); });
+    bind("dateRange", "onchange", function () { refresh(api); });
+    bind("csvBtn", "onclick", exportCsv);
+    bind("focusClose", "onclick", closeFocus);
+    bind("aceClose", "onclick", function () {
+      var el = document.getElementById("aceResult");
+      if (el) el.style.display = "none";
+    });
+    bind("aceBtn", "onclick", function () {
+      var el = document.getElementById("aceInput");
+      var q = el ? el.value.trim() : "";
+      if (q) askAce(q);
+    });
+    bind("aceInput", "onkeydown", function (e) {
+      if (e.keyCode === 13) {
         var el = document.getElementById("aceInput");
         var q = el ? el.value.trim() : "";
         if (q) askAce(q);
-      });
-      bind("aceInput", "onkeydown", function (e) {
-        if (e.keyCode === 13) {
-          var el = document.getElementById("aceInput");
-          var q = el ? el.value.trim() : "";
-          if (q) askAce(q);
-        }
+      }
+    });
+  }
+
+  return {
+    initialize: function (api, state, callback) {
+      dbg("TCO Calculator: initialize called");
+
+      // Wait for DOM to be ready before fetching data and wiring controls.
+      // MyGeotab loads the JS before the HTML elements exist in the iframe.
+      whenReady(function () {
+        dbg("DOM ready — starting refresh");
+        wireControls(api);
+        refresh(api);
       });
 
+      // CRITICAL: Call callback() immediately — don't wait for DOM or API.
+      // MyGeotab requires this to finish the Add-In loading sequence.
       callback();
     },
 
     focus: function (api) {
       _api = api;
-      refresh(api);
+      whenReady(function () { refresh(api); });
     },
 
     blur: function () {
