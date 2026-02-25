@@ -160,8 +160,10 @@ function getDates(val) {
 function refresh(api) {
   _api = api;
 
-  // Build date range from the selector (wired up in initialize)
-  var dates = getDates(document.getElementById("dateRange").value);
+  // Build date range from the selector (wired up in initialize).
+  // Falls back to "30" (last 30 days) if the element doesn't exist.
+  var rangeEl = document.getElementById("dateRange");
+  var dates = getDates(rangeEl ? rangeEl.value : "30");
 
   // Fetch Device and Trip data via multiCall.
   // NOTE: AddInData is fetched separately so that a failure (e.g., no saved
@@ -308,14 +310,16 @@ geotab.addin["fleet-tco-calc"] = function () {
       console.log("TCO Calculator: initialize called");
 
       // Wire up the RECALCULATE ALL button to re-fetch and re-render
-      document.getElementById("saveBtn").onclick = function () {
-        refresh(api);
-      };
+      var saveBtn = document.getElementById("saveBtn");
+      if (saveBtn) {
+        saveBtn.onclick = function () { refresh(api); };
+      }
 
       // Wire up the date range selector to re-fetch when changed
-      document.getElementById("dateRange").onchange = function () {
-        refresh(api);
-      };
+      var dateRange = document.getElementById("dateRange");
+      if (dateRange) {
+        dateRange.onchange = function () { refresh(api); };
+      }
 
       // Load initial data
       refresh(api);
