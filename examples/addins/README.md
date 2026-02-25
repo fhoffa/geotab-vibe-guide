@@ -79,34 +79,38 @@ Side-by-side comparison of Ace natural language queries vs direct API calls.
 **Type:** External hosted
 
 ### tco-calculator.* (TCO Calculator — Annotated)
-Fleet Total Cost of Ownership calculator with per-vehicle cost analysis.
+Full-featured fleet Total Cost of Ownership calculator with dashboard, Ace AI, and CSV export.
 
 **Features:**
-- Calculates monthly TCO per vehicle (depreciation + fuel + maintenance)
-- Three vehicle classes (Light, Medium, Heavy) with editable cost parameters
-- Bulk classification buttons for large fleets
-- Persists vehicle class assignments via AddInData
-- Uses `api.multiCall()` to batch Device + Trip + AddInData fetches
+- Three-column dashboard: Fleet Summary, SVG Health Gauge / Vehicle Focus Card, Controls
+- TCO formula: Fixed Cost (depreciation) + Operational (fuel + maintenance) + Waste (idle)
+- Real fuel data from `StatusData` (`DiagnosticDeviceTotalFuelId`) with estimate fallback
+- Idle hours from `Trip.idlingDuration` with Waste Cost calculation
+- Date range selector (30/60/90 days, MTD, YTD) — fully wired up
+- SVG odometer-style health gauge showing fleet efficiency
+- Clickable rows show Vehicle Focus Card with TCO breakdown and navigation links
+- Sortable table columns (click headers to sort by name, miles, idle, TCO)
+- CSV export for Excel
+- Ace AI integration (3-step `GetAceResults` pattern with polling)
+- Persistent vehicle classification via `AddInData`
+- MyGeotab navigation via `window.parent.location.hash`
 
 **Files:**
-- `tco-calculator.html` - Annotated HTML with UI structure explained
-- `tco-calculator.js` - Annotated JavaScript with TCO formula walkthrough
+- `tco-calculator.html` - Annotated HTML with three-column dashboard layout
+- `tco-calculator.js` - Annotated JavaScript (~450 lines, heavily commented)
 - `tco-calculator-config.json` - Configuration for MyGeotab
 
 **Type:** External hosted (requires HTTPS hosting)
 
 **Concepts demonstrated:**
-- `multiCall()` for batching API requests
+- `multiCall()` batching Device + Trip + StatusData + AddInData
+- `StatusData` with `DiagnosticDeviceTotalFuelId` for real fuel usage
 - `AddInData` for persisting custom data across sessions
-- `Trip.distance` conversion from km to miles
-- Inline class selectors with per-row state management
-- Editable parameters feeding a cost model
-
-**Enhancement ideas** (noted in code comments):
-- Wire up the date range selector (currently non-functional)
-- Use per-class MPG instead of flat 10 MPG assumption
-- Add `focus()` handler to refresh data on page revisit
-- Add error callbacks to API calls
+- `Trip.distance` (km to miles) and `Trip.idlingDuration` parsing
+- `GetAceResults` 3-step Ace AI pattern (create-chat, send-prompt, poll)
+- `window.parent.location.hash` for in-app navigation
+- ES5 syntax and inline CSS for embedded compatibility
+- SVG rendering for data visualization
 
 ### embedded-* (No Hosting Required!)
 Embedded add-in with everything in the JSON configuration.
