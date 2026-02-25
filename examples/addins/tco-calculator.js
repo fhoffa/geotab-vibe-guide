@@ -67,7 +67,8 @@ function copyDebugData() {
 // Supports: 30/60/90 days, month-to-date, year-to-date.
 
 function getFromDate() {
-  var val = document.getElementById("dateRange").value;
+  var el = document.getElementById("dateRange");
+  var val = el ? el.value : "30";
   var now = new Date();
   if (val === "mtd") {
     return new Date(now.getFullYear(), now.getMonth(), 1);
@@ -123,7 +124,7 @@ function saveMapping() {
 // 6 parameters per class (p=purchase, r=residual, y=life, f=fuel, m=maint, i=idle).
 
 function getParameters() {
-  function v(id) { return parseFloat(document.getElementById(id).value) || 0; }
+  function v(id) { var el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
   return {
     L: { p: v("L_p"), r: v("L_r"), y: v("L_y"), f: v("L_f"), m: v("L_m"), i: v("L_i") },
     M: { p: v("M_p"), r: v("M_r"), y: v("M_y"), f: v("M_f"), m: v("M_m"), i: v("M_i") },
@@ -337,6 +338,7 @@ function getSortedIds() {
 function render() {
   var params = getParameters();
   var tbody = document.getElementById("tco-body");
+  if (!tbody) { dbg("render() skipped — DOM not ready"); return; }
   tbody.innerHTML = "";
 
   var totalMiles = 0, totalIdle = 0, totalFuelCost = 0, totalMaintCost = 0, totalTco = 0;
@@ -392,13 +394,15 @@ function render() {
     tbody.appendChild(tr);
   }
 
-  // Update fleet summary
-  document.getElementById("sum-miles").textContent = Math.round(totalMiles).toLocaleString();
-  document.getElementById("sum-idle").textContent = Math.round(totalIdle).toLocaleString();
-  document.getElementById("sum-fuel").textContent = "$" + Math.round(totalFuelCost).toLocaleString();
-  document.getElementById("sum-maint").textContent = "$" + Math.round(totalMaintCost).toLocaleString();
-  document.getElementById("sum-tco").textContent = "$" + Math.round(totalTco).toLocaleString();
-  document.getElementById("loading").style.display = "none";
+  // Update fleet summary (null-safe for when DOM isn't fully loaded)
+  function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
+  setText("sum-miles", Math.round(totalMiles).toLocaleString());
+  setText("sum-idle", Math.round(totalIdle).toLocaleString());
+  setText("sum-fuel", "$" + Math.round(totalFuelCost).toLocaleString());
+  setText("sum-maint", "$" + Math.round(totalMaintCost).toLocaleString());
+  setText("sum-tco", "$" + Math.round(totalTco).toLocaleString());
+  var loadEl = document.getElementById("loading");
+  if (loadEl) loadEl.style.display = "none";
 
   dbg("Rendered " + ids.length + " vehicles — TCO: $" + Math.round(totalTco) +
       ", Waste: $" + Math.round(totalWaste));
@@ -672,24 +676,29 @@ geotab.addin["fleet-tco-calc"] = function () {
       dbg("TCO Calculator: initialize called");
       refresh(api);
 
-      // Wire up controls
-      document.getElementById("saveBtn").onclick = function () { refresh(api); };
-      document.getElementById("dateRange").onchange = function () { refresh(api); };
-      document.getElementById("csvBtn").onclick = exportCsv;
-      document.getElementById("focusClose").onclick = closeFocus;
-      document.getElementById("aceClose").onclick = function () {
-        document.getElementById("aceResult").style.display = "none";
-      };
-      document.getElementById("aceBtn").onclick = function () {
-        var q = document.getElementById("aceInput").value.trim();
+      // Wire up controls (null-safe — elements may not exist if DOM
+      // hasn't fully loaded or if running in a minimal test harness)
+      function bind(id, evt, fn) { var el = document.getElementById(id); if (el) el[evt] = fn; }
+      bind("saveBtn", "onclick", function () { refresh(api); });
+      bind("dateRange", "onchange", function () { refresh(api); });
+      bind("csvBtn", "onclick", exportCsv);
+      bind("focusClose", "onclick", closeFocus);
+      bind("aceClose", "onclick", function () {
+        var el = document.getElementById("aceResult");
+        if (el) el.style.display = "none";
+      });
+      bind("aceBtn", "onclick", function () {
+        var el = document.getElementById("aceInput");
+        var q = el ? el.value.trim() : "";
         if (q) askAce(q);
-      };
-      document.getElementById("aceInput").onkeydown = function (e) {
+      });
+      bind("aceInput", "onkeydown", function (e) {
         if (e.keyCode === 13) {
-          var q = document.getElementById("aceInput").value.trim();
+          var el = document.getElementById("aceInput");
+          var q = el ? el.value.trim() : "";
           if (q) askAce(q);
         }
-      };
+      });
 
       callback();
     },
