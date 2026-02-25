@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<!-- Part of Geotab Vibe Guide: https://github.com/fhoffa/geotab-vibe-guide -->
+<!--
+  Fleet TCO Calculator — Annotated Example
+  =========================================
+  Calculates Total Cost of Ownership for each vehicle in a fleet using
+  trip mileage from the Geotab API combined with user-defined cost parameters.
+
+  TCO Formula (per vehicle, per month):
+    Monthly Depreciation  = (Purchase Price − Residual Value) / Life Years / 12
+    Fuel Cost             = Miles × (1 / assumed MPG) × Fuel Price per Gallon
+    Maintenance Cost      = Miles × Maintenance Cost per Mile
+    ─────────────────────────────────────────────────────────
+    Total TCO             = Depreciation + Fuel + Maintenance
+
+  Key Geotab API concepts demonstrated:
+    • api.multiCall()  — batch multiple Get requests in one round-trip
+    • Device entity    — vehicle name, year, make, model
+    • Trip entity      — distance driven (returned in km, converted to miles)
+    • AddInData entity — persist custom data (vehicle class assignments)
+
+  This example was originally an embedded single-file Add-In that has been
+  separated into HTML + JS for readability and annotated for learning.
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Fleet TCO Calculator</title>
+
+  <!-- Bootstrap 5 for layout and form controls -->
+  <script>
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css';
+    document.head.appendChild(link);
+  </script>
+</head>
+
+<!--
+  NOTE: MyGeotab Add-Ins render inside an iframe, so <body> styles apply
+  only to this page. The host page (MyGeotab) is unaffected.
+-->
+<body style="margin:0; padding:0; font-family:sans-serif; background:#f4f7f6;">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       HEADER — Top bar with title and date-range selector
+       ═══════════════════════════════════════════════════════════════ -->
+  <div style="background:#002b49; padding:15px; display:flex; align-items:center; justify-content:space-between; border-bottom:4px solid #00a1de;">
+    <h2 style="color:#fff; margin:0; font-size:18px;">FLEET TCO CALCULATOR</h2>
+
+    <!--
+      Date range selector.
+      NOTE: In the original code this dropdown is present in the UI but the
+      refresh() function always hardcodes "last 30 days". Wiring this up
+      to actually change the query range would be a good enhancement exercise.
+    -->
+    <select id="dateRange" class="form-select form-select-sm" style="width:180px;">
+      <option value="30" selected>Last 30 Days</option>
+      <option value="month">This Month</option>
+      <option value="year">This Year</option>
+    </select>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       SUMMARY CARDS — Fleet-wide totals
+       ═══════════════════════════════════════════════════════════════ -->
+  <div class="container-fluid p-3">
+    <div class="row g-3 mb-3">
+
+      <!-- Fleet Summary: aggregated miles & TCO -->
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h6>Fleet Summary</h6>
+            <div class="row text-center">
+              <div class="col-6">
+                <small>MILES</small>
+                <div id="sum-miles" class="fw-bold">0</div>
+              </div>
+              <div class="col-6">
+                <small>TCO</small>
+                <div id="sum-tco" class="fw-bold" style="color:#002b49;">$0</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bulk Classification: quickly assign all vehicles to a class -->
+      <div class="col-md-8">
+        <div class="card shadow-sm border-0">
+          <div class="card-body">
+            <h6>Bulk Classification</h6>
+            <!--
+              bulkSet() iterates every vehicle and assigns the same class,
+              then persists to AddInData and re-renders.
+            -->
+            <div class="btn-group btn-group-sm w-100">
+              <button onclick="bulkSet('L')" class="btn btn-outline-dark">Set All Light</button>
+              <button onclick="bulkSet('M')" class="btn btn-outline-dark">Set All Medium</button>
+              <button onclick="bulkSet('H')" class="btn btn-outline-dark">Set All Heavy</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         VEHICLE TABLE — One row per device with class selector & TCO
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0" style="font-size:12px;">
+            <thead>
+              <tr style="background:#eee;">
+                <th>VEHICLE</th>
+                <th>YEAR/MAKE/MODEL</th>
+                <th>CLASS</th>
+                <th>MILES</th>
+                <th class="text-end">TCO</th>
+              </tr>
+            </thead>
+            <!-- Populated dynamically by render() in tco-calculator.js -->
+            <tbody id="tco-body"></tbody>
+          </table>
+        </div>
+        <div id="loading" style="padding:20px; text-align:center;">Calculating...</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CLASS PARAMETERS — Editable cost assumptions per vehicle class
+         ═══════════════════════════════════════════════════════════════
+         These inputs feed the TCO formula. Users can adjust them to
+         match their fleet's actual costs, then click RECALCULATE ALL.
+
+         Default values:
+           Light  — $45k purchase, $10k residual, 5yr life
+           Medium — $85k purchase, $20k residual, 7yr life
+           Heavy  — $165k purchase, $45k residual, 10yr life
+    -->
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h6>Class Parameters</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Price ($)</th>
+                <th>Residual ($)</th>
+                <th>Life (Yr)</th>
+                <th>Fuel ($/G)</th>
+                <th>Maint ($/M)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Light</b></td>
+                <td><input type="number" id="L_p" class="form-control form-control-sm" value="45000"></td>
+                <td><input type="number" id="L_r" class="form-control form-control-sm" value="10000"></td>
+                <td><input type="number" id="L_y" class="form-control form-control-sm" value="5"></td>
+                <td><input type="number" id="L_f" class="form-control form-control-sm" value="4.25"></td>
+                <td><input type="number" id="L_m" class="form-control form-control-sm" value="0.12"></td>
+              </tr>
+              <tr>
+                <td><b>Medium</b></td>
+                <td><input type="number" id="M_p" class="form-control form-control-sm" value="85000"></td>
+                <td><input type="number" id="M_r" class="form-control form-control-sm" value="20000"></td>
+                <td><input type="number" id="M_y" class="form-control form-control-sm" value="7"></td>
+                <td><input type="number" id="M_f" class="form-control form-control-sm" value="4.50"></td>
+                <td><input type="number" id="M_m" class="form-control form-control-sm" value="0.25"></td>
+              </tr>
+              <tr>
+                <td><b>Heavy</b></td>
+                <td><input type="number" id="H_p" class="form-control form-control-sm" value="165000"></td>
+                <td><input type="number" id="H_r" class="form-control form-control-sm" value="45000"></td>
+                <td><input type="number" id="H_y" class="form-control form-control-sm" value="10"></td>
+                <td><input type="number" id="H_f" class="form-control form-control-sm" value="4.75"></td>
+                <td><input type="number" id="H_m" class="form-control form-control-sm" value="0.45"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <!-- Re-reads parameter inputs and re-renders the vehicle table -->
+        <button id="saveBtn" class="btn btn-sm w-100 text-white mt-2" style="background:#002b49;">RECALCULATE ALL</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load the Add-In JavaScript (separate file for readability) -->
+  <script src="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/tco-calculator.js"></script>
+</body>
+</html>

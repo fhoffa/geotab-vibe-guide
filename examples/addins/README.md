@@ -78,6 +78,36 @@ Side-by-side comparison of Ace natural language queries vs direct API calls.
 
 **Type:** External hosted
 
+### tco-calculator.* (TCO Calculator — Annotated)
+Fleet Total Cost of Ownership calculator with per-vehicle cost analysis.
+
+**Features:**
+- Calculates monthly TCO per vehicle (depreciation + fuel + maintenance)
+- Three vehicle classes (Light, Medium, Heavy) with editable cost parameters
+- Bulk classification buttons for large fleets
+- Persists vehicle class assignments via AddInData
+- Uses `api.multiCall()` to batch Device + Trip + AddInData fetches
+
+**Files:**
+- `tco-calculator.html` - Annotated HTML with UI structure explained
+- `tco-calculator.js` - Annotated JavaScript with TCO formula walkthrough
+- `tco-calculator-config.json` - Configuration for MyGeotab
+
+**Type:** External hosted (requires HTTPS hosting)
+
+**Concepts demonstrated:**
+- `multiCall()` for batching API requests
+- `AddInData` for persisting custom data across sessions
+- `Trip.distance` conversion from km to miles
+- Inline class selectors with per-row state management
+- Editable parameters feeding a cost model
+
+**Enhancement ideas** (noted in code comments):
+- Wire up the date range selector (currently non-functional)
+- Use per-class MPG instead of flat 10 MPG assumption
+- Add `focus()` handler to refresh data on page revisit
+- Add error callbacks to API calls
+
 ### embedded-* (No Hosting Required!)
 Embedded add-in with everything in the JSON configuration.
 
