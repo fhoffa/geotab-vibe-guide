@@ -85,15 +85,24 @@ Fleet Total Cost of Ownership calculator with per-vehicle cost analysis.
 - Calculates monthly TCO per vehicle (depreciation + fuel + maintenance)
 - Three vehicle classes (Light, Medium, Heavy) with editable cost parameters
 - Bulk classification buttons for large fleets
+- Date range selector (30/60/90 days, month, year, last year)
 - Persists vehicle class assignments via AddInData
-- Uses `api.multiCall()` to batch Device + Trip + AddInData fetches
+- Refreshes data on page revisit via `focus()` handler
+- Error handling on all API calls
 
 **Files:**
 - `tco-calculator.html` - Annotated HTML with UI structure explained
 - `tco-calculator.js` - Annotated JavaScript with TCO formula walkthrough
-- `tco-calculator-config.json` - Configuration for MyGeotab
+- `tco-calculator-config.json` - Configuration for external hosted version
+- `tco-calculator-embedded-config.json` - **Embedded config (no hosting needed!)**
 
-**Type:** External hosted (requires HTTPS hosting)
+**Type:** Both external hosted and embedded versions available
+
+**Quick start (embedded — recommended):**
+1. Copy entire contents of `tco-calculator-embedded-config.json`
+2. In MyGeotab → Administration → System Settings → Add-Ins
+3. Enable "Allow unverified Add-Ins" → Yes
+4. Click "New Add-In" → "Configuration" tab → Paste and save
 
 **Concepts demonstrated:**
 - `multiCall()` for batching API requests
@@ -101,12 +110,10 @@ Fleet Total Cost of Ownership calculator with per-vehicle cost analysis.
 - `Trip.distance` conversion from km to miles
 - Inline class selectors with per-row state management
 - Editable parameters feeding a cost model
+- Resilient data loading (AddInData fetched separately so failures don't block display)
 
 **Enhancement ideas** (noted in code comments):
-- Wire up the date range selector (currently non-functional)
 - Use per-class MPG instead of flat 10 MPG assumption
-- Add `focus()` handler to refresh data on page revisit
-- Add error callbacks to API calls
 
 ### embedded-* (No Hosting Required!)
 Embedded add-in with everything in the JSON configuration.

@@ -48,16 +48,14 @@
   <div style="background:#002b49; padding:15px; display:flex; align-items:center; justify-content:space-between; border-bottom:4px solid #00a1de;">
     <h2 style="color:#fff; margin:0; font-size:18px;">FLEET TCO CALCULATOR</h2>
 
-    <!--
-      Date range selector.
-      NOTE: In the original code this dropdown is present in the UI but the
-      refresh() function always hardcodes "last 30 days". Wiring this up
-      to actually change the query range would be a good enhancement exercise.
-    -->
+    <!-- Date range selector — wired to refresh() via onchange in initialize() -->
     <select id="dateRange" class="form-select form-select-sm" style="width:180px;">
       <option value="30" selected>Last 30 Days</option>
+      <option value="60">Last 60 Days</option>
+      <option value="90">Last 90 Days</option>
       <option value="month">This Month</option>
       <option value="year">This Year</option>
+      <option value="lastYear">Last Year</option>
     </select>
   </div>
 

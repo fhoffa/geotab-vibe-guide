@@ -122,41 +122,56 @@ function getParameters() {
 }
 
 
+// ── Date range helper ────────────────────────────────────────────
+//
+// Converts the dateRange <select> value into { from, to } ISO strings.
+
+function getDates(val) {
+  var now = new Date();
+  var start = new Date();
+  var end = new Date();
+
+  if (val === "30") start.setDate(now.getDate() - 30);
+  else if (val === "60") start.setDate(now.getDate() - 60);
+  else if (val === "90") start.setDate(now.getDate() - 90);
+  else if (val === "month") {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+  } else if (val === "year") {
+    start = new Date(now.getFullYear(), 0, 1);
+  } else if (val === "lastYear") {
+    start = new Date(now.getFullYear() - 1, 0, 1);
+    end = new Date(now.getFullYear() - 1, 11, 31, 23, 59, 59);
+  }
+
+  return { from: start.toISOString(), to: end.toISOString() };
+}
+
+
 // ── Main data fetch ──────────────────────────────────────────────
 //
-// Uses api.multiCall() to fetch three entity types in a single
-// round-trip — this is much faster than three separate api.call()s.
+// Uses api.multiCall() to fetch Device and Trip in a single round-trip,
+// then separately fetches AddInData (so a failure there doesn't block display).
 //
 // Entities fetched:
 //   1. Device     — all vehicles (name, year, make, model)
-//   2. Trip       — trips from the last 30 days (for mileage)
-//   3. AddInData  — previously saved vehicle class assignments
-//
-// NOTE: The date range is hardcoded to 30 days. The dateRange <select>
-// in the UI is not wired up — a good enhancement exercise!
+//   2. Trip       — trips for the selected date range (for mileage)
+//   3. AddInData  — previously saved vehicle class assignments (separate call)
 
 function refresh(api) {
   _api = api;
 
-  // Build the "from" date — 30 days ago
-  var fromDate = new Date();
-  fromDate.setDate(fromDate.getDate() - 30);
+  // Build date range from the selector (wired up in initialize)
+  var dates = getDates(document.getElementById("dateRange").value);
 
-  // multiCall takes an array of [methodName, params] pairs.
-  // All three calls execute server-side in a single HTTP request.
+  // Fetch Device and Trip data via multiCall.
+  // NOTE: AddInData is fetched separately so that a failure (e.g., no saved
+  // data yet, or permission issues) does not block the main data load.
   api.multiCall([
     ["Get", { typeName: "Device" }],
-    ["Get", { typeName: "Trip", search: { fromDate: fromDate.toISOString() } }],
-    ["Get", { typeName: "AddInData", search: { addInId: S_ID } }]
+    ["Get", { typeName: "Trip", search: { fromDate: dates.from, toDate: dates.to } }]
   ], function (results) {
     var devices = results[0];
     var trips   = results[1];
-    var stored  = results[2];
-
-    // Restore the saved class mapping (if any)
-    if (stored.length > 0) {
-      _classMap = stored[0].details.map || {};
-    }
 
     // Build the vehicle lookup from Device entities.
     // Default class is "L" (Light) for any vehicle not previously classified.
@@ -183,6 +198,24 @@ function refresh(api) {
 
     // Re-render the table with updated data
     render();
+  }, function (error) {
+    // Error callback — log and hide the loading indicator
+    console.error("TCO Calculator: multiCall failed", error);
+    document.getElementById("loading").textContent = "Error loading data. Check console.";
+  });
+
+  // Separately try to load saved class mappings from AddInData.
+  // This is non-blocking — if it fails, vehicles just use the default class "L".
+  api.call("Get", {
+    typeName: "AddInData",
+    search: { addInId: S_ID }
+  }, function (stored) {
+    if (stored && stored.length > 0) {
+      _classMap = stored[0].details.map || {};
+    }
+  }, function () {
+    // AddInData not found or not accessible — that's fine, use defaults
+    console.log("TCO Calculator: No saved class mappings found, using defaults");
   });
 }
 
@@ -274,23 +307,28 @@ geotab.addin["fleet-tco-calc"] = function () {
     initialize: function (api, state, callback) {
       console.log("TCO Calculator: initialize called");
 
-      // Load initial data
-      refresh(api);
-
       // Wire up the RECALCULATE ALL button to re-fetch and re-render
       document.getElementById("saveBtn").onclick = function () {
         refresh(api);
       };
 
+      // Wire up the date range selector to re-fetch when changed
+      document.getElementById("dateRange").onchange = function () {
+        refresh(api);
+      };
+
+      // Load initial data
+      refresh(api);
+
       // CRITICAL: Must call callback() to signal MyGeotab that
       // the Add-In is ready. Without this, the page hangs.
       callback();
-    }
+    },
 
-    // NOTE: This Add-In omits focus() and blur(). MyGeotab doesn't
-    // require them — they're optional. Adding a focus() handler that
-    // calls refresh(api) would be a good enhancement so the data
-    // refreshes each time the user navigates back to this page.
+    // Refresh data each time the user navigates back to this page.
+    focus: function (api) {
+      refresh(api);
+    }
   };
 };
 
