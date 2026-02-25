@@ -17,6 +17,12 @@
 
 "use strict";
 
+// ── Version banner ───────────────────────────────────────────────
+// Logs immediately on script load so you can verify the right
+// version is running, even before initialize() is called.
+var TCO_VERSION = "2.1.0-dom-ready";
+console.log("TCO Calculator v" + TCO_VERSION + " loaded at " + new Date().toISOString());
+
 // ── Module-level state ───────────────────────────────────────────
 
 var _db = {};            // Vehicle lookup: { deviceId: { id, name, info, cls, mi, idleHrs, fuelGal, ... } }
@@ -711,12 +717,15 @@ geotab.addin["fleet-tco-calc"] = function () {
 
   return {
     initialize: function (api, state, callback) {
-      dbg("TCO Calculator: initialize called");
+      dbg("TCO Calculator v" + TCO_VERSION + " — initialize called");
+      dbg("DOM check: tco-body=" + !!document.getElementById("tco-body") +
+          ", dateRange=" + !!document.getElementById("dateRange") +
+          ", loading=" + !!document.getElementById("loading"));
 
       // Wait for DOM to be ready before fetching data and wiring controls.
       // MyGeotab loads the JS before the HTML elements exist in the iframe.
       whenReady(function () {
-        dbg("DOM ready — starting refresh");
+        dbg("DOM ready — starting refresh (tco-body found)");
         wireControls(api);
         refresh(api);
       });
