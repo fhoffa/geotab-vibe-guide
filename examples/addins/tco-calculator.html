@@ -264,6 +264,21 @@
     </div>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════════════
+       DEBUG PANEL — fixed to bottom of page, togglable
+       ═══════════════════════════════════════════════════════════════
+       Shows timestamped API call logs and raw data for troubleshooting.
+       The "Copy Data" button copies the full vehicle dataset as JSON
+       to the clipboard for pasting into bug reports or spreadsheets.
+  -->
+  <div style="position:fixed; bottom:0; left:0; right:0; text-align:center; z-index:9999;">
+    <button onclick="var d=document.getElementById('debug-log');d.style.display=d.style.display==='none'?'block':'none';"
+      style="background:#002b49; color:#fff; border:none; padding:4px 12px; cursor:pointer; font-size:11px; border-radius:4px 4px 0 0;">Debug Log</button>
+    <button onclick="copyDebugData()"
+      style="background:#f39c12; color:#fff; border:none; padding:4px 12px; cursor:pointer; font-size:11px; border-radius:4px 4px 0 0; margin-left:4px;">Copy Data</button>
+    <pre id="debug-log" style="display:none; background:#1e1e1e; color:#0f0; padding:10px; margin:0; max-height:200px; overflow-y:auto; text-align:left; font-size:10px;"></pre>
+  </div>
+
   <!-- Load the Add-In JavaScript (separate file for readability) -->
   <script src="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/tco-calculator.js"></script>
 </body>

@@ -30,6 +30,37 @@ var _aceChatId = null;   // Ace AI chat session ID (reused across queries)
 var S_ID = "fleet_tco_calculator";
 
 
+// ── Debug logging ────────────────────────────────────────────────
+//
+// Writes timestamped messages to the on-page debug panel (#debug-log)
+// and to the browser console. The panel is toggled by the "Debug Log"
+// button fixed at the bottom of the page.
+
+function dbg(msg) {
+  var el = document.getElementById("debug-log");
+  if (el) {
+    var ts = new Date().toISOString().substring(11, 23);
+    el.textContent += "[" + ts + "] " + msg + "\n";
+    el.scrollTop = el.scrollHeight;
+  }
+  console.log("[tco] " + msg);
+}
+
+// Copy the full vehicle dataset as JSON to the clipboard.
+// Useful for debugging or pasting into external tools.
+function copyDebugData() {
+  var data = { vehicles: _db, classMap: _classMap, params: getParameters() };
+  var text = JSON.stringify(data, null, 2);
+  var ta = document.createElement("textarea");
+  ta.value = text;
+  document.body.appendChild(ta);
+  ta.select();
+  document.execCommand("copy");
+  document.body.removeChild(ta);
+  dbg("Debug data copied to clipboard (" + text.length + " chars)");
+}
+
+
 // ── Date range helper ────────────────────────────────────────────
 //
 // Reads the #dateRange selector and returns the "from" date.
@@ -148,6 +179,8 @@ function parseDurationToHours(val) {
 function refresh(api) {
   _api = api;
   var fromDate = getFromDate();
+  dbg("════════════════════════════════════════");
+  dbg("Refreshing — from: " + fromDate.toISOString());
 
   api.multiCall([
     ["Get", { typeName: "Device" }],
@@ -162,6 +195,9 @@ function refresh(api) {
     var trips    = results[1];
     var fuelData = results[2];
     var stored   = results[3];
+
+    dbg("Devices: " + devices.length + ", Trips: " + trips.length +
+        ", FuelData: " + fuelData.length + ", Stored: " + stored.length);
 
     // Restore saved class mapping
     if (stored.length > 0) {
@@ -219,7 +255,7 @@ function refresh(api) {
 
     render();
   }, function (err) {
-    console.error("multiCall error:", err);
+    dbg("FATAL multiCall error: " + err);
     document.getElementById("loading").textContent = "Error loading data: " + err;
   });
 }
@@ -363,6 +399,9 @@ function render() {
   document.getElementById("sum-maint").textContent = "$" + Math.round(totalMaintCost).toLocaleString();
   document.getElementById("sum-tco").textContent = "$" + Math.round(totalTco).toLocaleString();
   document.getElementById("loading").style.display = "none";
+
+  dbg("Rendered " + ids.length + " vehicles — TCO: $" + Math.round(totalTco) +
+      ", Waste: $" + Math.round(totalWaste));
 
   // Update health gauge
   renderGauge(totalTco, totalWaste);
@@ -630,7 +669,7 @@ function pollAce(chatId, mgId, attempt) {
 geotab.addin["fleet-tco-calc"] = function () {
   return {
     initialize: function (api, state, callback) {
-      console.log("TCO Calculator: initialize called");
+      dbg("TCO Calculator: initialize called");
       refresh(api);
 
       // Wire up controls
@@ -661,7 +700,7 @@ geotab.addin["fleet-tco-calc"] = function () {
     },
 
     blur: function () {
-      console.log("TCO Calculator: blur");
+      dbg("TCO Calculator: blur");
     }
   };
 };
