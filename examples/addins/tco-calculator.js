@@ -20,7 +20,7 @@
 // ── Version banner ───────────────────────────────────────────────
 // Logs immediately on script load so you can verify the right
 // version is running, even before initialize() is called.
-var TCO_VERSION = "2.2.0-find-doc";
+var TCO_VERSION = "3.0.0";
 console.log("TCO Calculator v" + TCO_VERSION + " loaded at " + new Date().toISOString());
 
 // ── Module-level state ───────────────────────────────────────────
@@ -31,7 +31,6 @@ var _api;                // Reference to the MyGeotab API object
 var _sortField = "name"; // Current sort column
 var _sortAsc = true;     // Sort direction
 var _aceChatId = null;   // Ace AI chat session ID (reused across queries)
-var _doc = document;     // Resolved document — may be overridden if JS runs in parent frame
 
 // Stable key for AddInData persistence.
 var S_ID = "fleet_tco_calculator";
@@ -44,7 +43,7 @@ var S_ID = "fleet_tco_calculator";
 // button fixed at the bottom of the page.
 
 function dbg(msg) {
-  var el = _doc.getElementById("debug-log");
+  var el = document.getElementById("debug-log");
   if (el) {
     var ts = new Date().toISOString().substring(11, 23);
     el.textContent += "[" + ts + "] " + msg + "\n";
@@ -74,7 +73,7 @@ function copyDebugData() {
 // Supports: 30/60/90 days, month-to-date, year-to-date.
 
 function getFromDate() {
-  var el = _doc.getElementById("dateRange");
+  var el = document.getElementById("dateRange");
   var val = el ? el.value : "30";
   var now = new Date();
   if (val === "mtd") {
@@ -131,7 +130,7 @@ function saveMapping() {
 // 6 parameters per class (p=purchase, r=residual, y=life, f=fuel, m=maint, i=idle).
 
 function getParameters() {
-  function v(id) { var el = _doc.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
+  function v(id) { var el = document.getElementById(id); return el ? (parseFloat(el.value) || 0) : 0; }
   return {
     L: { p: v("L_p"), r: v("L_r"), y: v("L_y"), f: v("L_f"), m: v("L_m"), i: v("L_i") },
     M: { p: v("M_p"), r: v("M_r"), y: v("M_y"), f: v("M_f"), m: v("M_m"), i: v("M_i") },
@@ -192,11 +191,11 @@ function refresh(api) {
 
   api.multiCall([
     ["Get", { typeName: "Device" }],
-    ["Get", { typeName: "Trip", search: { fromDate: fromDate.toISOString() } }],
+    ["Get", { typeName: "Trip", search: { fromDate: fromDate.toISOString() }, resultsLimit: 50000 }],
     ["Get", { typeName: "StatusData", search: {
       diagnosticSearch: { id: "DiagnosticDeviceTotalFuelId" },
       fromDate: fromDate.toISOString()
-    }}],
+    }, resultsLimit: 50000 }],
     ["Get", { typeName: "AddInData", search: { addInId: S_ID } }]
   ], function (results) {
     var devices  = results[0];
@@ -264,7 +263,8 @@ function refresh(api) {
     render();
   }, function (err) {
     dbg("FATAL multiCall error: " + err);
-    _doc.getElementById("loading").textContent = "Error loading data: " + err;
+    var loadEl = document.getElementById("loading");
+    if (loadEl) loadEl.textContent = "Error loading data: " + err;
   });
 }
 
@@ -344,7 +344,7 @@ function getSortedIds() {
 
 function render() {
   var params = getParameters();
-  var tbody = _doc.getElementById("tco-body");
+  var tbody = document.getElementById("tco-body");
   if (!tbody) { dbg("render() skipped — DOM not ready"); return; }
   tbody.innerHTML = "";
 
@@ -402,13 +402,13 @@ function render() {
   }
 
   // Update fleet summary (null-safe for when DOM isn't fully loaded)
-  function setText(id, val) { var el = _doc.getElementById(id); if (el) el.textContent = val; }
+  function setText(id, val) { var el = document.getElementById(id); if (el) el.textContent = val; }
   setText("sum-miles", Math.round(totalMiles).toLocaleString());
   setText("sum-idle", Math.round(totalIdle).toLocaleString());
   setText("sum-fuel", "$" + Math.round(totalFuelCost).toLocaleString());
   setText("sum-maint", "$" + Math.round(totalMaintCost).toLocaleString());
   setText("sum-tco", "$" + Math.round(totalTco).toLocaleString());
-  var loadEl = _doc.getElementById("loading");
+  var loadEl = document.getElementById("loading");
   if (loadEl) loadEl.style.display = "none";
 
   dbg("Rendered " + ids.length + " vehicles — TCO: $" + Math.round(totalTco) +
@@ -455,7 +455,8 @@ function renderGauge(totalTco, totalWaste) {
     color = "#27ae60";
   }
 
-  var svg = _doc.getElementById("healthGauge");
+  var svg = document.getElementById("healthGauge");
+  if (!svg) return;
   svg.innerHTML =
     "<path d=\"" + bgPath + "\" fill=\"none\" stroke=\"#e0e0e0\" stroke-width=\"14\" stroke-linecap=\"round\"/>" +
     "<path d=\"" + fgPath + "\" fill=\"none\" stroke=\"" + color + "\" stroke-width=\"14\" stroke-linecap=\"round\"/>" +
@@ -464,7 +465,8 @@ function renderGauge(totalTco, totalWaste) {
     "<text x=\"" + cx + "\" y=\"" + (cy + 2) + "\" text-anchor=\"middle\" " +
       "font-size=\"10\" fill=\"#888\">EFFICIENCY</text>";
 
-  _doc.getElementById("gaugeLabel").textContent =
+  var gaugeLabel = document.getElementById("gaugeLabel");
+  if (gaugeLabel) gaugeLabel.textContent =
     "Idle waste: $" + Math.round(totalWaste).toLocaleString() + " of $" + Math.round(totalTco).toLocaleString() + " total";
 }
 
@@ -476,8 +478,10 @@ function renderGauge(totalTco, totalWaste) {
 
 function showFocus(v) {
   var tco = v.tcoBreakdown;
-  _doc.getElementById("gaugeView").style.display = "none";
-  _doc.getElementById("focusView").style.display = "block";
+  var gv = document.getElementById("gaugeView");
+  var fv = document.getElementById("focusView");
+  if (gv) gv.style.display = "none";
+  if (fv) fv.style.display = "block";
 
   var classNames = { L: "Light", M: "Medium", H: "Heavy" };
   var html =
@@ -503,12 +507,15 @@ function showFocus(v) {
         "style=\"color:#2563eb;font-size:11px;\">Live Map</a>" +
     "</div>";
 
-  _doc.getElementById("focusBody").innerHTML = html;
+  var fb = document.getElementById("focusBody");
+  if (fb) fb.innerHTML = html;
 }
 
 function closeFocus() {
-  _doc.getElementById("focusView").style.display = "none";
-  _doc.getElementById("gaugeView").style.display = "block";
+  var fv = document.getElementById("focusView");
+  var gv = document.getElementById("gaugeView");
+  if (fv) fv.style.display = "none";
+  if (gv) gv.style.display = "block";
 }
 
 
@@ -561,10 +568,10 @@ function exportCsv() {
 // Max 30 attempts (~2.5 minutes timeout).
 
 function askAce(prompt) {
-  var resultEl = _doc.getElementById("aceResult");
-  var bodyEl = _doc.getElementById("aceBody");
-  resultEl.style.display = "block";
-  bodyEl.innerHTML = "<i>Thinking...</i>";
+  var resultEl = document.getElementById("aceResult");
+  var bodyEl = document.getElementById("aceBody");
+  if (resultEl) resultEl.style.display = "block";
+  if (bodyEl) bodyEl.innerHTML = "<i>Thinking...</i>";
 
   // Step 1: create or reuse chat session
   function sendPrompt(chatId) {
@@ -613,7 +620,7 @@ function askAce(prompt) {
 
 function pollAce(chatId, mgId, attempt) {
   if (attempt > 30) {
-    _doc.getElementById("aceBody").innerHTML = "Ace timed out. Try a simpler question.";
+    document.getElementById("aceBody").innerHTML = "Ace timed out. Try a simpler question.";
     return;
   }
   _api.call("GetAceResults", {
@@ -657,9 +664,9 @@ function pollAce(chatId, mgId, attempt) {
           html += "</table>";
         }
       }
-      _doc.getElementById("aceBody").innerHTML = html || "Ace returned no data for this query.";
+      document.getElementById("aceBody").innerHTML = html || "Ace returned no data for this query.";
     } else if (status === "FAILED") {
-      _doc.getElementById("aceBody").innerHTML = "Ace query failed. Try rephrasing your question.";
+      document.getElementById("aceBody").innerHTML = "Ace query failed. Try rephrasing your question.";
     } else {
       // Still processing — poll again in 5 seconds
       setTimeout(function () { pollAce(chatId, mgId, attempt + 1); }, 5000);
@@ -678,101 +685,41 @@ function pollAce(chatId, mgId, attempt) {
 // CRITICAL: Always call callback() or the page hangs.
 
 geotab.addin["fleet-tco-calc"] = function () {
-
-  // ── Document context resolution ───────────────────────────────
-  // MyGeotab may run this JS in the parent frame while the HTML
-  // lives inside an iframe. We need to find the right document.
-  function findDoc() {
-    // 1. Check current document first
-    if (document.getElementById("tco-body")) {
-      dbg("DOM found in current document");
-      return document;
-    }
-    // 2. Check all iframes (parent might have loaded HTML in iframe)
-    try {
-      var frames = document.querySelectorAll("iframe");
-      dbg("Checking " + frames.length + " iframes in current document");
-      for (var i = 0; i < frames.length; i++) {
-        try {
-          var fd = frames[i].contentDocument || frames[i].contentWindow.document;
-          if (fd && fd.getElementById("tco-body")) {
-            dbg("DOM found in iframe[" + i + "] src=" + (frames[i].src || "").substring(0, 80));
-            return fd;
-          }
-        } catch (e) { /* cross-origin — skip */ }
-      }
-    } catch (e) { dbg("iframe scan error: " + e.message); }
-    // 3. Check parent document's iframes
-    try {
-      if (window.parent && window.parent !== window) {
-        var pframes = window.parent.document.querySelectorAll("iframe");
-        dbg("Checking " + pframes.length + " iframes in parent document");
-        for (var j = 0; j < pframes.length; j++) {
-          try {
-            var pfd = pframes[j].contentDocument || pframes[j].contentWindow.document;
-            if (pfd && pfd.getElementById("tco-body")) {
-              dbg("DOM found in parent iframe[" + j + "]");
-              return pfd;
-            }
-          } catch (e) { /* cross-origin — skip */ }
-        }
-      }
-    } catch (e) { dbg("parent scan error: " + e.message); }
-    dbg("DOM not found anywhere — using current document as fallback");
-    return document;
-  }
-
-  // Override getElementById globally for this add-in: use the right doc
-  function el(id) { return _doc.getElementById(id); }
-
-  function wireControls(api) {
-    function bind(id, evt, fn) { var e = el(id); if (e) e[evt] = fn; }
-    bind("saveBtn", "onclick", function () { refresh(api); });
-    bind("dateRange", "onchange", function () { refresh(api); });
-    bind("csvBtn", "onclick", exportCsv);
-    bind("focusClose", "onclick", closeFocus);
-    bind("aceClose", "onclick", function () {
-      var e = el("aceResult");
-      if (e) e.style.display = "none";
-    });
-    bind("aceBtn", "onclick", function () {
-      var e = el("aceInput");
-      var q = e ? e.value.trim() : "";
-      if (q) askAce(q);
-    });
-    bind("aceInput", "onkeydown", function (e) {
-      if (e.keyCode === 13) {
-        var inp = el("aceInput");
-        var q = inp ? inp.value.trim() : "";
-        if (q) askAce(q);
-      }
-    });
-  }
-
   return {
     initialize: function (api, state, callback) {
       dbg("TCO Calculator v" + TCO_VERSION + " — initialize called");
-      dbg("document.title=" + JSON.stringify(document.title));
-      dbg("document.body children=" + (document.body ? document.body.children.length : "no body"));
-      dbg("document.body firstChild tag=" + (document.body && document.body.firstElementChild ? document.body.firstElementChild.tagName : "none"));
-      dbg("window.location=" + window.location.href);
-      try { dbg("parent.location=" + window.parent.location.href); } catch(e) { dbg("parent.location=cross-origin"); }
-      dbg("window===parent: " + (window === window.parent));
-      dbg("DOM in document: tco-body=" + !!document.getElementById("tco-body") +
-          ", dateRange=" + !!document.getElementById("dateRange"));
+      dbg("DOM: tco-body=" + !!document.getElementById("tco-body") +
+          " dateRange=" + !!document.getElementById("dateRange"));
 
-      // Find the right document context (may be in an iframe)
-      _doc = findDoc();
-      dbg("_doc resolved: tco-body=" + !!_doc.getElementById("tco-body"));
+      // Wire up controls (null-safe)
+      function bind(id, evt, fn) { var el = document.getElementById(id); if (el) el[evt] = fn; }
+      bind("saveBtn", "onclick", function () { refresh(api); });
+      bind("dateRange", "onchange", function () { refresh(api); });
+      bind("csvBtn", "onclick", exportCsv);
+      bind("focusClose", "onclick", closeFocus);
+      bind("aceClose", "onclick", function () {
+        var el = document.getElementById("aceResult");
+        if (el) el.style.display = "none";
+      });
+      bind("aceBtn", "onclick", function () {
+        var el = document.getElementById("aceInput");
+        var q = el ? el.value.trim() : "";
+        if (q) askAce(q);
+      });
+      bind("aceInput", "onkeydown", function (e) {
+        if (e.keyCode === 13) {
+          var el = document.getElementById("aceInput");
+          var q = el ? el.value.trim() : "";
+          if (q) askAce(q);
+        }
+      });
 
-      wireControls(api);
       refresh(api);
       callback();
     },
 
     focus: function (api) {
       _api = api;
-      if (!_doc.getElementById("tco-body")) _doc = findDoc();
       refresh(api);
     },
 
