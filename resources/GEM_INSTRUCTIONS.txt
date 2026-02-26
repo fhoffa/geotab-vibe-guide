@@ -308,14 +308,18 @@ api.call('Get', { typeName: 'DeviceStatusInfo' }, function(statuses) {
     var miles = status.odometer / 1609.34;  // Often 0 or undefined!
 });
 
-// CORRECT — query StatusData directly for reliable odometer/hours
+// CORRECT — query StatusData with DiagnosticOdometerAdjustmentId per device
+// Setting fromDate to "now" returns only the latest calculated odometer value
 api.call('Get', {
     typeName: 'StatusData',
-    search: { diagnosticSearch: { id: 'DiagnosticOdometerId' }, latestOnly: true }
+    search: {
+        deviceSearch: { id: deviceId },
+        diagnosticSearch: { id: 'DiagnosticOdometerAdjustmentId' },
+        fromDate: new Date().toISOString()
+    }
 }, function(odoData) {
-    // odoData[i].data is in METERS — divide by 1609.34 for miles
-    var odoEntry = odoData.find(function(o) { return o.device.id === deviceId; });
-    var miles = odoEntry ? Math.round(odoEntry.data / 1609.34) : 0;
+    // odoData[0].data is in METERS — divide by 1609.34 for miles
+    var miles = odoData.length ? Math.round(odoData[0].data / 1609.34) : 0;
 });
 ```
 

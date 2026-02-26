@@ -85,6 +85,33 @@ All tests must pass before pushing. If a test fails, fix the issue and re-run.
 
 After editing `resources/GEM_INSTRUCTIONS.txt`, also read `tests/gem-review/REVIEW_CHECKLIST.md` and verify each question against the instructions. The checklist covers behavioral, correctness, completeness, and tone — things a regex can't catch.
 
+## Verifying API Examples
+
+When editing or debugging Geotab API code examples, check whether credentials are available as environment variables (`GEOTAB_DATABASE`, `GEOTAB_USERNAME`, `GEOTAB_PASSWORD`, `GEOTAB_SERVER`). If they are, **test the API call against the live API** before committing. This catches silent failures — the Geotab API often ignores invalid search parameters without returning an error, so the only way to verify correctness is to check the actual response (e.g., record count, expected fields).
+
+Quick smoke-test pattern:
+```bash
+# Check if credentials are available
+env | grep -q GEOTAB_DATABASE && echo "Credentials available" || echo "No credentials"
+```
+
+```python
+import json, requests, os
+url = f"https://{os.environ['GEOTAB_SERVER']}/apiv1"
+auth = requests.post(url, json={"method": "Authenticate", "params": {
+    "database": os.environ["GEOTAB_DATABASE"],
+    "userName": os.environ["GEOTAB_USERNAME"],
+    "password": os.environ["GEOTAB_PASSWORD"]
+}})
+creds = auth.json()["result"]["credentials"]
+
+# Then test the specific API call and verify the response makes sense
+resp = requests.post(url, json={"method": "Get", "params": {
+    "typeName": "Device", "credentials": creds, "search": {"resultsLimit": 1}
+}})
+print(json.dumps(resp.json()["result"][0], indent=2))
+```
+
 ## Code Standards
 
 When writing code examples or snippets:

@@ -339,16 +339,22 @@ api.getSession(function(session) {
 | Fuel Level | `StatusData` + `DiagnosticFuelLevelId` | Percentage |
 
 ```javascript
-// Get reliable odometer readings for all devices
+// Get reliable odometer for a specific device
+// DiagnosticOdometerAdjustmentId + fromDate: now returns the latest calculated value
 api.call('Get', {
     typeName: 'StatusData',
-    search: { diagnosticSearch: { id: 'DiagnosticOdometerId' }, latestOnly: true }
+    search: {
+        deviceSearch: { id: deviceId },
+        diagnosticSearch: { id: 'DiagnosticOdometerAdjustmentId' },
+        fromDate: new Date().toISOString()
+    }
 }, function(odoData) {
-    odoData.forEach(function(entry) {
-        var miles = Math.round(entry.data / 1609.34);  // meters → miles
-        console.log('Device ' + entry.device.id + ': ' + miles + ' miles');
-    });
+    if (odoData.length) {
+        var miles = Math.round(odoData[0].data / 1609.34);  // meters → miles
+        console.log('Device ' + deviceId + ': ' + miles + ' miles');
+    }
 }, errorCallback);
+// For fleet-wide odometer, use api.multiCall with one request per device
 ```
 
 ### Reference Objects — Resolve IDs Before Using Names
