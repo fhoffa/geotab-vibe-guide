@@ -6,6 +6,9 @@ Google provides a spectrum of AI-powered tools for vibe coding — from quick sk
 
 > Based on a presentation by [Mahin Sheth](https://www.linkedin.com/in/mahinsheth/) (Customer Engineer, Data & AI at Google) at Geotab Connect 2026.
 
+> [!TIP]
+> **Watch this guide in action:** Felipe and Mahin demo every tool below with live Geotab API integrations — [YouTube](https://www.youtube.com/watch?v=avEXlVw2lU8). Jump to: [Gemini Canvas](https://www.youtube.com/watch?v=avEXlVw2lU8&t=757) · [AI Studio](https://www.youtube.com/watch?v=avEXlVw2lU8&t=1224) · [Firebase Studio](https://www.youtube.com/watch?v=avEXlVw2lU8&t=2323) · [Antigravity & Agentic Engineering](https://www.youtube.com/watch?v=avEXlVw2lU8&t=2867) · [Using the Vibe Guide](https://www.youtube.com/watch?v=avEXlVw2lU8&t=3385)
+
 ---
 
 ## What is Vibe Coding?

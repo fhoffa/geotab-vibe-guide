@@ -5,6 +5,8 @@
 > [!TIP]
 > **Start here:** Watch the kickoff webinar where Felipe and Aaron walk through the Geotab API and vibe coding tools — everything you need to get going: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
 > Jump to: [Live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&t=17) · [Build an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155) · [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360) · [Safety tips](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1696)
+>
+> **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8) — demos of Gemini Canvas, AI Studio, Firebase Studio, and Antigravity. [Watch Veronica build a geofencing app](https://www.youtube.com/watch?v=SS3Y9UBDfoA) from scratch during the hackathon. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 
 ---
 

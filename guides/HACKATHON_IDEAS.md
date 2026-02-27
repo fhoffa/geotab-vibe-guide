@@ -3,6 +3,10 @@
 > **The hackathon is LIVE!** The sprint runs **Feb 12 -- Mar 2, 2026**, with **$25,000 in total prizes**. [**Register now**](https://luma.com/h6ldbaxp) for full details, prizes, rules, and terms and conditions.
 >
 > **Kickoff webinar:** Watch Felipe and Aaron discuss hackathon strategy, judging criteria, and what makes a winning submission ([33:50](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030)): [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
+>
+> **Google AI Tools Deep Dive:** Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos with Mahin Sheth: [YouTube](https://www.youtube.com/watch?v=avEXlVw2lU8) — jump to [using the Vibe Guide](https://www.youtube.com/watch?v=avEXlVw2lU8&t=3385)
+>
+> **Hackathon participant spotlight:** Watch Veronica build an intelligent geofencing app from scratch during the hackathon: [YouTube](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — includes getting started tips, app demo, and advice for participants. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 
 ## How to Use This Guide
 - Each idea includes: concept, key APIs to use, difficulty level, and vibe prompts to get started
@@ -799,7 +803,7 @@ to the prediction."
 ### Idea 8.7: GeofenceGPT - Natural Language Geofence Creation
 **Concept:** Create and manage geofences using plain English instead of drawing on maps.
 
-**Head start:** The [Import KML Zones sample](./SDK_ADDIN_SAMPLES_GUIDE.md#3-import-kml-zones--file-upload-and-write-operations) shows zone creation via the API. Replace file parsing with natural language parsing.
+**Head start:** The [Import KML Zones sample](./SDK_ADDIN_SAMPLES_GUIDE.md#3-import-kml-zones--file-upload-and-write-operations) shows zone creation via the API. Replace file parsing with natural language parsing. Watch [Veronica's intelligent geofencing demo](https://www.youtube.com/watch?v=SS3Y9UBDfoA&t=253) — she built a working app with AI-suggested hotspot zones and anomaly detection during the hackathon.
 
 **Key Features:**
 - "Create a 500-meter zone around all customer sites"

@@ -30,7 +30,7 @@ Before you can use Add-Ins, you need a MyGeotab account to install them in.
 Once you have your account, you're ready to create Add-Ins.
 
 > [!TIP]
-> **See the Gem in action first:** In our [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg), Felipe live-demos the Gem — building a trip auditor ([2:35](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155)) and an animal-speed fleet map ([5:52](https://www.youtube.com/watch?v=Zuazi88lBeg&t=352)) from scratch in minutes.
+> **See the Gem in action first:** In our [kickoff webinar](https://www.youtube.com/watch?v=Zuazi88lBeg), Felipe live-demos the Gem — building a trip auditor ([2:35](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155)) and an animal-speed fleet map ([5:52](https://www.youtube.com/watch?v=Zuazi88lBeg&t=352)) from scratch in minutes. Also see the [Gemini Canvas demo](https://www.youtube.com/watch?v=avEXlVw2lU8&t=757) from our Google AI Tools deep dive.
 
 ### Step 1: Open the Gem
 
