@@ -4,11 +4,19 @@
 >
 > **Kickoff webinar:** Watch Felipe and Aaron discuss hackathon strategy, judging criteria, and what makes a winning submission ([33:50](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030)): [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
 >
+> [![Kickoff Webinar](https://img.youtube.com/vi/Zuazi88lBeg/mqdefault.jpg)](https://www.youtube.com/watch?v=Zuazi88lBeg)
+>
 > **Google AI Tools Deep Dive:** Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos with Mahin Sheth: [YouTube](https://www.youtube.com/watch?v=avEXlVw2lU8) — jump to [using the Vibe Guide](https://www.youtube.com/watch?v=avEXlVw2lU8&t=3385)
+>
+> [![Google AI Tools Deep Dive](https://img.youtube.com/vi/avEXlVw2lU8/mqdefault.jpg)](https://www.youtube.com/watch?v=avEXlVw2lU8)
 >
 > **Hackathon participant spotlight:** Watch Veronica build an intelligent geofencing app from scratch during the hackathon: [YouTube](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — includes getting started tips, app demo, and advice for participants.
 >
+> [![Vibe Coding an Intelligent Geofencing App](https://img.youtube.com/vi/SS3Y9UBDfoA/mqdefault.jpg)](https://www.youtube.com/watch?v=SS3Y9UBDfoA)
+>
 > **Experienced add-in developer's approach:** LP Papillon ([Attrix](https://attrix.ca/), Geotab partner since 2015) built LLM-based add-in scaffolding tooling, then created "Last Week in Fleet" — a native MyGeotab add-in with productivity, safety, compliance, and sustainability tabs: [YouTube](https://www.youtube.com/watch?v=EiZsIof1Scw) — jump to [tooling demo (2:58)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=178) · [app walkthrough (7:50)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=470) · [open source submission (21:29)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=1289). [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+>
+> [![LP Papillon builds Last Week in Fleet](https://img.youtube.com/vi/EiZsIof1Scw/mqdefault.jpg)](https://www.youtube.com/watch?v=EiZsIof1Scw)
 
 ## How to Use This Guide
 - Each idea includes: concept, key APIs to use, difficulty level, and vibe prompts to get started
