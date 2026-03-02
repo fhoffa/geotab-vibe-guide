@@ -7,6 +7,39 @@
 >
 > **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8) with Mahin Sheth — Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos. [Vibe Coding an Intelligent Geofencing App](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — hackathon participant Veronica builds a geofencing app from scratch. [LP Papillon builds "Last Week in Fleet"](https://www.youtube.com/watch?v=EiZsIof1Scw) — Attrix (Geotab reseller since 2015) uses LLMs to scaffold add-ins and builds a native-looking weekly fleet summary across productivity, safety, compliance, and sustainability. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 
+## 📺 Featured Videos
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=Zuazi88lBeg">
+        <img src="https://img.youtube.com/vi/Zuazi88lBeg/mqdefault.jpg" alt="Kickoff Webinar" width="320"/>
+      </a><br>
+      <b><a href="https://www.youtube.com/watch?v=Zuazi88lBeg">Kickoff Webinar</a></b>
+    </td>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=avEXlVw2lU8">
+        <img src="https://img.youtube.com/vi/avEXlVw2lU8/mqdefault.jpg" alt="Google AI Tools Deep Dive" width="320"/>
+      </a><br>
+      <b><a href="https://www.youtube.com/watch?v=avEXlVw2lU8">Google AI Tools Deep Dive</a></b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=SS3Y9UBDfoA">
+        <img src="https://img.youtube.com/vi/SS3Y9UBDfoA/mqdefault.jpg" alt="Vibe Coding: Geofencing App" width="320"/>
+      </a><br>
+      <b><a href="https://www.youtube.com/watch?v=SS3Y9UBDfoA">Vibe Coding: Geofencing App</a></b>
+    </td>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=EiZsIof1Scw">
+        <img src="https://img.youtube.com/vi/EiZsIof1Scw/mqdefault.jpg" alt="LP Papillon: Last Week in Fleet" width="320"/>
+      </a><br>
+      <b><a href="https://www.youtube.com/watch?v=EiZsIof1Scw">LP Papillon: Last Week in Fleet</a></b>
+    </td>
+  </tr>
+</table>
+
 **Build fleet management apps in minutes using AI.**
 
 This repository is a "Vibe Coding" starter kit. You don't need to be an expert coder. You just need to know how to ask the right questions.
