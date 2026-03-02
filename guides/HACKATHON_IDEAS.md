@@ -2,21 +2,21 @@
 
 > **The hackathon is LIVE!** The sprint runs **Feb 12 -- Mar 2, 2026**, with **$25,000 in total prizes**. [**Register now**](https://luma.com/h6ldbaxp) for full details, prizes, rules, and terms and conditions.
 >
-> **Kickoff webinar:** Watch Felipe and Aaron discuss hackathon strategy, judging criteria, and what makes a winning submission ([33:50](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030)): [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
+> **Kickoff webinar:** Watch Felipe and Aaron discuss hackathon strategy, judging criteria, and what makes a winning submission ([33:50](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=2030)): [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA)
 >
-> [![Kickoff Webinar](https://img.youtube.com/vi/Zuazi88lBeg/mqdefault.jpg)](https://www.youtube.com/watch?v=Zuazi88lBeg)
+> [![Kickoff Webinar](https://img.youtube.com/vi/Zuazi88lBeg/mqdefault.jpg)](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
 >
-> **Google AI Tools Deep Dive:** Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos with Mahin Sheth: [YouTube](https://www.youtube.com/watch?v=avEXlVw2lU8) — jump to [using the Vibe Guide](https://www.youtube.com/watch?v=avEXlVw2lU8&t=3385)
+> **Google AI Tools Deep Dive:** Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos with Mahin Sheth: [YouTube](https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — jump to [using the Vibe Guide](https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=3385)
 >
-> [![Google AI Tools Deep Dive](https://img.youtube.com/vi/avEXlVw2lU8/mqdefault.jpg)](https://www.youtube.com/watch?v=avEXlVw2lU8)
+> [![Google AI Tools Deep Dive](https://img.youtube.com/vi/avEXlVw2lU8/mqdefault.jpg)](https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
 >
-> **Hackathon participant spotlight:** Watch Veronica build an intelligent geofencing app from scratch during the hackathon: [YouTube](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — includes getting started tips, app demo, and advice for participants.
+> **Hackathon participant spotlight:** Watch Veronica build an intelligent geofencing app from scratch during the hackathon: [YouTube](https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — includes getting started tips, app demo, and advice for participants.
 >
-> [![Vibe Coding an Intelligent Geofencing App](https://img.youtube.com/vi/SS3Y9UBDfoA/mqdefault.jpg)](https://www.youtube.com/watch?v=SS3Y9UBDfoA)
+> [![Vibe Coding an Intelligent Geofencing App](https://img.youtube.com/vi/SS3Y9UBDfoA/mqdefault.jpg)](https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
 >
-> **Experienced add-in developer's approach:** LP Papillon ([Attrix](https://attrix.ca/), Geotab partner since 2015) built LLM-based add-in scaffolding tooling, then created "Last Week in Fleet" — a native MyGeotab add-in with productivity, safety, compliance, and sustainability tabs: [YouTube](https://www.youtube.com/watch?v=EiZsIof1Scw) — jump to [tooling demo (2:58)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=178) · [app walkthrough (7:50)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=470) · [open source submission (21:29)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=1289). [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+> **Experienced add-in developer's approach:** LP Papillon ([Attrix](https://attrix.ca/), Geotab partner since 2015) built LLM-based add-in scaffolding tooling, then created "Last Week in Fleet" — a native MyGeotab add-in with productivity, safety, compliance, and sustainability tabs: [YouTube](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — jump to [tooling demo (2:58)](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=178) · [app walkthrough (7:50)](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=470) · [open source submission (21:29)](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=1289). [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 >
-> [![LP Papillon builds Last Week in Fleet](https://img.youtube.com/vi/EiZsIof1Scw/mqdefault.jpg)](https://www.youtube.com/watch?v=EiZsIof1Scw)
+> [![LP Papillon builds Last Week in Fleet](https://img.youtube.com/vi/EiZsIof1Scw/mqdefault.jpg)](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
 
 ## How to Use This Guide
 - Each idea includes: concept, key APIs to use, difficulty level, and vibe prompts to get started
@@ -613,7 +613,7 @@ using GPT-4."
 
 > **Start here:** [MCP Server Guide](./CUSTOM_MCP_GUIDE.md)
 >
-> [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
+> [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
 
 **Why Build Your Own MCP?**
 - Official Geotab MCP is coming, but you can start today
@@ -813,7 +813,7 @@ to the prediction."
 ### Idea 8.7: GeofenceGPT - Natural Language Geofence Creation
 **Concept:** Create and manage geofences using plain English instead of drawing on maps.
 
-**Head start:** The [Import KML Zones sample](./SDK_ADDIN_SAMPLES_GUIDE.md#3-import-kml-zones--file-upload-and-write-operations) shows zone creation via the API. Replace file parsing with natural language parsing. Watch [Veronica's intelligent geofencing demo](https://www.youtube.com/watch?v=SS3Y9UBDfoA&t=253) — she built a working app with AI-suggested hotspot zones and anomaly detection during the hackathon.
+**Head start:** The [Import KML Zones sample](./SDK_ADDIN_SAMPLES_GUIDE.md#3-import-kml-zones--file-upload-and-write-operations) shows zone creation via the API. Replace file parsing with natural language parsing. Watch [Veronica's intelligent geofencing demo](https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=253) — she built a working app with AI-suggested hotspot zones and anomaly detection during the hackathon.
 
 **Key Features:**
 - "Create a 500-meter zone around all customer sites"

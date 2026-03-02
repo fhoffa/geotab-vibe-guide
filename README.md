@@ -3,39 +3,39 @@
 > [!IMPORTANT]
 > **The Geotab Vibe Coding Challenge is LIVE!** $25,000 in prizes. Build fleet intelligence solutions using AI-assisted development. The sprint runs **Feb 12 -- Mar 2, 2026**. [**Register now**](https://luma.com/h6ldbaxp) to get all the important updates, and check out the [project ideas](./guides/HACKATHON_IDEAS.md) for inspiration. See the [registration page](https://luma.com/h6ldbaxp) for official terms and conditions.
 >
-> **New to the Geotab API?** Watch the kickoff webinar with Felipe and Aaron: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA) — jump to [live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&t=17), [building an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155), [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360), or [winning strategy](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030)
+> **New to the Geotab API?** Watch the kickoff webinar with Felipe and Aaron: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA) — jump to [live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=17), [building an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=155), [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=1360), or [winning strategy](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=2030)
 >
-> **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8) with Mahin Sheth — Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos. [Vibe Coding an Intelligent Geofencing App](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — hackathon participant Veronica builds a geofencing app from scratch. [LP Papillon builds "Last Week in Fleet"](https://www.youtube.com/watch?v=EiZsIof1Scw) — Attrix (Geotab reseller since 2015) uses LLMs to scaffold add-ins and builds a native-looking weekly fleet summary across productivity, safety, compliance, and sustainability. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+> **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) with Mahin Sheth — Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos. [Vibe Coding an Intelligent Geofencing App](https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — hackathon participant Veronica builds a geofencing app from scratch. [LP Papillon builds "Last Week in Fleet"](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — Attrix (Geotab reseller since 2015) uses LLMs to scaffold add-ins and builds a native-looking weekly fleet summary across productivity, safety, compliance, and sustainability. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 
 ## 📺 Featured Videos
 
 <table>
   <tr>
     <td align="center">
-      <a href="https://www.youtube.com/watch?v=Zuazi88lBeg">
+      <a href="https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">
         <img src="https://img.youtube.com/vi/Zuazi88lBeg/mqdefault.jpg" alt="Kickoff Webinar" width="320"/>
       </a><br>
-      <b><a href="https://www.youtube.com/watch?v=Zuazi88lBeg">Kickoff Webinar</a></b>
+      <b><a href="https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">Kickoff Webinar</a></b>
     </td>
     <td align="center">
-      <a href="https://www.youtube.com/watch?v=avEXlVw2lU8">
+      <a href="https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">
         <img src="https://img.youtube.com/vi/avEXlVw2lU8/mqdefault.jpg" alt="Google AI Tools Deep Dive" width="320"/>
       </a><br>
-      <b><a href="https://www.youtube.com/watch?v=avEXlVw2lU8">Google AI Tools Deep Dive</a></b>
+      <b><a href="https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">Google AI Tools Deep Dive</a></b>
     </td>
   </tr>
   <tr>
     <td align="center">
-      <a href="https://www.youtube.com/watch?v=SS3Y9UBDfoA">
+      <a href="https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">
         <img src="https://img.youtube.com/vi/SS3Y9UBDfoA/mqdefault.jpg" alt="Vibe Coding: Geofencing App" width="320"/>
       </a><br>
-      <b><a href="https://www.youtube.com/watch?v=SS3Y9UBDfoA">Vibe Coding: Geofencing App</a></b>
+      <b><a href="https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">Vibe Coding: Geofencing App</a></b>
     </td>
     <td align="center">
-      <a href="https://www.youtube.com/watch?v=EiZsIof1Scw">
+      <a href="https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">
         <img src="https://img.youtube.com/vi/EiZsIof1Scw/mqdefault.jpg" alt="LP Papillon: Last Week in Fleet" width="320"/>
       </a><br>
-      <b><a href="https://www.youtube.com/watch?v=EiZsIof1Scw">LP Papillon: Last Week in Fleet</a></b>
+      <b><a href="https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">LP Papillon: Last Week in Fleet</a></b>
     </td>
   </tr>
 </table>
