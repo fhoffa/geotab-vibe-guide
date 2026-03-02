@@ -6,7 +6,9 @@
 >
 > **Google AI Tools Deep Dive:** Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos with Mahin Sheth: [YouTube](https://www.youtube.com/watch?v=avEXlVw2lU8) — jump to [using the Vibe Guide](https://www.youtube.com/watch?v=avEXlVw2lU8&t=3385)
 >
-> **Hackathon participant spotlight:** Watch Veronica build an intelligent geofencing app from scratch during the hackathon: [YouTube](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — includes getting started tips, app demo, and advice for participants. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+> **Hackathon participant spotlight:** Watch Veronica build an intelligent geofencing app from scratch during the hackathon: [YouTube](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — includes getting started tips, app demo, and advice for participants.
+>
+> **Experienced add-in developer's approach:** LP Papillon ([Attrix](https://attrix.ca/), Geotab partner since 2015) built LLM-based add-in scaffolding tooling, then created "Last Week in Fleet" — a native MyGeotab add-in with productivity, safety, compliance, and sustainability tabs: [YouTube](https://www.youtube.com/watch?v=EiZsIof1Scw) — jump to [tooling demo (2:58)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=178) · [app walkthrough (7:50)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=470) · [open source submission (21:29)](https://www.youtube.com/watch?v=EiZsIof1Scw&t=1289). [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 
 ## How to Use This Guide
 - Each idea includes: concept, key APIs to use, difficulty level, and vibe prompts to get started

@@ -5,7 +5,7 @@
 >
 > **New to the Geotab API?** Watch the kickoff webinar with Felipe and Aaron: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA) — jump to [live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&t=17), [building an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&t=155), [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&t=1360), or [winning strategy](https://www.youtube.com/watch?v=Zuazi88lBeg&t=2030)
 >
-> **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8) with Mahin Sheth — Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos. [Vibe Coding an Intelligent Geofencing App](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — hackathon participant Veronica builds a geofencing app from scratch. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+> **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8) with Mahin Sheth — Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos. [Vibe Coding an Intelligent Geofencing App](https://www.youtube.com/watch?v=SS3Y9UBDfoA) — hackathon participant Veronica builds a geofencing app from scratch. [LP Papillon builds "Last Week in Fleet"](https://www.youtube.com/watch?v=EiZsIof1Scw) — Attrix (Geotab reseller since 2015) uses LLMs to scaffold add-ins and builds a native-looking weekly fleet summary across productivity, safety, compliance, and sustainability. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 
 **Build fleet management apps in minutes using AI.**
 
