@@ -1,0 +1,14 @@
+{
+  "name": "Odometer Offset with History",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "2.0",
+  "items": [
+    {
+      "url": "dist/audit.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "en": "Odo Audit + History"
+      }
+    }
+  ]
+}
