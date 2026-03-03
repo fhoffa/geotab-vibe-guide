@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<!-- Part of Geotab Vibe Guide: https://github.com/fhoffa/geotab-vibe-guide -->
+<!--
+  Fleet TCO Calculator — Annotated Example
+  =========================================
+  Calculates Total Cost of Ownership for each vehicle in a fleet by combining
+  real telematics data from the Geotab API with user-defined cost parameters.
+
+  TCO Formula (per vehicle, per period):
+    Fixed Cost       = (Purchase Price - Residual Value) / Life Years / 12
+    Operational Cost = Fuel Cost + Maintenance Cost
+    Waste Cost       = Idle Hours x Idle Cost per Hour
+    ──────────────────────────────────────────────────
+    Total TCO        = Fixed + Operational + Waste
+
+  Geotab API entities used:
+    Device     — vehicle metadata (name, year, make, model)
+    Trip       — distance driven (km), idle duration per trip
+    StatusData — fuel used (DiagnosticDeviceTotalFuelId, liters)
+               — engine hours (DiagnosticEngineHoursId, seconds)
+    AddInData  — persist vehicle class assignments and parameters
+
+  Features: Three-column dashboard, SVG health gauge, vehicle focus card,
+  sortable table, CSV export, Ace AI integration, date range selector.
+
+  Technical constraints: ES5 syntax, inline CSS, MyGeotab iframe compatible.
+-->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Fleet TCO Calculator</title>
+  <!-- Bootstrap 5 loaded dynamically (works in both external and embedded modes) -->
+  <script>
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css';
+    document.head.appendChild(link);
+  </script>
+</head>
+
+<!--
+  NOTE: MyGeotab Add-Ins render inside an iframe, so <body> styles apply
+  only to this page. All CSS is inline (no <style> tags) for embedded compat.
+-->
+<body style="margin:0; padding:0; font-family:sans-serif; background:#f4f7f6;">
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       HEADER — Title, Ace AI prompt bar, and date range selector
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div style="background:#002b49; padding:12px 15px; display:flex; align-items:center; justify-content:space-between; border-bottom:4px solid #00a1de; flex-wrap:wrap; gap:8px;">
+    <h2 style="color:#fff; margin:0; font-size:18px; white-space:nowrap;">FLEET TCO CALCULATOR</h2>
+
+    <!--
+      Ace AI prompt bar — uses the 3-step GetAceResults pattern:
+      1. create-chat  2. send-prompt  3. poll get-message-group
+      customerData:true is REQUIRED on every call or Ace returns empty data.
+    -->
+    <div style="display:flex; flex:1; max-width:450px; min-width:200px;">
+      <input id="aceInput" type="text" placeholder="Ask Ace AI about your fleet..."
+        style="flex:1; border:none; border-radius:4px 0 0 4px; padding:6px 10px; font-size:13px;">
+      <button id="aceBtn"
+        style="background:#00a1de; color:#fff; border:none; border-radius:0 4px 4px 0; padding:6px 12px; font-size:13px; cursor:pointer;">Ask</button>
+    </div>
+
+    <!--
+      Date range selector — now fully wired up.
+      Changing this triggers a fresh API fetch with the selected range.
+    -->
+    <select id="dateRange" class="form-select form-select-sm" style="width:160px;">
+      <option value="30" selected>Last 30 Days</option>
+      <option value="60">Last 60 Days</option>
+      <option value="90">Last 90 Days</option>
+      <option value="mtd">Month to Date</option>
+      <option value="ytd">Year to Date</option>
+    </select>
+  </div>
+
+  <!-- Ace AI response area (hidden until a query is made) -->
+  <div id="aceResult" style="display:none; background:#e8f4f8; padding:10px 15px; font-size:12px; border-bottom:1px solid #ccc;">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+      <b>Ace AI</b>
+      <span id="aceClose" style="cursor:pointer; color:#666; font-size:16px;">&#x2715;</span>
+    </div>
+    <div id="aceBody" style="margin-top:5px;"></div>
+  </div>
+
+  <div class="container-fluid p-3">
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         THREE-COLUMN DASHBOARD
+         Col 1: Fleet Summary — aggregated totals
+         Col 2: Health Gauge / Vehicle Focus Card (contextual)
+         Col 3: Controls — Bulk Classification + CSV Export
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="row g-3 mb-3">
+
+      <!-- COLUMN 1: Fleet Summary -->
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0" style="min-height:160px;">
+          <div class="card-body">
+            <h6 style="color:#002b49; margin-bottom:12px;">Fleet Summary</h6>
+            <div class="row text-center" style="font-size:12px;">
+              <div class="col-3">
+                <small style="color:#888;">MILES</small>
+                <div id="sum-miles" style="font-weight:bold; font-size:15px;">0</div>
+              </div>
+              <div class="col-3">
+                <small style="color:#888;">IDLE HRS</small>
+                <div id="sum-idle" style="font-weight:bold; font-size:15px;">0</div>
+              </div>
+              <div class="col-3">
+                <small style="color:#888;">FUEL $</small>
+                <div id="sum-fuel" style="font-weight:bold; font-size:15px;">$0</div>
+              </div>
+              <div class="col-3">
+                <small style="color:#888;">MAINT $</small>
+                <div id="sum-maint" style="font-weight:bold; font-size:15px;">$0</div>
+              </div>
+            </div>
+            <div style="text-align:center; margin-top:12px; padding-top:8px; border-top:1px solid #eee;">
+              <small style="color:#888;">TOTAL TCO</small>
+              <div id="sum-tco" style="font-weight:bold; font-size:22px; color:#002b49;">$0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 2: Health Gauge / Vehicle Focus Card
+           Shows a fleet health gauge by default. When a table row is
+           clicked, transforms into a Vehicle Focus Card with detail. -->
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0" style="min-height:160px;">
+          <div class="card-body" style="text-align:center;">
+            <!-- Fleet health gauge (SVG odometer) — default view -->
+            <div id="gaugeView">
+              <h6 style="color:#002b49; margin-bottom:8px;">Fleet Health</h6>
+              <!--
+                SVG gauge: arc from 180 to 0 degrees. The colored arc length
+                represents fleet efficiency (100% = no idle waste).
+                Rendered by renderGauge() in tco-calculator.js.
+              -->
+              <svg id="healthGauge" width="160" height="100" viewBox="0 0 160 100"></svg>
+              <div id="gaugeLabel" style="font-size:12px; color:#666;">Loading...</div>
+            </div>
+            <!-- Vehicle focus card — shown on row click -->
+            <div id="focusView" style="display:none; text-align:left;">
+              <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h6 style="color:#002b49; margin:0;">Vehicle Detail</h6>
+                <span id="focusClose" style="cursor:pointer; color:#666; font-size:16px;">&#x2715;</span>
+              </div>
+              <div id="focusBody" style="margin-top:8px; font-size:12px;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COLUMN 3: Controls -->
+      <div class="col-md-4">
+        <div class="card shadow-sm border-0" style="min-height:160px;">
+          <div class="card-body">
+            <h6 style="color:#002b49; margin-bottom:8px;">Controls</h6>
+            <!-- Bulk classification -->
+            <small style="color:#888;">BULK CLASSIFICATION</small>
+            <div class="btn-group btn-group-sm w-100 mb-2" style="margin-top:4px;">
+              <button onclick="bulkSet('L')" class="btn btn-outline-dark">All Light</button>
+              <button onclick="bulkSet('M')" class="btn btn-outline-dark">All Medium</button>
+              <button onclick="bulkSet('H')" class="btn btn-outline-dark">All Heavy</button>
+            </div>
+            <!-- CSV Export -->
+            <button id="csvBtn" class="btn btn-sm btn-outline-secondary w-100 mb-2">Export CSV</button>
+            <!-- Recalculate -->
+            <button id="saveBtn" class="btn btn-sm w-100 text-white" style="background:#002b49;">RECALCULATE ALL</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         VEHICLE TABLE — sortable, clickable rows, per-row class selector
+         ═══════════════════════════════════════════════════════════════ -->
+    <div class="card shadow-sm border-0 mb-3">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <!--
+            Sortable columns: click a <th> header to sort by that column.
+            The data-sort attribute tells sortTable() which field to sort on.
+            Vehicle name is a clickable link that navigates to the MyGeotab
+            device detail page via window.parent.location.hash.
+          -->
+          <table class="table table-hover align-middle mb-0" style="font-size:12px;">
+            <thead>
+              <tr style="background:#eee;">
+                <th style="cursor:pointer;" data-sort="name" onclick="sortTable('name')">VEHICLE &#x25B4;&#x25BE;</th>
+                <th style="cursor:pointer;" data-sort="info" onclick="sortTable('info')">YEAR/MAKE/MODEL &#x25B4;&#x25BE;</th>
+                <th>CLASS</th>
+                <th style="cursor:pointer;" data-sort="mi" onclick="sortTable('mi')">MILES &#x25B4;&#x25BE;</th>
+                <th style="cursor:pointer;" data-sort="idleHrs" onclick="sortTable('idleHrs')">IDLE HRS &#x25B4;&#x25BE;</th>
+                <th style="cursor:pointer; text-align:right;" data-sort="tco" onclick="sortTable('tco')">TCO &#x25B4;&#x25BE;</th>
+              </tr>
+            </thead>
+            <tbody id="tco-body"></tbody>
+          </table>
+        </div>
+        <div id="loading" style="padding:20px; text-align:center;">Loading fleet data...</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════
+         CLASS PARAMETERS — full-width grid of editable cost variables
+         ═══════════════════════════════════════════════════════════════
+         Parameters per class:
+           p = purchase price ($)      r = residual value ($)
+           y = useful life (years)     f = fuel cost ($/gallon)
+           m = maintenance ($/mile)    i = idle cost ($/hour)
+    -->
+    <div class="card shadow-sm border-0">
+      <div class="card-body">
+        <h6 style="color:#002b49;">Class Parameters</h6>
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered" style="font-size:11px;">
+            <thead>
+              <tr>
+                <th>Class</th>
+                <th>Price ($)</th>
+                <th>Residual ($)</th>
+                <th>Life (Yr)</th>
+                <th>Fuel ($/Gal)</th>
+                <th>Maint ($/Mi)</th>
+                <th>Idle ($/Hr)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><b>Light</b></td>
+                <td><input type="number" id="L_p" class="form-control form-control-sm" value="45000"></td>
+                <td><input type="number" id="L_r" class="form-control form-control-sm" value="10000"></td>
+                <td><input type="number" id="L_y" class="form-control form-control-sm" value="5"></td>
+                <td><input type="number" id="L_f" class="form-control form-control-sm" value="4.25"></td>
+                <td><input type="number" id="L_m" class="form-control form-control-sm" value="0.12"></td>
+                <td><input type="number" id="L_i" class="form-control form-control-sm" value="3.50"></td>
+              </tr>
+              <tr>
+                <td><b>Medium</b></td>
+                <td><input type="number" id="M_p" class="form-control form-control-sm" value="85000"></td>
+                <td><input type="number" id="M_r" class="form-control form-control-sm" value="20000"></td>
+                <td><input type="number" id="M_y" class="form-control form-control-sm" value="7"></td>
+                <td><input type="number" id="M_f" class="form-control form-control-sm" value="4.50"></td>
+                <td><input type="number" id="M_m" class="form-control form-control-sm" value="0.25"></td>
+                <td><input type="number" id="M_i" class="form-control form-control-sm" value="5.00"></td>
+              </tr>
+              <tr>
+                <td><b>Heavy</b></td>
+                <td><input type="number" id="H_p" class="form-control form-control-sm" value="165000"></td>
+                <td><input type="number" id="H_r" class="form-control form-control-sm" value="45000"></td>
+                <td><input type="number" id="H_y" class="form-control form-control-sm" value="10"></td>
+                <td><input type="number" id="H_f" class="form-control form-control-sm" value="4.75"></td>
+                <td><input type="number" id="H_m" class="form-control form-control-sm" value="0.45"></td>
+                <td><input type="number" id="H_i" class="form-control form-control-sm" value="8.00"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       DEBUG PANEL — fixed to bottom of page, togglable
+       ═══════════════════════════════════════════════════════════════
+       Shows timestamped API call logs and raw data for troubleshooting.
+       The "Copy Data" button copies the full vehicle dataset as JSON
+       to the clipboard for pasting into bug reports or spreadsheets.
+  -->
+  <div style="position:fixed; bottom:0; left:0; right:0; text-align:center; z-index:9999;">
+    <button onclick="var d=document.getElementById('debug-log');d.style.display=d.style.display==='none'?'block':'none';"
+      style="background:#002b49; color:#fff; border:none; padding:4px 12px; cursor:pointer; font-size:11px; border-radius:4px 4px 0 0;">Debug Log</button>
+    <button onclick="copyDebugData()"
+      style="background:#f39c12; color:#fff; border:none; padding:4px 12px; cursor:pointer; font-size:11px; border-radius:4px 4px 0 0; margin-left:4px;">Copy Data</button>
+    <pre id="debug-log" style="display:none; background:#1e1e1e; color:#0f0; padding:10px; margin:0; max-height:200px; overflow-y:auto; text-align:left; font-size:10px;"></pre>
+  </div>
+
+  <!-- Load the Add-In JavaScript (separate file for readability) -->
+  <script src="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/tco-calculator.js?v=3"></script>
+</body>
+</html>
