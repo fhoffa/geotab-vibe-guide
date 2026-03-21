@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<!-- Part of Geotab Vibe Guide: https://github.com/fhoffa/geotab-vibe-guide -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Animal Speed Map v0.2</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; font-family: sans-serif; background: #f4f7f6; }
+
+    #login-panel {
+      max-width: 420px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    #login-panel h2 { margin-top: 0; color: #2c3e50; }
+    #login-panel label { display: block; margin-top: 14px; font-size: 13px; color: #555; font-weight: bold; }
+    #login-panel input {
+      width: 100%; padding: 8px 10px; margin-top: 4px;
+      border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+    }
+    #login-btn {
+      margin-top: 20px; width: 100%; padding: 10px;
+      background: #2ecc71; color: white; border: none;
+      border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    #login-btn:hover { background: #27ae60; }
+    #login-error { color: #e74c3c; margin-top: 10px; font-size: 13px; display: none; }
+
+    #app { display: none; }
+
+    #header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    #header h1 { margin: 0; font-size: 22px; color: #2c3e50; }
+    #refresh-btn {
+      background: #3498db; color: white; border: none;
+      padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    }
+    #refresh-btn:hover { background: #2980b9; }
+
+    #map {
+      height: 450px; width: 100%;
+      border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 25px;
+    }
+
+    #editor-container {
+      background: white; padding: 25px;
+      border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    #editor-container h3 {
+      margin-top: 0; color: #2c3e50;
+      border-bottom: 2px solid #eee; padding-bottom: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f8f9fa; }
+    th { padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #eee; }
+    .rename-input {
+      padding: 6px; border-radius: 4px;
+      border: 1px solid #ccc; width: 140px;
+    }
+    .rename-btn {
+      background: #2ecc71; color: white; border: none;
+      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;
+    }
+    .vehicle-link { color: #2563eb; font-weight: bold; text-decoration: none; }
+    .vehicle-link:hover { text-decoration: underline; }
+
+    #status-bar {
+      font-size: 12px; color: #888; text-align: right; margin-bottom: 8px;
+    }
+
+    /* Debug panel */
+    #debug-toggle {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      text-align: center; z-index: 9999;
+    }
+    #debug-toggle button {
+      border: none; padding: 4px 16px; cursor: pointer;
+      font-size: 12px; border-radius: 4px 4px 0 0;
+    }
+    #debug-log {
+      display: none; background: #1e1e1e; color: #0f0;
+      padding: 10px; margin: 0; max-height: 200px;
+      overflow-y: auto; text-align: left; font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login Panel -->
+<div id="login-panel">
+  <h2>🐾 Animal Speed Map</h2>
+  <p style="color:#666; font-size:14px;">Sign in with your Geotab credentials to view your fleet.</p>
+  <label>Server</label>
+  <input id="in-server" type="text" value="my.geotab.com" placeholder="my.geotab.com">
+  <label>Database</label>
+  <input id="in-db" type="text" placeholder="your_database">
+  <label>Username</label>
+  <input id="in-user" type="text" placeholder="email@company.com">
+  <label>Password</label>
+  <input id="in-pass" type="password" placeholder="••••••••">
+  <div id="login-error">Login failed. Check your credentials and try again.</div>
+  <button id="login-btn" onclick="doLogin()">Connect to Fleet</button>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <div id="header">
+    <h1>🐾 Animal Speed Map v0.2</h1>
+    <div>
+      <span id="status-bar"></span>
+      <button id="refresh-btn" onclick="refreshData()">↻ Refresh</button>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="editor-container">
+    <h3>Vehicle Manager</h3>
+    <div style="overflow-x:auto;">
+      <table id="device-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Name</th>
+            <th>Speed</th>
+            <th>Rename</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="device-list"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Debug Panel -->
+<div id="debug-toggle">
+  <button onclick="toggleDebug()" style="background:#e74c3c;color:#fff;">Toggle Debug Log</button>
+  <button onclick="copyDebugData()" style="background:#f39c12;color:#fff;margin-left:4px;">Copy Debug Data</button>
+  <pre id="debug-log"></pre>
+</div>
+
+<script>
+  var _apiBase, _creds;
+  var _debugData = {};
+  var map, markers = [];
+
+  // ---------- Debug helpers ----------
+  function debugLog(msg) {
+    var el = document.getElementById('debug-log');
+    el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+  function debugSample(key, arr) {
+    _debugData[key] = { total: arr.length, sample: arr.slice(0, 10) };
+  }
+  function toggleDebug() {
+    var d = document.getElementById('debug-log');
+    d.style.display = d.style.display === 'none' ? 'block' : 'none';
+  }
+  function copyDebugData() {
+    var t = document.createElement('textarea');
+    t.value = JSON.stringify(_debugData, null, 2);
+    document.body.appendChild(t); t.select();
+    document.execCommand('copy'); document.body.removeChild(t);
+    alert('Debug data copied to clipboard!');
+  }
+
+  // ---------- API helpers ----------
+  function apiCall(method, params, cb, errCb) {
+    fetch(_apiBase, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: method, params: Object.assign({ credentials: _creds }, params) })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { if (errCb) errCb(data.error.message); else debugLog('API error: ' + data.error.message); }
+      else cb(data.result);
+    })
+    .catch(function(e) { if (errCb) errCb(e.message); else debugLog('Fetch error: ' + e.message); });
+  }
+
+  function multiCall(calls, cb, errCb) {
+    fetch(_apiBase, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'ExecuteMultiCall', params: { calls: calls, credentials: _creds } })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { if (errCb) errCb(data.error.message); else debugLog('MultiCall error: ' + data.error.message); }
+      else cb(data.result);
+    })
+    .catch(function(e) { if (errCb) errCb(e.message); else debugLog('Fetch error: ' + e.message); });
+  }
+
+  // ---------- Login ----------
+  function doLogin() {
+    var server = document.getElementById('in-server').value.trim();
+    var db     = document.getElementById('in-db').value.trim();
+    var user   = document.getElementById('in-user').value.trim();
+    var pass   = document.getElementById('in-pass').value;
+    var errEl  = document.getElementById('login-error');
+    errEl.style.display = 'none';
+
+    _apiBase = 'https://' + server + '/apiv1';
+    var btn = document.getElementById('login-btn');
+    btn.textContent = 'Connecting...'; btn.disabled = true;
+
+    fetch(_apiBase, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ method: 'Authenticate', params: { database: db, userName: user, password: pass } })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) {
+        errEl.textContent = data.error.message || 'Login failed.';
+        errEl.style.display = 'block';
+        btn.textContent = 'Connect to Fleet'; btn.disabled = false;
+        return;
+      }
+      _creds = data.result.credentials;
+      // If server redirected us to a different server, update base
+      if (data.result.path && data.result.path !== 'ThisServer') {
+        _apiBase = 'https://' + data.result.path + '/apiv1';
+        debugLog('Redirected to: ' + _apiBase);
+      }
+      debugLog('Authenticated as ' + user + ' on ' + db);
+      showApp();
+    })
+    .catch(function(e) {
+      errEl.textContent = 'Connection error: ' + e.message;
+      errEl.style.display = 'block';
+      btn.textContent = 'Connect to Fleet'; btn.disabled = false;
+    });
+  }
+
+  // Enter key submits login
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && document.getElementById('login-panel').style.display !== 'none') doLogin();
+  });
+
+  // ---------- App ----------
+  function showApp() {
+    document.getElementById('login-panel').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+
+    map = L.map('map').setView([0, 0], 2);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: 'OSM' }).addTo(map);
+
+    refreshData();
+  }
+
+  function getAnimalEmoji(speed) {
+    if (speed === 0) return '💤';
+    if (speed <= 20)  return '🐌';
+    if (speed <= 50)  return '🐢';
+    if (speed <= 90)  return '🐎';
+    return '🐆';
+  }
+
+  function refreshData() {
+    document.getElementById('status-bar').textContent = 'Loading...';
+    multiCall(
+      [['Get', { typeName: 'Device' }], ['Get', { typeName: 'DeviceStatusInfo' }]],
+      function(results) {
+        var devices  = results[0];
+        var statuses = results[1];
+        debugSample('devices', devices);
+        debugSample('statuses', statuses);
+        debugLog('Loaded ' + devices.length + ' devices, ' + statuses.length + ' statuses');
+
+        var statusLookup = {};
+        statuses.forEach(function(s) { statusLookup[s.device.id] = s; });
+
+        renderTable(devices, statusLookup);
+        renderMap(devices, statuses);
+
+        var ts = new Date().toLocaleTimeString();
+        document.getElementById('status-bar').textContent =
+          devices.length + ' vehicles · last updated ' + ts + ' ';
+      },
+      function(err) { debugLog('Error: ' + err); document.getElementById('status-bar').textContent = 'Error'; }
+    );
+  }
+
+  function renderMap(devices, statuses) {
+    markers.forEach(function(m) { map.removeLayer(m); });
+    markers = [];
+    var coords = [];
+    var deviceIndex = {};
+    devices.forEach(function(d) { deviceIndex[d.id] = d.name; });
+
+    statuses.forEach(function(s) {
+      if (s.latitude && s.longitude) {
+        var name  = deviceIndex[s.device.id] || 'Unknown';
+        var speed = s.speed || 0;
+        var emoji = getAnimalEmoji(speed);
+        var icon  = L.divIcon({
+          html: '<div style="font-size:24px;">' + emoji + '</div>',
+          className: 'custom-div-icon', iconSize: [30, 30], iconAnchor: [15, 15]
+        });
+        var marker = L.marker([s.latitude, s.longitude], { icon: icon })
+          .addTo(map)
+          .bindPopup('<b>' + name + '</b><br>Speed: ' + speed + ' km/h');
+        markers.push(marker);
+        coords.push([s.latitude, s.longitude]);
+      }
+    });
+    if (coords.length > 0) map.fitBounds(coords);
+  }
+
+  function renderTable(devices, statusLookup) {
+    var list = document.getElementById('device-list');
+    list.innerHTML = '';
+    devices.forEach(function(d) {
+      var status = statusLookup[d.id] || { speed: 0 };
+      var speed  = status.speed || 0;
+      var emoji  = getAnimalEmoji(speed);
+
+      var row = document.createElement('tr');
+
+      var emojiTd = document.createElement('td');
+      emojiTd.style.fontSize = '20px';
+      emojiTd.textContent = emoji;
+
+      var nameTd = document.createElement('td');
+      var a = document.createElement('a');
+      a.textContent = d.name;
+      a.href = '#';
+      a.className = 'vehicle-link';
+      a.onclick = function(e) { e.preventDefault(); window.parent.location.hash = '#device,id:' + d.id; };
+      nameTd.appendChild(a);
+
+      var speedTd = document.createElement('td');
+      speedTd.textContent = speed + ' km/h';
+
+      var inputTd = document.createElement('td');
+      var input = document.createElement('input');
+      input.id = 'input-' + d.id;
+      input.placeholder = 'New name...';
+      input.className = 'rename-input';
+      inputTd.appendChild(input);
+
+      var actionTd = document.createElement('td');
+      var btn = document.createElement('button');
+      btn.textContent = 'Rename';
+      btn.className = 'rename-btn';
+      btn.onclick = (function(id, inp) {
+        return function() { renameDevice(id, inp.value); };
+      }(d.id, input));
+      actionTd.appendChild(btn);
+
+      row.appendChild(emojiTd);
+      row.appendChild(nameTd);
+      row.appendChild(speedTd);
+      row.appendChild(inputTd);
+      row.appendChild(actionTd);
+      list.appendChild(row);
+    });
+  }
+
+  function renameDevice(id, newName) {
+    if (!newName) { alert('Please enter a name'); return; }
+    apiCall('Set', { typeName: 'Device', entity: { id: id, name: newName } },
+      function() { alert('Vehicle renamed!'); refreshData(); },
+      function(err) { alert('Error: ' + err); }
+    );
+  }
+</script>
+</body>
+</html>
