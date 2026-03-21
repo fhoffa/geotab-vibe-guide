@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<!-- Part of Geotab Vibe Guide: https://github.com/fhoffa/geotab-vibe-guide -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Animal Speed Map v0.2</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; font-family: sans-serif; background: #f4f7f6; }
+
+    #login-panel {
+      max-width: 420px;
+      margin: 60px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    #login-panel h2 { margin-top: 0; color: #2c3e50; }
+    #login-panel label { display: block; margin-top: 14px; font-size: 13px; color: #555; font-weight: bold; }
+    #login-panel input {
+      width: 100%; padding: 8px 10px; margin-top: 4px;
+      border: 1px solid #ccc; border-radius: 6px; font-size: 14px;
+    }
+    #login-btn {
+      margin-top: 20px; width: 100%; padding: 10px;
+      background: #2ecc71; color: white; border: none;
+      border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer;
+    }
+    #login-btn:hover { background: #27ae60; }
+    #login-error { color: #e74c3c; margin-top: 10px; font-size: 13px; display: none; }
+
+    #app { display: none; }
+
+    #header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    #header h1 { margin: 0; font-size: 22px; color: #2c3e50; }
+    #refresh-btn {
+      background: #3498db; color: white; border: none;
+      padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    }
+    #refresh-btn:hover { background: #2980b9; }
+
+    #map {
+      height: 450px; width: 100%;
+      border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 25px;
+    }
+
+    #editor-container {
+      background: white; padding: 25px;
+      border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    #editor-container h3 {
+      margin-top: 0; color: #2c3e50;
+      border-bottom: 2px solid #eee; padding-bottom: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f8f9fa; }
+    th { padding: 12px; border-bottom: 2px solid #dee2e6; text-align: left; }
+    td { padding: 12px; border-bottom: 1px solid #eee; }
+    .rename-input {
+      padding: 6px; border-radius: 4px;
+      border: 1px solid #ccc; width: 140px;
+    }
+    .rename-btn {
+      background: #2ecc71; color: white; border: none;
+      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-weight: bold;
+    }
+    .vehicle-link { color: #2563eb; font-weight: bold; text-decoration: none; }
+    .vehicle-link:hover { text-decoration: underline; }
+
+    #status-bar { font-size: 12px; color: #888; margin-bottom: 8px; }
+
+    /* Debug panel */
+    #debug-toggle {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      text-align: center; z-index: 9999;
+    }
+    #debug-toggle button {
+      border: none; padding: 4px 16px; cursor: pointer;
+      font-size: 12px; border-radius: 4px 4px 0 0;
+    }
+    #debug-log {
+      display: none; background: #1e1e1e; color: #0f0;
+      padding: 10px; margin: 0; max-height: 200px;
+      overflow-y: auto; text-align: left; font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Login Panel -->
+<div id="login-panel">
+  <h2>🐾 Animal Speed Map</h2>
+  <p style="color:#666; font-size:14px;">Sign in with your Geotab credentials to view your fleet.</p>
+  <label>Server</label>
+  <input id="in-server" type="text" value="my.geotab.com" placeholder="my.geotab.com">
+  <label>Database</label>
+  <input id="in-db" type="text" placeholder="your_database">
+  <label>Username</label>
+  <input id="in-user" type="text" placeholder="email@company.com">
+  <label>Password</label>
+  <input id="in-pass" type="password" placeholder="••••••••">
+  <div id="login-error">Login failed. Check your credentials and try again.</div>
+  <button id="login-btn" onclick="doLogin()">Connect to Fleet</button>
+</div>
+
+<!-- Main App -->
+<div id="app">
+  <div id="header">
+    <h1>🐾 Animal Speed Map v0.2</h1>
+    <div>
+      <span id="status-bar"></span>
+      <button id="refresh-btn" onclick="refreshData()">&#x21bb; Refresh</button>
+    </div>
+  </div>
+
+  <div id="map"></div>
+
+  <div id="editor-container">
+    <h3>Vehicle Manager</h3>
+    <div style="overflow-x:auto;">
+      <table id="device-table">
+        <thead>
+          <tr>
+            <th>Status</th>
+            <th>Name</th>
+            <th>Speed</th>
+            <th>Rename</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="device-list"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Debug Panel -->
+<div id="debug-toggle">
+  <button onclick="toggleDebug()" style="background:#e74c3c;color:#fff;">Toggle Debug Log</button>
+  <button onclick="copyDebugData()" style="background:#f39c12;color:#fff;margin-left:4px;">Copy Debug Data</button>
+  <pre id="debug-log"></pre>
+</div>
+
+<script src="animal-speed-map.js"></script>
+</body>
+</html>
