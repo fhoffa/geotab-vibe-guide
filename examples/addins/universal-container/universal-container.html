@@ -8,7 +8,7 @@
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     html { height: 100%; }
-    body { font-family: Arial, sans-serif; height: 100%; display: flex; flex-direction: column; overflow: hidden; background: #111; }
+    body { font-family: Arial, sans-serif; height: 100%; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #111; }
 
     /* ── Top bar ── */
     #topbar { background: #1a5276; color: white; padding: 8px 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -253,8 +253,9 @@ Express: app.use(require('cors')())</pre>
     var geotabSession = null;  // { credentials, server } — passed to inner Add-Ins via geotab-init
     var activeTab = 'timeline';
 
-    // Rate limiting: sliding window, 20 calls/sec
-    var RATE_LIMIT = 20;
+    // Rate limiting: sliding window. 50/s allows normal dashboard startup
+    // bursts while still blocking runaway loops.
+    var RATE_LIMIT = 50;
     var callTimestamps = [];
 
     // Block lists
@@ -285,7 +286,8 @@ Express: app.use(require('cors')())</pre>
       '      if(typeof params==="function"){error=success;success=params;params={};}',
       '      var id=(Math.random()*1e9|0)+"-"+Date.now();',
       '      pending[id]={s:success||function(){},e:error||function(){}};',
-      '      window.parent.postMessage({type:"geotab-call",id:id,method:method,params:params||{}},"*");',
+      '      var sp;try{sp=JSON.parse(JSON.stringify(params||{}));}catch(e){sp={};}',
+      '      window.parent.postMessage({type:"geotab-call",id:id,method:method,params:sp},"*");',
       '    },',
       '    getSession:function(cb){',
       '      if(cb) cb(session&&session.credentials, session&&session.server);',
@@ -500,7 +502,8 @@ Express: app.use(require('cors')())</pre>
                     : (result !== null && result !== undefined ? 1 : 0);
           addTimelineEntry(method, typeName, count, ms, false, false, false);
           recordStat(method, typeName, 'ok');
-          frame.contentWindow.postMessage({ type: 'geotab-result', id: id, result: result }, '*');
+          var safe; try { safe = JSON.parse(JSON.stringify(result)); } catch(e) { safe = null; }
+          frame.contentWindow.postMessage({ type: 'geotab-result', id: id, result: safe }, '*');
         },
         function(error) {
           var ms = Date.now() - t0;
