@@ -109,7 +109,6 @@
     <select id="preset-select" title="Load a preset Add-In" onchange="loadPreset(this.value)">
       <option value="">— presets —</option>
       <optgroup label="This Repo — CORS ✅ bridge auto-injects">
-        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/bridge-demo.html">Bridge Demo</option>
         <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/simple-test.html">Simple Test</option>
         <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/minimal-test.html">Minimal Test</option>
         <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-dashboard-map.html">Vehicle Dashboard Map</option>
@@ -267,8 +266,38 @@ Express: app.use(require('cors')())</pre>
     // Timeline (max 200 entries, newest first)
     var timeline = [];
 
-    // Bridge URL to inject into CORS-fetched Add-Ins
-    var BRIDGE_URL = 'https://fhoffa.github.io/geotab-vibe-guide/examples/addins/geotab-bridge.js';
+    // Inline bridge — embedded directly into srcdoc so there is no external
+    // dependency and no race condition with script loading order.
+    var BRIDGE_CODE = [
+      '(function(){',
+      '  var pending={},factories={},initialized=false;',
+      '  var fakeState={translate:function(s){return s;},device:{},user:{}};',
+      '  var api={call:function(method,params,success,error){',
+      '    if(typeof params==="function"){error=success;success=params;params={};}',
+      '    var id=(Math.random()*1e9|0)+"-"+Date.now();',
+      '    pending[id]={s:success||function(){},e:error||function(){}};',
+      '    window.parent.postMessage({type:"geotab-call",id:id,method:method,params:params||{}},"*");',
+      '  }};',
+      '  function initAddin(name,factory){',
+      '    try{var inst=factory();',
+      '      if(inst&&inst.initialize)inst.initialize(api,fakeState,function(){});',
+      '    }catch(e){console.error("[bridge] addin init error",name,e);}',
+      '  }',
+      '  window.geotab={addin:new Proxy({},{',
+      '    set:function(t,n,v){t[n]=v;factories[n]=v;if(initialized)initAddin(n,v);return true;},',
+      '    get:function(t,n){return t[n];}',
+      '  })};',
+      '  window.addEventListener("message",function(ev){',
+      '    var d=ev.data;if(!d||typeof d!=="object")return;',
+      '    if(d.type==="geotab-init"){initialized=true;',
+      '      Object.keys(factories).forEach(function(n){initAddin(n,factories[n]);});return;}',
+      '    var p=pending[d.id];if(!p)return;',
+      '    if(d.type==="geotab-result"){try{p.s(d.result);}catch(e){}delete pending[d.id];}',
+      '    if(d.type==="geotab-error"){try{p.e(d.error);}catch(e){}delete pending[d.id];}',
+      '  });',
+      '  window.parent.postMessage({type:"geotab-ready"},"*");',
+      '})();'
+    ].join('\n');
 
     // ============================================
     // TAB SWITCHING
@@ -490,9 +519,10 @@ Express: app.use(require('cors')())</pre>
     // BRIDGE INJECTION (CORS path)
     // ============================================
     function injectBridge(html, baseUrl) {
-      // Add <base> so relative assets resolve correctly from srcdoc
+      // Add <base> so relative assets resolve correctly from srcdoc.
+      // Embed bridge inline so there is no external request and no load-order race.
       var base   = '<base href="' + baseUrl + '">';
-      var script = '<script src="' + BRIDGE_URL + '"><\/script>';
+      var script = '<script>' + BRIDGE_CODE + '<\/script>';
       var inject = base + '\n' + script;
 
       if (/<head[^>]*>/i.test(html)) {
