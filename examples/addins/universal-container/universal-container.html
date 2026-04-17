@@ -7,7 +7,8 @@
   <title>Universal Add-In Container</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Arial, sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #111; }
+    html { height: 100%; }
+    body { font-family: Arial, sans-serif; height: 100%; display: flex; flex-direction: column; overflow: hidden; background: #111; }
 
     /* ── Top bar ── */
     #topbar { background: #1a5276; color: white; padding: 8px 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
@@ -19,7 +20,7 @@
     #rate-warning { background: #c0392b; color: white; padding: 3px 12px; font-size: 11px; display: none; flex-shrink: 0; }
 
     /* ── Main split ── */
-    #main { display: flex; flex: 1; overflow: hidden; }
+    #main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
 
     /* ── Monitor panel ── */
     #monitor { width: 300px; min-width: 160px; max-width: 600px; background: #1e2a35; color: #e0e0e0; display: flex; flex-direction: column; flex-shrink: 0; }
@@ -79,7 +80,7 @@
     #resize:hover { background: #27ae60; }
 
     /* Frame area */
-    #frame-area { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    #frame-area { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
     #frame-status { padding: 5px 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-size: 11px; color: #555; display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-height: 28px; }
     #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
     #status-dot.ok { background: #27ae60; }
