@@ -108,23 +108,18 @@
     <strong>Universal Container</strong>
     <select id="preset-select" title="Load a preset Add-In" onchange="loadPreset(this.value)">
       <option value="">— presets —</option>
-      <optgroup label="This Repo (CORS friendly)">
+      <optgroup label="This Repo — CORS ✅ bridge auto-injects">
+        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/bridge-demo.html">Bridge Demo</option>
         <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/simple-test.html">Simple Test</option>
         <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/minimal-test.html">Minimal Test</option>
         <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-dashboard-map.html">Vehicle Dashboard Map</option>
-        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/ace-api-comparison.html">Ace vs API Comparison</option>
-        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/exception-heatmap.html">Exception Heatmap</option>
-        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/bridge-demo.html">Bridge Demo</option>
       </optgroup>
-      <optgroup label="Geotab SDK Samples via jsDelivr (CORS friendly)">
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-exception-heatmap/addinExceptionHeatmap.html">Heat Map</option>
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-trips-timeline/addinTripsTimeline.html">Trips Timeline</option>
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-import-zones-kml/addinImportZonesKml.html">Import KML Zones</option>
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-start-stop-savings/addinStartStopSavings.html">Start-Stop Savings</option>
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-iox-output/addinIoxOutput.html">IOX Output</option>
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-drive-hours/addinDriveHours.html">Drive Hours</option>
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-simple-map/addinSimpleMap.html">Simple Map</option>
-        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-distance-summary/addinDistanceSummary.html">Distance Summary</option>
+      <optgroup label="Geotab SDK Samples (jsDelivr CDN) — CORS ✅ bridge auto-injects">
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-heatmap/dist/heatmap.html">Heat Map</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-trips-timeline/dist/tripsTimeline.html">Trips Timeline</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-import-kml-zones/dist/importKmlZones.html">Import KML Zones</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-start-stop/dist/startStop.html">Start-Stop</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-iox-output/dist/ioxOutput.html">IOX Output</option>
       </optgroup>
     </select>
     <input id="url-input" type="url" placeholder="https://…/addin.html"
