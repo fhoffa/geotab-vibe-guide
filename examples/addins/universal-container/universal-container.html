@@ -107,6 +107,8 @@
   <!-- Top bar -->
   <div id="topbar">
     <strong>Universal Container</strong>
+    <span id="page-loaded" title="Page load time — if this doesn't change after a deploy, MyGeotab cached the old version. Add ?v=2 (then ?v=3…) to the URL in the config JSON to bust the cache."
+      style="font-size:10px; color:#7fb3d3; white-space:nowrap; cursor:help;"></span>
     <select id="preset-select" title="Load a preset Add-In" onchange="loadPreset(this.value)">
       <option value="">— presets —</option>
       <optgroup label="This Repo — CORS ✅ bridge auto-injects">
@@ -243,7 +245,12 @@ Express: app.use(require('cors')())</pre>
     // ============================================
     // STATE
     // ============================================
+    // Show page load time in topbar so stale MyGeotab cache is easy to spot
+    document.getElementById('page-loaded').textContent =
+      'loaded ' + new Date().toLocaleTimeString();
+
     var geotabApi = null;
+    var geotabSession = null;  // { credentials, server } — passed to inner Add-Ins via geotab-init
     var activeTab = 'timeline';
 
     // Rate limiting: sliding window, 20 calls/sec
@@ -271,14 +278,19 @@ Express: app.use(require('cors')())</pre>
     // dependency and no race condition with script loading order.
     var BRIDGE_CODE = [
       '(function(){',
-      '  var pending={},factories={},initialized=false;',
+      '  var pending={},factories={},initialized=false,session=null;',
       '  var fakeState={translate:function(s){return s;},device:{},user:{}};',
-      '  var api={call:function(method,params,success,error){',
-      '    if(typeof params==="function"){error=success;success=params;params={};}',
-      '    var id=(Math.random()*1e9|0)+"-"+Date.now();',
-      '    pending[id]={s:success||function(){},e:error||function(){}};',
-      '    window.parent.postMessage({type:"geotab-call",id:id,method:method,params:params||{}},"*");',
-      '  }};',
+      '  var api={',
+      '    call:function(method,params,success,error){',
+      '      if(typeof params==="function"){error=success;success=params;params={};}',
+      '      var id=(Math.random()*1e9|0)+"-"+Date.now();',
+      '      pending[id]={s:success||function(){},e:error||function(){}};',
+      '      window.parent.postMessage({type:"geotab-call",id:id,method:method,params:params||{}},"*");',
+      '    },',
+      '    getSession:function(cb){',
+      '      if(cb) cb(session&&session.credentials, session&&session.server);',
+      '    }',
+      '  };',
       '  function initAddin(name,factory){',
       '    try{var inst=factory();',
       '      if(inst&&inst.initialize)inst.initialize(api,fakeState,function(){});',
@@ -290,7 +302,9 @@ Express: app.use(require('cors')())</pre>
       '  })};',
       '  window.addEventListener("message",function(ev){',
       '    var d=ev.data;if(!d||typeof d!=="object")return;',
-      '    if(d.type==="geotab-init"){initialized=true;',
+      '    if(d.type==="geotab-init"){',
+      '      if(d.session)session=d.session;',
+      '      initialized=true;',
       '      Object.keys(factories).forEach(function(n){initAddin(n,factories[n]);});return;}',
       '    var p=pending[d.id];if(!p)return;',
       '    if(d.type==="geotab-result"){try{p.s(d.result);}catch(e){}delete pending[d.id];}',
@@ -432,9 +446,9 @@ Express: app.use(require('cors')())</pre>
       var data = event.data;
       if (!data || typeof data !== 'object') return;
 
-      // Bridge handshake: inner page loaded geotab-bridge.js and signals ready
+      // Bridge handshake: inner page signals ready, container replies with session
       if (data.type === 'geotab-ready') {
-        frame.contentWindow.postMessage({ type: 'geotab-init' }, '*');
+        frame.contentWindow.postMessage({ type: 'geotab-init', session: geotabSession }, '*');
         return;
       }
 
@@ -647,6 +661,9 @@ Express: app.use(require('cors')())</pre>
       return {
         initialize: function(api, state, callback) {
           geotabApi = api;
+          api.getSession(function(credentials, server) {
+            geotabSession = { credentials: credentials, server: server };
+          });
           renderBlockPanel();
           callback();
         },
