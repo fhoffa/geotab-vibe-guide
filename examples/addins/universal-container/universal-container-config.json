@@ -3,7 +3,7 @@
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "1.0.0",
   "items": [{
-    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/universal-container/universal-container.html",
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/universal-container/universal-container.html?v=2",
     "path": "ActivityLink/",
     "menuName": {
       "en": "Universal Container"
