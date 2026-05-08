@@ -48,6 +48,7 @@ Complete reference guide for participants and instructors.
 - **LP Papillon builds "Last Week in Fleet"**: LP Papillon ([Attrix](https://attrix.ca/), Geotab reseller and marketplace partner since 2015) explains how his team used LLM prompting to scaffold and test Geotab add-ins, then built "Last Week in Fleet" — a native-looking MyGeotab add-in with weekly fleet summaries across four tabs — [YouTube](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
   - Key moments: [Modern add-in tooling](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=178) · [Last Week in Fleet add-in](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=470) · [Productivity dashboard](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=607) · [Safety & compliance](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=745) · [Sustainability insights](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=932) · [Open source & submission](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=1289) · [AI video editing workflow](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=1452) · [Final advice](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=1654)
 - **Full Playlist**: All hackathon videos in one place — [YouTube Playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
+- **Felipe's big data video archive**: Videos from throughout Felipe's career — [YouTube Playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lwF7l0tg81qUoJk4n3H5w5y)
 - **Create Demo Account**: https://my.geotab.com/registration.html
   > **Important:** Click **"Create a Demo Database"** (not "I'm a New Customer") to get pre-populated sample data.
 - **MyGeotab Login**: https://my.geotab.com/
@@ -70,7 +71,8 @@ Complete reference guide for participants and instructors.
 - **ExceptionEvent**: https://geotab.github.io/sdk/software/api/reference/#ExceptionEvent (safety events)
 
 ### Geotab Ace API
-[Links to be added when available]
+- **Geotab Ace MCP demo post**: Felipe's walkthrough of Claude testing Geotab Ace with MCP — [LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7402804935110955008/) | [YouTube](https://www.youtube.com/watch?v=jiRCSqKR22A) | [MCP server repo](https://github.com/fhoffa/geotab-ace-mcp-demo)
+- **Reference MCP server**: https://github.com/fhoffa/geotab-ace-mcp-demo
 - Ace API Documentation
 - Authentication setup
 - Natural language query examples
