@@ -119,15 +119,17 @@ Vibe coding gives you speed. Speed building on fake data is just a faster fake.
 
 # Part 2 — Build With the Gem
 
-## First: Get a Demo Database
+## First: Set Up a Demo Database
 
-Before you can install an Add-In, you need a MyGeotab account. If you don't have one through your company or a reseller, create a free demo database:
+You probably already have a MyGeotab account through your company. Don't experiment against that one.
+
+Vibe coding is iterative — you'll install Add-Ins that are half-finished, paste JSON that breaks the layout, iterate a dozen times before it's right. That's the process. Do it in a dedicated sandbox.
 
 **→ [my.geotab.com/registration.html](https://my.geotab.com/registration.html)**
 
-The demo database comes with a small set of simulated vehicles and trips — enough to build and test real Add-Ins. This matters more than it sounds: the #1 reason hackathon projects didn't advance was fake/hardcoded data. A demo database gives you a real Geotab API, real responses, real data structures. Everything you build against it transfers directly to a production account.
+A free demo database gives you a real Geotab API, real TypeNames, real responses — just simulated vehicles instead of your actual fleet. Everything you build and test against it works the same way in production. Install things, break things, reset, iterate. No risk to your live data, no colleagues wondering why there's a half-finished dashboard in their sidebar.
 
-If you're at this session and don't have an account yet, create one now — the Gem works in parallel.
+The demo database is also why the hackathon's real-data requirement mattered: teams that built against the real API from day one had working code. Teams that used `Math.random()` had a beautiful app that didn't actually do anything.
 
 ---
 
