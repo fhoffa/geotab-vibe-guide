@@ -29,7 +29,9 @@ If none of these apply yet — stay in the Gem. Keep iterating there. There's no
 
 The fastest way to move from Gem to Claude Code isn't a set of steps — it's a prompt.
 
-1. Copy your Add-In JSON out of MyGeotab (Administration → System Settings → Add-Ins → your Add-In → Configuration tab → select all → copy)
+**Get the JSON from the Gem, not from MyGeotab.** Once an Add-In is installed, MyGeotab strips the embedded assets from the configuration — you won't get the full JSON back out. Go back to your Gem conversation and copy the JSON it generated (the block you originally pasted into MyGeotab).
+
+1. In your Gem conversation, copy the full JSON it generated
 2. Open [Claude Code](https://claude.ai/code) in an empty folder
 3. Paste this:
 
@@ -90,12 +92,23 @@ When you're happy with a round of changes, tell Claude Code: *"Commit this and p
 
 ---
 
-## Loading Geotab Knowledge with a Skill
+## Loading the Full Geotab Skill
 
-The Gem works because Geotab domain knowledge was embedded into it — but it carries a curated subset. Claude Code can load the full skill:
+The Gem works because Geotab domain knowledge was embedded into it — but it carries a curated subset. Claude Code can load the full skill from GitHub:
+
+```bash
+# Clone the vibe guide alongside your project
+git clone https://github.com/fhoffa/geotab-vibe-guide
+
+# Then tell Claude Code where it is:
+# "Load the Geotab skill from ../geotab-vibe-guide/skills/geotab/SKILL.md"
+```
+
+Or just tell Claude Code at the start of a session:
 
 ```
-/plugin marketplace add fhoffa/geotab-vibe-guide
+Before we start, read https://raw.githubusercontent.com/fhoffa/geotab-vibe-guide/main/skills/geotab/SKILL.md
+and use it as your Geotab API reference.
 ```
 
 This gives Claude Code the complete Geotab developer reference — all 13 files covering TypeNames, auth patterns, ACE polling, result caps, zone/group APIs, Add-In constraints, and every known gotcha. The Gem doesn't have all of this; Claude Code with the full skill does. For complex Add-Ins that push into less-common API territory, this matters.
@@ -116,7 +129,8 @@ Before assuming you need a backend, here's what works inside the Gem's embedded 
 | Geotab ACE (AI fleet queries) | ✅ Yes — via async polling pattern |
 | External API calls (public endpoints) | ✅ Yes |
 | External API calls requiring secret keys | ❌ No — embedded code is visible in MyGeotab |
-| React / bundled frameworks | ❌ Not recommended — no build step available |
+| Zenith (Geotab's UI framework) | ✅ Yes — load via CDN, no build step needed. See [TRANSFORM_ADDIN_ZENITH.md](./TRANSFORM_ADDIN_ZENITH.md) |
+| React / Vue / bundled frameworks | ❌ Need a build step — use a hosted Add-In |
 | Node.js or server-side logic | ❌ Needs a hosted Add-In |
 
 The Geotab Storage API is particularly underused: it lets your Add-In save user preferences, cached data, or lightweight configuration — without any external database.
