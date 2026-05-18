@@ -119,6 +119,18 @@ Vibe coding gives you speed. Speed building on fake data is just a faster fake.
 
 # Part 2 — Build With the Gem
 
+## First: Get a Demo Database
+
+Before you can install an Add-In, you need a MyGeotab account. If you don't have one through your company or a reseller, create a free demo database:
+
+**→ [my.geotab.com/registration.html](https://my.geotab.com/registration.html)**
+
+The demo database comes with a small set of simulated vehicles and trips — enough to build and test real Add-Ins. This matters more than it sounds: the #1 reason hackathon projects didn't advance was fake/hardcoded data. A demo database gives you a real Geotab API, real responses, real data structures. Everything you build against it transfers directly to a production account.
+
+If you're at this session and don't have an account yet, create one now — the Gem works in parallel.
+
+---
+
 ## What the Gem Is
 
 The **Geotab Add-In Architect** is a Google Gemini Gem pre-loaded with the Geotab API knowledge base: TypeNames, field structures, auth patterns, inline CSS requirements, async polling — everything an Add-In needs, packaged as a conversational assistant.
@@ -423,6 +435,7 @@ Talk to Geotab at this event. When the official MCP opens, you'll be among the f
 
 | Resource | Link |
 |----------|------|
+| **Create a free demo database** | [my.geotab.com/registration.html](https://my.geotab.com/registration.html) |
 | Geotab Add-In Architect Gem | [gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO) |
 | Gem user guide | [guides/GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) |
 | Gem → Claude Code bridge | [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md) |
