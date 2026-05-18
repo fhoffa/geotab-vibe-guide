@@ -478,3 +478,17 @@ Yes. [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) covers the community ap
 
 **How do I teach my AI tool about our internal systems?**  
 Same approach as this repo's skills: write a SKILL.md with your domain knowledge (API patterns, naming conventions, gotchas), commit it to GitHub, load it into your AI tool. Format: [agentskills.io](https://agentskills.io).
+
+**How do I manage and share skills across my team?**  
+A skill is just a file in a GitHub repo — manage it like any other internal documentation.
+
+To share with your team, give them the raw GitHub URL and they load it directly:
+```
+Before we start, read https://raw.githubusercontent.com/your-org/your-repo/main/skills/SKILL.md
+```
+
+To keep it current: when your API or system changes, update the SKILL.md, commit, push. Everyone gets the updated version the next time they load it — no distribution step needed.
+
+Private repos work fine for internal skills. Team members with repo access can clone it and load locally in Claude Code, or load from the raw URL if your GitHub organization allows it.
+
+One person writes the skill once. Every AI user in your organization benefits. That's the leverage.
