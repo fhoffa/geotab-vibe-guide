@@ -1,0 +1,438 @@
+# Vibe Coding Demo + ACE
+## Connect Europe 2026 — Barcelona
+
+**Session:** 02:50 PM – 03:50 PM · 60 minutes  
+**Speaker:** Felipe Hoffa  
+**Repo:** [github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide)
+
+---
+
+This session is the hands-on half of a two-hour AI track. By the time it starts, the audience has seen what vibe coding is (Abhinav), real Geotab projects already in production (Jorge & Ronald), and 20 minutes of networking. This session goes deeper: here's what the developer community built, here's how you can build something right now, and here's what Geotab has opened up for your AI tools.
+
+This document serves as both session guide and take-home reference. Everything linked here is publicly accessible.
+
+---
+
+## Session Flow at a Glance
+
+| Time | Block | What Happens |
+|------|-------|--------------|
+| 02:50 | **Opening** (1 min) | Hackathon summary video |
+| 02:51 | **Hackathon** (14 min) | What developers built, what worked, what didn't |
+| 03:05 | **Gem demo** (10 min) | Build a MyGeotab Add-In live with the audience |
+| 03:15 | **Vibe Guide** (3 min) | What this repo is and how to use it |
+| 03:18 | **ACE** (10 min) | AI queries across three contexts |
+| 03:28 | **Claude + MCP** (15 min) | Official Geotab MCP live demo |
+| 03:43 | **Close + Q&A** (5 min) | Three things to do today |
+
+---
+
+---
+
+# Part 1 — The Hackathon
+
+> **Opening video:** [youtube.com/watch?v=BD0U9Zf-LvY](https://www.youtube.com/watch?v=BD0U9Zf-LvY) (1 min — plays as Felipe walks on stage)
+
+## What Happened
+
+The Geotab Vibe Coding Challenge ran February 12 – March 2, 2026. Any developer could participate — Geotab employees, resellers, partners, strangers on the internet. The tools: any AI assistant. The data: the Geotab fleet API. The prize: $25,000.
+
+47 teams submitted projects. 43 repos were cloned and code-reviewed — not by humans reading READMEs, but by Claude Code reading every source file. We used vibe coding to judge vibe coding.
+
+The judging rubric: **Useful (35%)** · **Original (25%)** · **Fun (15%)** · **Well-done (25%)**. Projects that used mock data had their Well-done score capped at 6.
+
+## What the Community Built
+
+All submissions were built in the open. All videos are in the [full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+
+---
+
+### 🏆 FleetShield AI — Vimal Kanagaraj
+**Score: 8.35** · [Interview video](https://www.youtube.com/watch?v=G3A8PjtovN8)
+
+A predictive fleet safety and insurance intelligence platform. The operator says *"Run a coaching sweep"* and the system:
+
+1. Scores every driver against their 90-day personal baseline
+2. Creates action items in each driver's portal  
+3. Places actual Twilio phone calls to flagged drivers
+
+Fleet manager voice command to driver phone call — automatically, no human in the loop. What's under the hood:
+- 17 Claude agent tools with real Geotab API connections
+- 9 scoring engines grounded in FMCSA safety standards and insurance formulas
+- Two voice surfaces: Operator Tasha (fleet manager assistant) + Driver Mike (Twilio outbound calls)
+- 736-line CLAUDE.md teaching Claude every API pattern, every quirk, every scoring formula before execution
+
+This is the architect mindset: you don't vibe your way to correct insurance risk math. You define the domain precisely. Then the AI executes.
+
+---
+
+### Last Week in Fleet — LP Papillon / Attrix
+[Watch](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
+
+Attrix is a Geotab reseller since 2015. Their team used AI to build their *own* Add-In scaffolding tooling first, then built "Last Week in Fleet" — a native-looking MyGeotab summary across safety, sustainability, compliance, and productivity tabs. A reseller building tools with AI to build more tools faster.
+
+---
+
+### FuelGuard MCP — Fuel Theft Detection
+An MCP server built from scratch to detect when vehicles are losing fuel faster than expected — using graph clustering on consumption patterns across similar trip profiles.
+
+---
+
+### ActionEngine — GPS Data Quality Validator
+A 6-algorithm GPS data quality validator. Not glamorous, but a fleet tool that would save real hours of data cleaning for teams who actually deal with GPS artifacts.
+
+---
+
+### GeoSafe — AI-Suggested Geofences
+Proposes geofence zones based on where vehicles actually stop — the AI looks at trip history and suggests where zones belong. The Gem could do something like this today.
+
+---
+
+## The Key Lesson
+
+**The #1 differentiator across 47 submissions wasn't the idea. Wasn't the UI. It was whether the project connected to real fleet data.**
+
+Project after project had polished demos. When the code was read, it showed `Math.random()`, `seed-data.ts`, `fakeData.ts`. Beautiful apps. No real data.
+
+The ones that advanced: real API calls, real driver names, real trips, real fault codes.
+
+Vibe coding gives you speed. Speed building on fake data is just a faster fake.
+
+---
+
+---
+
+# Part 2 — Build With the Gem
+
+## What the Gem Is
+
+The **Geotab Add-In Architect** is a Google Gemini Gem pre-loaded with the Geotab API knowledge base: TypeNames, field structures, auth patterns, inline CSS requirements, async polling — everything an Add-In needs, packaged as a conversational assistant.
+
+**→ Open it here:** [Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO)
+
+**Full guide:** [guides/GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md)
+
+## Live Demo: Build Something With the Audience
+
+The audience picks a fleet problem. The Gem builds it. The session installs it in MyGeotab together.
+
+**Backup prompt if the room is quiet:**
+> *"Safety coaching dashboard — show me my 10 riskiest drivers ranked by speeding and harsh braking events this week. Color-code them red/yellow/green."*
+
+**Install steps:**
+1. Copy the JSON from the Gem
+2. MyGeotab → Administration → System Settings → Add-Ins → New Add-In → Configuration → Paste → Save
+3. Hard refresh (`Ctrl+Shift+R`)
+4. Click the new sidebar item
+
+## The Gem Is Iterative
+
+One prompt rarely produces the final result. The workflow is a conversation:
+
+- Try the generated Add-In in MyGeotab
+- Note what's wrong or missing — wrong columns, missing data, layout issues
+- Describe changes back to the Gem: *"The table header is cut off. Make the columns wider and add a sort button."*
+- Paste the updated JSON and hard refresh
+
+**Tip:** In Gemini, switch from Fast to Thinking mode for complex requests. Thinking mode reasons through the MyGeotab Add-In constraints before generating code — better results for multi-panel layouts or anything involving async calls.
+
+## Two Paths Forward
+
+The Gem is the fastest entry point. Where you go next depends on what you're building:
+
+| If you're a **fleet manager** | If you're a **developer / reseller** |
+|-------------------------------|--------------------------------------|
+| The Gem is the destination | The Gem is the scaffold |
+| Describe → paste → done | Copy JSON → GitHub → Claude Code |
+| Zero code, zero hosting | Unlimited extension and iteration |
+
+The bridge between Gem and Claude Code: [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md)
+
+---
+
+---
+
+# Part 3 — The Vibe Guide
+
+## What This Repo Is
+
+[github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide) has two layers:
+
+### For Humans: `guides/`
+
+| Guide | What it is |
+|-------|------------|
+| [GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) | How to use the Gem, step by step |
+| [GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md) | Gem → GitHub → Claude Code bridge |
+| [GOOGLE_TOOLS_GUIDE.md](./GOOGLE_TOOLS_GUIDE.md) | Gemini Canvas, AI Studio, Gemini CLI |
+| [BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md) | MCP setup and testing guide |
+| [DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) | ACE vs direct API — benchmarks and tradeoffs |
+| [GEOTAB_ADDINS.md](./GEOTAB_ADDINS.md) | Add-In architecture and constraints |
+
+### For AI Tools: `skills/`
+
+Skills are SKILL.md files that package domain knowledge for AI tools. Any AI tool that supports Claude's skills format can load them.
+
+| Skill | What it teaches |
+|-------|----------------|
+| [`skills/geotab`](../skills/geotab/) | Complete Geotab developer guide — API patterns, gotchas, TypeNames, auth, all of it |
+| [`skills/agentic-n8n`](../skills/agentic-n8n/) | Fleet automation workflows with n8n |
+| [`skills/geotab-custom-mcp`](../skills/geotab-custom-mcp/) | How to build and deploy custom MCP servers for Geotab |
+
+Load into Claude Code:
+```
+/plugin marketplace add fhoffa/geotab-vibe-guide
+```
+
+## Why Skills Matter
+
+Generic Claude doesn't know the Geotab API. A skill fixes that — one domain expert writes it once, every AI in your organization benefits. Claude Code, Codex, Gemini — same knowledge, any tool.
+
+The format is open: [agentskills.io](https://agentskills.io). Your team can do this for any domain — your ERP, your dispatch system, your maintenance platform. One SKILL.md committed to GitHub. Done.
+
+---
+
+---
+
+# Part 4 — ACE in Three Contexts
+
+ACE is Geotab's AI query engine: natural language in, SQL-backed fleet intelligence out. It runs in three different places, each with different tradeoffs.
+
+---
+
+## Context 1: The MyGeotab Web UI
+
+Already there. No setup. Fleet managers can ask questions in plain English and get answers directly in MyGeotab.
+
+**What to ask:**
+- *"Which vehicles drove the most distance this week?"*
+- *"Which drivers had the most safety events?"*
+- *"What's our fuel consumption trend this month?"*
+
+**Hidden value — read the SQL ACE generates.** ACE shows you the query it ran. This is the fastest way to learn the Geotab data model: ask a question, read the SQL, understand the join. Better than documentation for developers who are new to the schema.
+
+**Important accuracy note:** ACE may add implicit filters you didn't ask for. In one case, ACE added `IsTracked = TRUE` to a distance query — the result was 304,000 km instead of the actual 490,000 km fleet total. The query wasn't wrong from ACE's perspective, but it wasn't the full picture. For mission-critical KPIs, read the SQL and verify the filters. For fleet-wide reporting at scale, the [OData Data Connector](https://helpdesk.geotab.com/hc/en-us/articles/1500001401861-Geotab-Data-Connector-Overview) is more complete.
+
+---
+
+## Context 2: ACE as a Text Widget Inside Your Add-In
+
+The Gem can build this in one prompt.
+
+An Add-In with a text input: fleet manager types a question, ACE processes it, the answer appears inside MyGeotab — your interface, your branding.
+
+**The one technical wrinkle:** ACE is async. You can't call it and wait synchronously. The pattern:
+
+```
+1. create-chat  →  get chat_id
+2. send-prompt  →  get message_group_id
+3. Wait ~10 seconds
+4. Poll get-message-group every 8s until status === "DONE"
+5. Read from message_group.messages[id].preview_array
+```
+
+**Gem prompt to build this:**
+```
+Build a "Fleet Insights" Add-In with a text input where managers can 
+ask questions about the fleet. Use Geotab Ace with the async pattern:
+create-chat → send-prompt → poll get-message-group until DONE every 8s.
+Show a loading spinner "ACE is thinking…" while waiting.
+
+Add preset buttons:
+• "Which drivers need coaching this week?"
+• "What's our fuel trend this month?"
+• "Which vehicles might need maintenance?"
+```
+
+Auth comes from the MyGeotab session automatically — nothing extra to wire up.
+
+---
+
+## Context 3: ACE via the MCP (GetAceResults)
+
+When Claude is connected to your fleet via the MCP, `GetAceResults` is one of its 20 tools. The important nuance is when to use it versus the direct API.
+
+| | GetAceResults (ACE) | Direct API (Get, GetCountOf) |
+|--|---------------------|------------------------------|
+| Speed | 30–45 seconds | < 1 second |
+| Query type | Natural language | Structured |
+| Best for | Complex analysis, trend questions | Counts, lookups, real-time data |
+| Caveat | May add implicit filters | 5K result cap without pagination |
+
+Real benchmark: the same fleet-wide distance question — 41 seconds via ACE, 1.3 seconds via the direct API. For a dashboard that loads on click, that's the difference between fast and broken.
+
+Use ACE for questions where you need AI reasoning and can tolerate 45 seconds. Use the direct API when you know what you want and need it now.
+
+Full comparison: [guides/DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)
+
+---
+
+---
+
+# Part 5 — Claude + the Official Geotab MCP
+
+## The Shift
+
+AI assistants are becoming a business tool — like email, like a browser. The question isn't whether your employees will use one. The question is: when they do, what can they do with your fleet?
+
+The wrong frame: *"Why is Geotab making me pay for Claude?"*  
+The right frame: *"My business is already evaluating AI assistants. What becomes possible when my fleet is part of that?"*
+
+Geotab isn't adopting AI. Geotab is ready for the AI-native world you're already entering. Bring your tools — they'll meet you there.
+
+## What MCP Is
+
+[MCP (Model Context Protocol)](https://modelcontextprotocol.io/) is an open standard that lets AI assistants connect to external data and tools. It's not Geotab-specific — it's how Claude, Copilot, and others plug into external systems. Geotab has built a server that implements it.
+
+**One key benefit over manual API use:** You no longer need to give Claude your Geotab password. The MCP server handles authentication — Claude connects through the server, your credentials stay out of the conversation.
+
+## The 20 Tools
+
+| Category | Tools |
+|----------|-------|
+| **Data Retrieval** | Get, GetCountOf, GetAceResults, ListEntities, GetEntity |
+| **Fleet Management** | Add, Set, Remove, DecodeVins |
+| **Safety & Compliance** | DismissFaults, GetHosRuleSets, EmissionEnrollDevices, EmissionDeadline, GetPostedRoadSpeeds |
+| **Video — Go Focus** | SearchMedia, GetMediaUrl, GetDevicesInformation, DownloadMediaFile, UploadMediaFile |
+| **Reporting** | SendReportProcessingRequest |
+
+Full read *and* write. This isn't a read-only analytics layer.
+
+## What Claude + MCP Can Do
+
+The MCP unlocks four levels of capability that go well beyond single-question analysis:
+
+---
+
+### Level 1: Instant fleet answers, no dashboard needed
+
+```
+You: "Which vehicles haven't communicated in 24 hours?"
+
+Claude: [queries Geotab live]
+"2 vehicles offline: GVF-1204 (last seen near Lyon, 3 days ago) 
+and GVF-0891 (last seen near Valencia, 5 days ago). 
+Want their fault history?"
+```
+
+No MyGeotab tab open. No login. Your fleet is part of the conversation.
+
+---
+
+### Level 2: Multi-step investigations — chain of reasoning
+
+ACE answers one question at a time. Claude can chain many steps together, carrying context across the conversation:
+
+```
+You: "Which drivers had the most harsh braking events last week?"
+
+Claude: [GetAceResults] "Top 3: Martinez (14 events), Chen (11), 
+Okonkwo (9). All assigned to the Southern Region group."
+
+You: "Decode the VINs for their assigned vehicles."
+
+Claude: [DecodeVins] "All three are 2021 diesel vans — 
+Mercedes Sprinter, Ford Transit, Renault Master."
+
+You: "Create a Safety Coaching Q2 group and add these drivers."
+
+Claude: [Add + Set] "Done. Group created. All three assigned."
+```
+
+Query → analyze → act. One conversation. This is what FleetShield AI's operator does with a voice command.
+
+---
+
+### Level 3: Charting, mapping, and synthesis across tools
+
+Claude isn't limited to Geotab data. In the same conversation it can:
+
+- Pull fleet data via MCP
+- Generate a chart from the results
+- Cross-reference against external data (weather, road conditions, regulatory thresholds)
+- Write a summary formatted for your reporting workflow
+
+With the [Geotab skill](../skills/geotab/) loaded, Claude understands the data model deeply enough to translate ambiguous questions into the right API calls.
+
+---
+
+### Level 4: System changes and cross-company integrations
+
+The MCP has full write access:
+
+- Create groups, zones, alerts
+- Update driver rules and notification settings
+- Trigger report generation
+- Dismiss faults, enroll vehicles in emissions programs
+
+And Claude can connect to your other systems in the same session — your HR platform, your maintenance software, your dispatch system — if those have MCP servers or APIs Claude can reach.
+
+---
+
+## Beta and Setup
+
+The official Geotab MCP is opening to beta testers. Talk to Geotab at this event to get early access.
+
+**Setup guide:** [guides/BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md)
+
+**Works today (read-only, ACE-only, 15-minute setup):** [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) — use this as a preview while waiting for beta.
+
+---
+
+---
+
+# Part 6 — Take These Three Things Home
+
+### 1. Try the Gem right now
+[Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO) — describe a fleet problem. A working MyGeotab Add-In in 10 minutes. Free, no code, no hosting. Then iterate with it — one prompt is the start, not the end.
+
+### 2. Sign up for MCP beta
+Talk to Geotab at this event. When the official MCP opens, you'll be among the first to connect your AI assistant to your live fleet.
+
+### 3. Explore this repo
+[github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide) — all guides, all prompts, all skills, links to all hackathon videos.
+
+> *"You used to write instructions. Now you describe outcomes.  
+> Bring your AI tools — Geotab is ready for that world."*
+
+---
+
+---
+
+## Resources
+
+| Resource | Link |
+|----------|------|
+| Geotab Add-In Architect Gem | [gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO) |
+| Gem user guide | [guides/GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) |
+| Gem → Claude Code bridge | [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md) |
+| Vibe guide repo | [github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide) |
+| MCP beta setup | [guides/BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md) |
+| Custom MCP demo (works today) | [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) |
+| ACE vs API comparison | [guides/DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) |
+| Hackathon intro video | [youtube.com/watch?v=BD0U9Zf-LvY](https://www.youtube.com/watch?v=BD0U9Zf-LvY) |
+| FleetShield AI interview | [youtube.com/watch?v=G3A8PjtovN8](https://www.youtube.com/watch?v=G3A8PjtovN8) |
+| Attrix / Last Week in Fleet | [youtube.com/watch?v=EiZsIof1Scw](https://www.youtube.com/watch?v=EiZsIof1Scw) |
+| Full hackathon playlist | [youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) |
+| Create a free demo account | [my.geotab.com/registration.html](https://my.geotab.com/registration.html) |
+| Agent skills format | [agentskills.io](https://agentskills.io) |
+| MCP open standard | [modelcontextprotocol.io](https://modelcontextprotocol.io/) |
+
+---
+
+## Q&A Reference
+
+**Does my team need to pay for Claude to use the MCP?**  
+The MCP requires a Claude subscription (~$20/month Pro, or enterprise plans). But the frame matters: if you're already evaluating AI assistants for your business, Geotab integrating with them is a value-add on something you're buying anyway — not a new cost Geotab is adding. You're not buying Claude for Geotab. You're buying Claude for your business, and Geotab comes along for the ride.
+
+**What about driver privacy?**  
+The MCP runs against your Geotab account with the same permission model — users only see vehicles and drivers they already have access to. Fleet data goes from Geotab to your machine. Your credentials are handled by the MCP server, not passed through Claude.
+
+**Does ACE work inside embedded Add-Ins?**  
+Yes, verified. Auth comes from the MyGeotab session automatically. The async polling pattern is the critical part — the Gem handles it if you ask explicitly.
+
+**Can I build my own MCP server for Geotab?**  
+Yes. [guides/BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md) covers the official path. For a custom server, see [skills/geotab-custom-mcp](../skills/geotab-custom-mcp/) and [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo).
+
+**How do I teach my AI tool about our internal systems?**  
+Same approach as this repo's skills: write a SKILL.md with your domain knowledge (API patterns, naming conventions, gotchas), commit it to GitHub, load it into your AI tool. Format: [agentskills.io](https://agentskills.io).
