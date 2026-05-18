@@ -459,7 +459,11 @@ Talk to Geotab at this event. When the official MCP opens, you'll be among the f
 ## Q&A Reference
 
 **Does my team need to pay for Claude to use the MCP?**  
-The MCP requires a Claude subscription (~$20/month Pro, or enterprise plans). But the frame matters: if you're already evaluating AI assistants for your business, Geotab integrating with them is a value-add on something you're buying anyway — not a new cost Geotab is adding. You're not buying Claude for Geotab. You're buying Claude for your business, and Geotab comes along for the ride.
+Not necessarily. Claude's free tier supports MCP through the desktop app via a JSON config file — but that's a developer path. Claude Pro ($20/month) adds a GUI-based integrations panel in settings, which is what most non-developer users will want.
+
+It doesn't need to be Claude either. ChatGPT, Gemini, and [Goose](https://goose-docs.ai) (Block's free open-source agent) all support MCP. For serious work, some paid plan somewhere is likely — but that's a cost your organization is probably already evaluating for AI assistants in general, not something you're buying specifically for Geotab.
+
+Claude is currently the most mature option for non-developer users: the integrations UI is point-and-click, no JSON editing required. The others tend to be more developer-focused. That may change — the ecosystem is moving fast.
 
 **What about driver privacy?**  
 The MCP runs against your Geotab account with the same permission model — users only see vehicles and drivers they already have access to. Fleet data goes from Geotab to your machine. Your credentials are handled by the MCP server, not passed through Claude.
