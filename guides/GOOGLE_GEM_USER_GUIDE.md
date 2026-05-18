@@ -420,6 +420,8 @@ The styling isn't working. Can you make sure all CSS is inline using style="" at
 | Multiple API calls | Real-time streaming updates |
 | Navigate to other MyGeotab pages | Open external websites |
 
+**When the Add-In outgrows the Gem** — you need tests, version control, secret API keys, or teammates contributing — copy the JSON from the Gem conversation and move to Claude Code. See [GEM_TO_CLAUDE_CODE.md](GEM_TO_CLAUDE_CODE.md) for the one-prompt handoff.
+
 **For advanced Add-Ins** (external APIs, React frameworks, complex state management), you'll need external hosting. See the [Building Geotab Add-Ins guide](GEOTAB_ADDINS.md) for hosted options.
 
 ---
