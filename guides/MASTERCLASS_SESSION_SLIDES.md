@@ -148,9 +148,8 @@ Font: **Trebuchet MS** titles · **Calibri** body
 - Title: **"AI assistants are becoming a business tool — like email, like a browser."**
 - Large question (white, 24pt centered):
   *"When your employees have an AI assistant — what can it do for your fleet?"*
-- Two lines (18pt):
-  - ❌ *"Why is Geotab making me pay for Claude?"*
-  - ✅ *"What becomes possible when my fleet is part of the AI conversation?"*
+- Large centered question (white, 24pt):
+  *"What becomes possible when my fleet is part of the AI conversation?"*
 - Footer (orange): *"Bring your AI tools. Geotab is ready for that world."*
 
 ---

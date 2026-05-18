@@ -305,8 +305,7 @@ Full comparison: [guides/DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)
 
 AI assistants are becoming a business tool — like email, like a browser. The question isn't whether your employees will use one. The question is: when they do, what can they do with your fleet?
 
-The wrong frame: *"Why is Geotab making me pay for Claude?"*  
-The right frame: *"My business is already evaluating AI assistants. What becomes possible when my fleet is part of that?"*
+*"My business is already evaluating AI assistants. What becomes possible when my fleet is part of that?"*
 
 Geotab isn't adopting AI. Geotab is ready for the AI-native world you're already entering. Bring your tools — they'll meet you there.
 
