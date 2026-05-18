@@ -39,9 +39,9 @@ This document serves as both session guide and take-home reference. Everything l
 
 ## What Happened
 
-The Geotab Vibe Coding Challenge ran February 12 – March 2, 2026. Any developer could participate — Geotab employees, resellers, partners, strangers on the internet. The tools: any AI assistant. The data: the Geotab fleet API. The prize: $25,000.
+The Geotab Vibe Coding Challenge ran February 12 – March 2, 2026. Any developer could participate — resellers, partners, customers, strangers on the internet. The tools: any AI assistant. The data: the Geotab fleet API. The prize: $25,000.
 
-47 teams submitted projects. 43 repos were cloned and code-reviewed — not by humans reading READMEs, but by Claude Code reading every source file. We used vibe coding to judge vibe coding.
+47 teams submitted projects. The judges reviewed demos, repos, and videos — AI tools were part of the judging process too.
 
 
 ## The Winners
@@ -106,18 +106,6 @@ LP (Attrix, Geotab reseller since 2015) won the community award for consistent g
 
 ---
 
-## The Key Lesson
-
-**The #1 differentiator across 47 submissions wasn't the idea. Wasn't the UI. It was whether the project connected to real fleet data.**
-
-Project after project had polished demos. When the code was read, it showed `Math.random()`, `seed-data.ts`, `fakeData.ts`. Beautiful apps. No real data.
-
-The ones that advanced: real API calls, real driver names, real trips, real fault codes.
-
-Vibe coding gives you speed. Speed building on fake data is just a faster fake.
-
----
-
 ---
 
 # Part 2 — Build With the Gem
@@ -131,8 +119,6 @@ Vibe coding is iterative — you'll install Add-Ins that are half-finished, past
 **→ [my.geotab.com/registration.html](https://my.geotab.com/registration.html)**
 
 A free demo database gives you a real Geotab API, real TypeNames, real responses — just simulated vehicles instead of your actual fleet. Everything you build and test against it works the same way in production. Install things, break things, reset, iterate. No risk to your live data, no colleagues wondering why there's a half-finished dashboard in their sidebar.
-
-The demo database is also why the hackathon's real-data requirement mattered: teams that built against the real API from day one had working code. Teams that used `Math.random()` had a beautiful app that didn't actually do anything.
 
 ---
 
