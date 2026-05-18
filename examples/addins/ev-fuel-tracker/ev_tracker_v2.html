@@ -6,68 +6,79 @@
 </head>
 <body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f8f9fa;'>
 
-  <!-- Loading state shown until API data arrives -->
   <div id='loading-state' style='text-align:center;padding:40px;color:#666;'>
     Loading fleet telemetry...
   </div>
 
-  <!-- Main dashboard, hidden until data loads -->
   <div id='main-content' style='display:none;'>
 
     <div style='margin-bottom:20px;'>
-      <h2 style='color:#1e293b;margin:0;font-weight:600;'>EV Fleet &amp; Low Fuel Tracker (v0.2)</h2>
+      <h2 style='color:#1e293b;margin:0;font-weight:600;'>EV Fleet &amp; Fuel Tracker (v0.2)</h2>
     </div>
 
     <!-- Summary cards -->
     <div style='display:flex;gap:15px;margin-bottom:25px;flex-wrap:wrap;'>
-      <div style='flex:1;min-width:200px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:5px solid #3b82f6;'>
+      <div style='flex:1;min-width:180px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:5px solid #3b82f6;'>
         <div style='font-size:12px;color:#64748b;text-transform:uppercase;font-weight:600;'>Total Fleet</div>
         <div id='txt-total' style='font-size:28px;font-weight:bold;color:#1e293b;margin-top:5px;'>0</div>
       </div>
-      <div style='flex:1;min-width:200px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:5px solid #10b981;'>
+      <div style='flex:1;min-width:180px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:5px solid #10b981;'>
         <div style='font-size:12px;color:#64748b;text-transform:uppercase;font-weight:600;'>Electric Vehicles (EV)</div>
         <div id='txt-ev' style='font-size:28px;font-weight:bold;color:#1e293b;margin-top:5px;'>0 (0%)</div>
       </div>
-      <div style='flex:1;min-width:200px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:5px solid #f59e0b;'>
+      <div style='flex:1;min-width:180px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:5px solid #f59e0b;'>
         <div style='font-size:12px;color:#64748b;text-transform:uppercase;font-weight:600;'>Gas / ICE Vehicles</div>
         <div id='txt-gas' style='font-size:28px;font-weight:bold;color:#1e293b;margin-top:5px;'>0 (0%)</div>
       </div>
-    </div>
-
-    <!-- Fleet mix progress bar -->
-    <div style='background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:25px;'>
-      <h5 style='margin:0 0 15px 0;color:#334155;font-size:16px;'>Fleet Composition Mix</h5>
-      <div style='height:24px;display:flex;overflow:hidden;border-radius:4px;background-color:#e9ecef;'>
-        <div id='bar-ev' role='progressbar' style='width:0%;color:#fff;text-align:center;line-height:24px;font-weight:bold;background-color:#10b981;transition:width .6s ease;'>EV</div>
-        <div id='bar-gas' role='progressbar' style='width:0%;color:#fff;text-align:center;line-height:24px;font-weight:bold;background-color:#f59e0b;transition:width .6s ease;'>Gas</div>
+      <div style='flex:1;min-width:180px;background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);border-left:5px solid #e11d48;'>
+        <div style='font-size:12px;color:#64748b;text-transform:uppercase;font-weight:600;'>Low Energy Alerts</div>
+        <div id='txt-alerts' style='font-size:28px;font-weight:bold;color:#1e293b;margin-top:5px;'>0</div>
       </div>
     </div>
 
-    <!-- Alert table: vehicles below 20% fuel/battery -->
+    <!-- Fleet mix bar -->
+    <div style='background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:25px;'>
+      <h5 style='margin:0 0 15px 0;color:#334155;font-size:16px;'>Fleet Composition Mix</h5>
+      <div style='height:24px;display:flex;overflow:hidden;border-radius:4px;background-color:#e9ecef;'>
+        <div id='bar-ev' role='progressbar' style='width:0%;color:#fff;text-align:center;line-height:24px;font-weight:bold;background-color:#10b981;transition:width .6s ease;'></div>
+        <div id='bar-gas' role='progressbar' style='width:0%;color:#fff;text-align:center;line-height:24px;font-weight:bold;background-color:#f59e0b;transition:width .6s ease;'></div>
+      </div>
+    </div>
+
+    <!-- Full vehicle table -->
     <div style='background:#fff;padding:20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);'>
-      <h3 style='color:#e11d48;margin:0 0 15px 0;font-weight:600;font-size:18px;'>Alerts: Fuel/Battery Level Less Than 20%</h3>
+      <div style='display:flex;align-items:center;justify-content:space-between;margin-bottom:15px;flex-wrap:wrap;gap:10px;'>
+        <h3 style='margin:0;color:#1e293b;font-weight:600;font-size:18px;'>All Vehicles</h3>
+        <div style='display:flex;gap:8px;align-items:center;flex-wrap:wrap;'>
+          <label style='font-size:13px;color:#64748b;'>Filter:</label>
+          <button id='btn-all'  onclick='filterTable("all")'  style='padding:4px 12px;border-radius:4px;border:1px solid #3b82f6;background:#3b82f6;color:#fff;cursor:pointer;font-size:13px;'>All</button>
+          <button id='btn-ev'   onclick='filterTable("ev")'   style='padding:4px 12px;border-radius:4px;border:1px solid #10b981;background:#fff;color:#10b981;cursor:pointer;font-size:13px;'>EV</button>
+          <button id='btn-gas'  onclick='filterTable("gas")'  style='padding:4px 12px;border-radius:4px;border:1px solid #f59e0b;background:#fff;color:#f59e0b;cursor:pointer;font-size:13px;'>Gas</button>
+          <button id='btn-low'  onclick='filterTable("low")'  style='padding:4px 12px;border-radius:4px;border:1px solid #e11d48;background:#fff;color:#e11d48;cursor:pointer;font-size:13px;'>Low (&lt;20%)</button>
+        </div>
+      </div>
       <div style='overflow-x:auto;'>
-        <table style='width:100%;border-collapse:collapse;text-align:left;'>
+        <table id='vehicle-table' style='width:100%;border-collapse:collapse;text-align:left;'>
           <thead style='background-color:#f8f9fa;border-bottom:2px solid #e2e8f0;'>
             <tr>
-              <th style='padding:12px;color:#475569;'>Vehicle (Click to View)</th>
-              <th style='padding:12px;color:#475569;'>Type</th>
-              <th style='padding:12px;color:#475569;'>Current Fuel/Battery</th>
-              <th style='padding:12px;color:#475569;'>Live Speed</th>
-              <th style='padding:12px;color:#475569;'>Status Alert</th>
+              <th style='padding:12px;color:#475569;cursor:pointer;' onclick='sortTable("name")'>Vehicle <span id='sort-name'></span></th>
+              <th style='padding:12px;color:#475569;cursor:pointer;' onclick='sortTable("type")'>Type <span id='sort-type'></span></th>
+              <th style='padding:12px;color:#475569;cursor:pointer;' onclick='sortTable("level")'>Fuel / Battery % <span id='sort-level'></span></th>
+              <th style='padding:12px;color:#475569;cursor:pointer;' onclick='sortTable("speed")'>Live Speed <span id='sort-speed'></span></th>
+              <th style='padding:12px;color:#475569;'>Status</th>
             </tr>
           </thead>
-          <tbody id='alert-table-body'></tbody>
+          <tbody id='vehicle-table-body'></tbody>
         </table>
-        <div id='empty-state' style='display:none;text-align:center;padding:40px;color:#64748b;font-size:16px;'>
-          All operational vehicles have healthy fuel and battery levels!
+        <div id='no-data-state' style='display:none;text-align:center;padding:40px;color:#64748b;font-size:16px;'>
+          No vehicles match this filter.
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Debug panel (hidden by default) -->
-  <div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;z-index:9999;'>
+  <!-- Debug panel -->
+  <div style='position:fixed;bottom:0;left:0;right:0;text-align:center;z-index:9999;'>
     <button onclick="var d=document.getElementById('debug-log');d.style.display=d.style.display==='none'?'block':'none';"
             style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>
       Toggle Debug Log
@@ -81,13 +92,14 @@
 
   <script>
     var _debugData = {};
+    var _allRows = [];   // [{el, type, level, speed, name}] — used for filter/sort
+    var _sortCol = 'level';
+    var _sortAsc = true;
+    var _activeFilter = 'all';
 
     function debugLog(msg) {
       var el = document.getElementById('debug-log');
-      if (el) {
-        el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
-        el.scrollTop = el.scrollHeight;
-      }
+      if (el) { el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n'; el.scrollTop = el.scrollHeight; }
     }
 
     function debugSample(key, arr) {
@@ -101,15 +113,72 @@
       t.select();
       document.execCommand('copy');
       document.body.removeChild(t);
-      alert('Debug data copied to clipboard! Paste it back to the AI chat for analysis.');
+      alert('Debug data copied! Paste back to your AI chat for analysis.');
+    }
+
+    function filterTable(f) {
+      _activeFilter = f;
+      var btns = { all: 'btn-all', ev: 'btn-ev', gas: 'btn-gas', low: 'btn-low' };
+      var colors = { all: '#3b82f6', ev: '#10b981', gas: '#f59e0b', low: '#e11d48' };
+      Object.keys(btns).forEach(function (k) {
+        var btn = document.getElementById(btns[k]);
+        btn.style.background = k === f ? colors[k] : '#fff';
+        btn.style.color      = k === f ? '#fff'     : colors[k];
+      });
+      renderRows();
+    }
+
+    function sortTable(col) {
+      if (_sortCol === col) { _sortAsc = !_sortAsc; } else { _sortCol = col; _sortAsc = true; }
+      ['name','type','level','speed'].forEach(function (c) {
+        document.getElementById('sort-' + c).textContent = c === col ? (_sortAsc ? ' ▲' : ' ▼') : '';
+      });
+      renderRows();
+    }
+
+    function renderRows() {
+      var visible = _allRows.filter(function (r) {
+        if (_activeFilter === 'ev')  return r.type  === 'EV';
+        if (_activeFilter === 'gas') return r.type  === 'Gas';
+        if (_activeFilter === 'low') return r.level !== null && r.level < 20;
+        return true;
+      });
+
+      visible.sort(function (a, b) {
+        var av = a[_sortCol], bv = b[_sortCol];
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        if (typeof av === 'string') av = av.toLowerCase();
+        if (typeof bv === 'string') bv = bv.toLowerCase();
+        if (av < bv) return _sortAsc ? -1 : 1;
+        if (av > bv) return _sortAsc ?  1 : -1;
+        return 0;
+      });
+
+      var tbody = document.getElementById('vehicle-table-body');
+      tbody.innerHTML = '';
+      visible.forEach(function (r) { tbody.appendChild(r.el); });
+      document.getElementById('no-data-state').style.display = visible.length ? 'none' : 'block';
+    }
+
+    function makeLevelBar(level) {
+      if (level === null) return '<span style="color:#94a3b8;font-size:13px;">No data</span>';
+      var pct = Math.round(level);
+      var color = pct < 20 ? '#e11d48' : pct < 40 ? '#f59e0b' : '#10b981';
+      return '<div style="display:flex;align-items:center;gap:8px;">' +
+        '<div style="flex:1;height:10px;background:#e9ecef;border-radius:5px;overflow:hidden;min-width:60px;">' +
+          '<div style="height:100%;width:' + pct + '%;background:' + color + ';border-radius:5px;"></div>' +
+        '</div>' +
+        '<span style="font-weight:600;color:' + color + ';min-width:36px;">' + pct + '%</span>' +
+      '</div>';
     }
 
     geotab.addin['ev-fuel-tracker-v2'] = function () {
       return {
         initialize: function (api, state, callback) {
-          debugLog('Initializing EV & Fuel Add-In v0.2');
+          debugLog('EV & Fuel Tracker v0.2 — initializing');
 
-          // Look back 2 days to capture the most recent fuel/battery readings
           var lookback = new Date();
           lookback.setDate(lookback.getDate() - 2);
 
@@ -125,145 +194,156 @@
               var evData     = results[2];
               var statusInfo = results[3];
 
-              debugLog('Loaded ' + devices.length + ' devices and live status telemetry');
+              debugLog('Devices: ' + devices.length + ' | Fuel readings: ' + fuelData.length + ' | EV readings: ' + evData.length);
               debugSample('devices', devices);
+              debugSample('fuelData', fuelData);
+              debugSample('evData', evData);
               debugSample('statusInfo', statusInfo);
 
-              // Build fleet index keyed by device id
+              // Index all devices
               var fleet = {};
               devices.forEach(function (d) {
-                fleet[d.id] = { device: d, type: 'Gas', level: null, speed: 0, lastUpdated: null };
+                fleet[d.id] = { device: d, type: 'Gas', level: null, speed: 0, lastFuelUpdate: null, lastEvUpdate: null };
               });
 
-              // Apply live speed from DeviceStatusInfo
+              // Live speed
               statusInfo.forEach(function (si) {
                 if (si.device && fleet[si.device.id]) {
                   fleet[si.device.id].speed = si.speed !== undefined ? Math.round(si.speed) : 0;
                 }
               });
 
-              // Apply most-recent fuel level readings (ICE vehicles)
+              // Most-recent fuel level (ICE)
               fuelData.forEach(function (r) {
                 if (r.device && fleet[r.device.id]) {
                   var v = fleet[r.device.id];
-                  if (!v.lastUpdated || new Date(r.dateTime) > new Date(v.lastUpdated)) {
-                    v.level = r.data;
-                    v.lastUpdated = r.dateTime;
+                  if (!v.lastFuelUpdate || new Date(r.dateTime) > new Date(v.lastFuelUpdate)) {
+                    v.lastFuelUpdate = r.dateTime;
+                    // Only update level if we haven't seen EV data for this vehicle yet
+                    if (v.type !== 'EV') { v.level = r.data; }
                   }
                 }
               });
 
-              // Apply most-recent battery SoC readings (EV vehicles override type)
+              // Most-recent EV battery SoC — wins over fuel readings
               evData.forEach(function (r) {
                 if (r.device && fleet[r.device.id]) {
                   var v = fleet[r.device.id];
                   v.type = 'EV';
-                  if (!v.lastUpdated || new Date(r.dateTime) > new Date(v.lastUpdated)) {
+                  if (!v.lastEvUpdate || new Date(r.dateTime) > new Date(v.lastEvUpdate)) {
+                    v.lastEvUpdate = r.dateTime;
                     v.level = r.data;
-                    v.lastUpdated = r.dateTime;
                   }
                 }
               });
 
-              // Tally counts and collect low-energy alerts
-              var total    = devices.length;
-              var evCount  = 0;
-              var gasCount = 0;
-              var lowEnergy = [];
-
+              // Tally
+              var total = devices.length, evCount = 0, gasCount = 0, alertCount = 0;
               Object.keys(fleet).forEach(function (id) {
                 var v = fleet[id];
                 if (v.type === 'EV') { evCount++; } else { gasCount++; }
-                if (v.level !== null && v.level < 20) { lowEnergy.push(v); }
+                if (v.level !== null && v.level < 20) { alertCount++; }
               });
 
               var evPct  = total > 0 ? Math.round((evCount  / total) * 100) : 0;
               var gasPct = total > 0 ? Math.round((gasCount / total) * 100) : 0;
 
-              // Update summary cards
-              document.getElementById('txt-total').textContent = total;
-              document.getElementById('txt-ev').textContent   = evCount  + ' (' + evPct  + '%)';
-              document.getElementById('txt-gas').textContent  = gasCount + ' (' + gasPct + '%)';
+              document.getElementById('txt-total').textContent  = total;
+              document.getElementById('txt-ev').textContent     = evCount  + ' (' + evPct  + '%)';
+              document.getElementById('txt-gas').textContent    = gasCount + ' (' + gasPct + '%)';
+              document.getElementById('txt-alerts').textContent = alertCount;
 
-              // Update mix bar
-              var bEv  = document.getElementById('bar-ev');
+              var bEv = document.getElementById('bar-ev');
+              bEv.style.width    = evPct + '%';
+              bEv.textContent    = evPct > 5 ? 'EV (' + evPct + '%)' : '';
+
               var bGas = document.getElementById('bar-gas');
-              bEv.style.width  = evPct  + '%';
-              bEv.textContent  = 'EV ('  + evPct  + '%)';
-              bGas.style.width = gasPct + '%';
-              bGas.textContent = 'Gas (' + gasPct + '%)';
+              bGas.style.width   = gasPct + '%';
+              bGas.textContent   = gasPct > 5 ? 'Gas (' + gasPct + '%)' : '';
 
-              // Build alert table rows
-              var tbody = document.getElementById('alert-table-body');
-              tbody.innerHTML = '';
+              // Build all vehicle rows
+              _allRows = [];
+              Object.keys(fleet).forEach(function (id) {
+                var item = fleet[id];
+                var isLow = item.level !== null && item.level < 20;
+                var rowBg = isLow ? '#fff5f7' : '#fff';
 
-              if (lowEnergy.length === 0) {
-                document.getElementById('empty-state').style.display = 'block';
-              } else {
-                document.getElementById('empty-state').style.display = 'none';
-                lowEnergy.forEach(function (item) {
-                  var tr = document.createElement('tr');
-                  tr.style.borderBottom = '1px solid #e2e8f0';
+                var tr = document.createElement('tr');
+                tr.style.cssText = 'border-bottom:1px solid #e2e8f0;background:' + rowBg + ';';
 
-                  // Vehicle name (links to device detail page)
-                  var tdName = document.createElement('td');
-                  tdName.style.padding = '12px';
-                  var a = document.createElement('a');
-                  a.textContent = item.device.name || item.device.id;
-                  a.href = '#';
-                  a.style.cssText = 'color:#2563eb;cursor:pointer;text-decoration:underline;font-weight:600;';
-                  a.onclick = function (e) {
+                // Vehicle name — click navigates to device detail
+                var tdName = document.createElement('td');
+                tdName.style.padding = '12px';
+                var a = document.createElement('a');
+                a.textContent = item.device.name || item.device.id;
+                a.href = '#';
+                a.style.cssText = 'color:#2563eb;cursor:pointer;text-decoration:underline;font-weight:600;';
+                a.onclick = (function (devId) {
+                  return function (e) {
                     e.preventDefault();
-                    window.parent.location.hash = 'device,id=' + item.device.id;
+                    window.parent.location.hash = 'device,id=' + devId;
                   };
-                  tdName.appendChild(a);
-                  tr.appendChild(tdName);
+                }(item.device.id));
+                tdName.appendChild(a);
+                tr.appendChild(tdName);
 
-                  // EV / Gas badge
-                  var tdType = document.createElement('td');
-                  tdType.style.padding = '12px';
-                  var badge = document.createElement('span');
-                  badge.style.cssText = 'padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#fff;background:' +
-                    (item.type === 'EV' ? '#10b981' : '#f59e0b') + ';';
-                  badge.textContent = item.type;
-                  tdType.appendChild(badge);
-                  tr.appendChild(tdType);
+                // Type badge
+                var tdType = document.createElement('td');
+                tdType.style.padding = '12px';
+                var badge = document.createElement('span');
+                badge.style.cssText = 'padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#fff;background:' +
+                  (item.type === 'EV' ? '#10b981' : '#f59e0b') + ';';
+                badge.textContent = item.type;
+                tdType.appendChild(badge);
+                tr.appendChild(tdType);
 
-                  // Fuel / battery level
-                  var tdLevel = document.createElement('td');
-                  tdLevel.style.padding = '12px';
-                  tdLevel.innerHTML = '<strong>' + Math.round(item.level) + '%</strong>';
-                  tr.appendChild(tdLevel);
+                // Fuel / battery mini-bar
+                var tdLevel = document.createElement('td');
+                tdLevel.style.padding = '12px';
+                tdLevel.style.minWidth = '140px';
+                tdLevel.innerHTML = makeLevelBar(item.level);
+                tr.appendChild(tdLevel);
 
-                  // Live speed
-                  var tdSpeed = document.createElement('td');
-                  tdSpeed.style.padding = '12px';
-                  tdSpeed.textContent = item.speed + ' km/h';
-                  tr.appendChild(tdSpeed);
+                // Speed
+                var tdSpeed = document.createElement('td');
+                tdSpeed.style.padding = '12px';
+                tdSpeed.textContent = item.speed + ' km/h';
+                tr.appendChild(tdSpeed);
 
-                  // Alert badge
-                  var tdStatus = document.createElement('td');
-                  tdStatus.style.padding = '12px';
-                  var sBadge = document.createElement('span');
-                  sBadge.style.cssText = 'padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#fff;background:#e11d48;';
-                  sBadge.textContent = item.type === 'EV' ? 'Low Battery' : 'Low Fuel';
-                  tdStatus.appendChild(sBadge);
-                  tr.appendChild(tdStatus);
+                // Status
+                var tdStatus = document.createElement('td');
+                tdStatus.style.padding = '12px';
+                if (isLow) {
+                  var alert = document.createElement('span');
+                  alert.style.cssText = 'padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;color:#fff;background:#e11d48;';
+                  alert.textContent = item.type === 'EV' ? 'Low Battery' : 'Low Fuel';
+                  tdStatus.appendChild(alert);
+                } else if (item.level === null) {
+                  tdStatus.innerHTML = '<span style="color:#94a3b8;font-size:13px;">No reading</span>';
+                } else {
+                  tdStatus.innerHTML = '<span style="color:#10b981;font-size:13px;">OK</span>';
+                }
+                tr.appendChild(tdStatus);
 
-                  tbody.appendChild(tr);
-                });
-              }
+                _allRows.push({ el: tr, name: (item.device.name || '').toLowerCase(), type: item.type, level: item.level, speed: item.speed });
+              });
+
+              // Default sort: level ascending (lowest fuel first)
+              _sortCol = 'level';
+              _sortAsc = true;
+              document.getElementById('sort-level').textContent = ' ▲';
+              renderRows();
 
               document.getElementById('loading-state').style.display = 'none';
               document.getElementById('main-content').style.display  = 'block';
 
             } catch (err) {
-              debugLog('Error processing data: ' + err.message);
+              debugLog('Processing error: ' + err.message);
             }
           }, function (err) {
-            debugLog('API Error: ' + err);
+            debugLog('API error: ' + err);
             document.getElementById('loading-state').innerHTML =
-              '<div style="color:red;font-weight:bold;">Error loading fleet data. Check debug log.</div>';
+              '<div style="color:red;font-weight:bold;">Error loading fleet data. Check debug log below.</div>';
           });
 
           callback();

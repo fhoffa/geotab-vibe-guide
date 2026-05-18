@@ -38,6 +38,25 @@ node tests/gem-validation/validate.js my-addin.json
 - `fixtures/pass-*.json` — configs that should pass all checks
 - `fixtures/fail-*.json` — configs that should fail on a specific check (noted in `_comment`)
 
+### `ev-fuel-tracker/`
+
+Validates the EV Mix and Fuel Tracker add-in (`examples/addins/ev-fuel-tracker/`).
+
+**Run:**
+```bash
+bash tests/ev-fuel-tracker/run.sh
+```
+
+**Two suites in one script:**
+1. **Config JSON checks** — verifies the install config uses the external-hosted format (absolute HTTPS URL, no `files` property, no trailing slash on path, etc.)
+2. **HTML checks** — verifies the add-in HTML follows Geotab rules: `callback()` called, no `<style>` tags, clickable vehicle names via `window.parent.location.hash`, correct diagnostic IDs, debug panel, filter buttons
+
+**Fixtures:**
+- `fixtures/pass-config.json` — valid config (should pass all checks)
+- `fixtures/fail-embedded-files.json` — config with `files` property (wrong for external-hosted)
+- `fixtures/fail-relative-url.json` — relative URL instead of absolute GitHub Pages URL
+- `fixtures/fail-trailing-slash.json` — path ends with `/`
+
 ### `gem-review/`
 
 LLM-oriented review checklist for the Gem instructions. Not code — a set of 17 questions an AI assistant (or human) should answer after editing `resources/GEM_INSTRUCTIONS.txt`. Covers behavioral expectations ("would the Gem make vehicle names clickable?"), technical correctness, completeness, and tone.

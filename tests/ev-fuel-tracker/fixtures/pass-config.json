@@ -1,12 +1,11 @@
 {
+  "_comment": "Valid external-hosted config pointing to GitHub Pages",
   "name": "EV Mix and Fuel Tracker v0.2",
   "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
   "version": "0.2",
   "items": [{
     "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/ev-fuel-tracker/ev_tracker_v2.html",
     "path": "ActivityLink",
-    "menuName": {
-      "en": "EV & Fuel Tracker v0.2"
-    }
+    "menuName": { "en": "EV & Fuel Tracker v0.2" }
   }]
 }
