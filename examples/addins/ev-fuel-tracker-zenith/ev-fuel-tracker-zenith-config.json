@@ -1,0 +1,12 @@
+{
+  "name": "EV Mix and Fuel Tracker v0.2 Zenith",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "0.2",
+  "items": [{
+    "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/ev-fuel-tracker-zenith/dist/ev-fuel-tracker.html",
+    "path": "ActivityLink",
+    "menuName": {
+      "en": "EV Fuel Tracker (Zenith)"
+    }
+  }]
+}
