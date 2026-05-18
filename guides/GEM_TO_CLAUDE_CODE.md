@@ -16,6 +16,7 @@ The Gem works inside a conversation. It can't run your Add-In, can't test it, ca
 | The Add-In needs to call an external API with secret keys | Embedded Add-Ins can't hold server-side secrets — you need a backend |
 | You want tests | Automated testing requires a real dev environment |
 | The Gem is losing context across revisions | Long conversation threads drift; Claude Code reads the actual file |
+| You need deeper Geotab API knowledge than the Gem has | The Gem carries a curated subset of the skill — Claude Code can load the full skill with all 13 reference files |
 | You want teammates to contribute | GitHub gives you collaboration, history, code review |
 | The Add-In logic is getting complex enough that it deserves documentation | A proper project can be documented, versioned, and handed off |
 | You want to publish to the Geotab Marketplace | Marketplace Add-Ins need to meet quality and hosting requirements |
@@ -91,13 +92,13 @@ When you're happy with a round of changes, tell Claude Code: *"Commit this and p
 
 ## Loading Geotab Knowledge with a Skill
 
-Instead of manually explaining Geotab's API patterns to Claude, load the skill:
+The Gem works because Geotab domain knowledge was embedded into it — but it carries a curated subset. Claude Code can load the full skill:
 
 ```
 /plugin marketplace add fhoffa/geotab-vibe-guide
 ```
 
-This gives Claude Code the complete Geotab developer guide — TypeNames, authentication patterns, API quirks, result caps, the Add-In format — without you having to explain it. Then your prompts can skip the basics and focus on what you're building.
+This gives Claude Code the complete Geotab developer reference — all 13 files covering TypeNames, auth patterns, ACE polling, result caps, zone/group APIs, Add-In constraints, and every known gotcha. The Gem doesn't have all of this; Claude Code with the full skill does. For complex Add-Ins that push into less-common API territory, this matters.
 
 The `CLAUDE.md` in your project still matters for your specific Add-In's context (what it does, what files to edit, how to deploy). The skill handles the Geotab knowledge layer.
 
