@@ -10,7 +10,7 @@ All projects were built in the open. Browse the repos, watch the videos, learn a
 
 ## Safety, Coaching & Driver Behavior
 
-**FleetShield AI** 🏆 — [github.com/klickgenai/geotab-hackathon](https://github.com/klickgenai/geotab-hackathon) · [Video](https://youtu.be/bb52r3x8EJw) · [Winner interview](https://www.youtube.com/watch?v=G3A8PjtovN8)
+**FleetShield AI** 🏆 Vibe Master — [github.com/klickgenai/geotab-hackathon](https://github.com/klickgenai/geotab-hackathon) · [Video](https://youtu.be/bb52r3x8EJw) · [Winner interview](https://www.youtube.com/watch?v=G3A8PjtovN8)
 
 Voice AI operator assistant + autonomous mission orchestration. The operator asks Tasha to run a coaching sweep — the system scores every driver against their 90-day baseline, updates their portal, and places real Twilio phone calls to flagged drivers. 17 Claude agent tools, 9 insurance/safety scoring engines, 736-line CLAUDE.md.
 
@@ -46,7 +46,7 @@ Lip-synced AI avatar that delivers personalized per-shift driver coaching based 
 
 ---
 
-**Sentinel Fleet IA** — [github.com/JESUSMIJARES/geotab_vibe_coding_sentinel_fleet_ia](https://github.com/JESUSMIJARES/geotab_vibe_coding_sentinel_fleet_ia) · [Video](https://drive.google.com/file/d/12pjrvraeGv-fXZlSlUyGPqX_HZH71EXW/view)
+**Sentinel Fleet IA** 🤖 Best Use of Google Tools — [github.com/JESUSMIJARES/geotab_vibe_coding_sentinel_fleet_ia](https://github.com/JESUSMIJARES/geotab_vibe_coding_sentinel_fleet_ia) · [Video](https://drive.google.com/file/d/12pjrvraeGv-fXZlSlUyGPqX_HZH71EXW/view)
 
 Multi-agent safety audit system integrating SmarterAI dashcam footage with Geotab telematics events.
 
@@ -122,7 +122,7 @@ MCP server that detects fuel theft using graph clustering — finds vehicles los
 
 ---
 
-**Attrix vibe challenge** — [github.com/attrix-technologies/vibe-challenge-entry](https://github.com/attrix-technologies/vibe-challenge-entry) · [Video](https://www.youtube.com/watch?v=Cf6DeKCADmw)
+**Attrix vibe challenge** 🤝 Most Collaborative — [github.com/attrix-technologies/vibe-challenge-entry](https://github.com/attrix-technologies/vibe-challenge-entry) · [Video](https://www.youtube.com/watch?v=Cf6DeKCADmw)
 
 Built by Attrix, a Geotab reseller since 2015. They first used AI to build their own Add-In scaffolding tooling, then built "Last Week in Fleet" — a four-tab weekly fleet summary across productivity, safety, compliance, and sustainability.
 
@@ -140,7 +140,7 @@ Async PHP SDK using PHP 8.1 Fibers with full ACE integration — fills a real ga
 
 ---
 
-**Check-Fleet Onboarding** — [github.com/amufti-cmd/geotab-check-fleet-onboarding-agent](https://github.com/amufti-cmd/geotab-check-fleet-onboarding-agent) · [Video](https://share.synthesia.io/9455d0a6-f86b-4350-8712-51771b99ae73)
+**Check-Fleet Onboarding** 💡 The Disruptor — [github.com/amufti-cmd/geotab-check-fleet-onboarding-agent](https://github.com/amufti-cmd/geotab-check-fleet-onboarding-agent) · [Video](https://share.synthesia.io/9455d0a6-f86b-4350-8712-51771b99ae73)
 
 3-system reseller provisioning agent — automates new customer onboarding across Geotab, CRM, and billing in a single workflow.
 
@@ -154,13 +154,13 @@ Async PHP SDK using PHP 8.1 Fibers with full ACE integration — fills a real ga
 
 ## Route, Cost & Fleet Optimization
 
-**PoolFinder** — [github.com/tmeb123/PoolFinder](https://github.com/tmeb123/PoolFinder) · [Video](https://youtu.be/dhjaQ14ta_4)
+**PoolFinder** 🔬 The Innovator — [github.com/tmeb123/PoolFinder](https://github.com/tmeb123/PoolFinder) · [Video](https://youtu.be/dhjaQ14ta_4)
 
 Fleet right-sizing using the Bron-Kerbosch clique algorithm — finds which vehicles could be shared or eliminated based on actual utilization overlap patterns.
 
 ---
 
-**SmartRoute** — [github.com/avkap007/geotab-hackathon-smartroute](https://github.com/avkap007/geotab-hackathon-smartroute) · [Video](https://drive.google.com/file/d/1lks6aoqf8iqPxwyqrcKnSQxKpxggEL3I/view)
+**SmartRoute** 🌱 Green Award — [github.com/avkap007/geotab-hackathon-smartroute](https://github.com/avkap007/geotab-hackathon-smartroute) · [Video](https://drive.google.com/file/d/1lks6aoqf8iqPxwyqrcKnSQxKpxggEL3I/view)
 
 Waste collection route optimizer using the Clarke-Wright savings algorithm applied to real GPS stop data.
 

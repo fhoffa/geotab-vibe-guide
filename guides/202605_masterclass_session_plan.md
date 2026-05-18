@@ -41,50 +41,65 @@ The Geotab Vibe Coding Challenge ran February 12 – March 2, 2026. Any develope
 
 The judging rubric: **Useful (35%)** · **Original (25%)** · **Fun (15%)** · **Well-done (25%)**. Projects that used mock data had their Well-done score capped at 6.
 
-## What the Community Built
+## The Winners
 
 All submissions were built in the open. All videos are in the [full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG). Full project directory with GitHub links: [guides/HACKATHON_PROJECTS.md](./HACKATHON_PROJECTS.md).
 
 ---
 
-### 🏆 FleetShield AI — Vimal Kanagaraj
-**Score: 8.35** · [Interview video](https://www.youtube.com/watch?v=G3A8PjtovN8)
+### 🏆 Vibe Master — FleetShield AI (Best Overall)
+[GitHub](https://github.com/klickgenai/geotab-hackathon) · [Interview](https://www.youtube.com/watch?v=G3A8PjtovN8)
 
-A predictive fleet safety and insurance intelligence platform. The operator says *"Run a coaching sweep"* and the system:
+A predictive fleet safety and insurance intelligence platform. The operator says *"Run a coaching sweep"* and the system scores every driver against their 90-day baseline, updates their portal, and places real Twilio phone calls to flagged drivers — automatically, no human in the loop.
 
-1. Scores every driver against their 90-day personal baseline
-2. Creates action items in each driver's portal  
-3. Places actual Twilio phone calls to flagged drivers
+> *"Went beyond just visualizing data to illustrating a complete workflow, showing ROI, voice-agents, and what-if analysis. It really brought to life elements of our own product strategy."*
 
-Fleet manager voice command to driver phone call — automatically, no human in the loop. What's under the hood:
-- 17 Claude agent tools with real Geotab API connections
-- 9 scoring engines grounded in FMCSA safety standards and insurance formulas
-- Two voice surfaces: Operator Tasha (fleet manager assistant) + Driver Mike (Twilio outbound calls)
-- 736-line CLAUDE.md teaching Claude every API pattern, every quirk, every scoring formula before execution
-
-This is the architect mindset: you don't vibe your way to correct insurance risk math. You define the domain precisely. Then the AI executes.
+17 Claude agent tools, 9 scoring engines, 736-line CLAUDE.md. This is the architect mindset: you define the domain precisely, then the AI executes.
 
 ---
 
-### Last Week in Fleet — LP Papillon / Attrix
-[Watch](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
+### 🔬 The Innovator — PoolFinder (Best Technical Creativity)
+[GitHub](https://github.com/tmeb123/PoolFinder)
 
-Attrix is a Geotab reseller since 2015. Their team used AI to build their *own* Add-In scaffolding tooling first, then built "Last Week in Fleet" — a native-looking MyGeotab summary across safety, sustainability, compliance, and productivity tabs. A reseller building tools with AI to build more tools faster.
+Fleet right-sizing using the Bron-Kerbosch clique algorithm — finds which vehicles could be shared or eliminated based on actual utilization overlap.
 
----
-
-### FuelGuard MCP — Fuel Theft Detection
-An MCP server built from scratch to detect when vehicles are losing fuel faster than expected — using graph clustering on consumption patterns across similar trip profiles.
+> *"Solves a targeted real world problem virtually all fleets have, with a good scientific approach behind the scenes."*
 
 ---
 
-### ActionEngine — GPS Data Quality Validator
-A 6-algorithm GPS data quality validator. Not glamorous, but a fleet tool that would save real hours of data cleaning for teams who actually deal with GPS artifacts.
+### 💡 The Disruptor — Check-Fleet Onboarding (Most Unique Idea)
+[GitHub](https://github.com/amufti-cmd/geotab-check-fleet-onboarding-agent)
+
+A 3-system reseller provisioning agent — automates new customer onboarding across Geotab, CRM, and billing in a single workflow.
+
+> *"Very relevant problem for our partners. The efficiencies that this would bring to shorten the onboarding process + integrations are incredible."*
 
 ---
 
-### GeoSafe — AI-Suggested Geofences
-Proposes geofence zones based on where vehicles actually stop — the AI looks at trip history and suggests where zones belong. The Gem could do something like this today.
+### 🤖 Best Use of Google Tools — Sentinel Fleet AI
+[GitHub](https://github.com/JESUSMIJARES/geotab_vibe_coding_sentinel_fleet_ia)
+
+Multi-agent safety audit integrating SmarterAI dashcam footage with Geotab telematics — the AI actively reasons through visual data to detect safety violations in real time.
+
+> *"Stands out for its multi-layered integration of Google's AI tools. Leans into the latest agentic workflows, where the AI doesn't just wait for a prompt; it actively reasons."*
+
+---
+
+### 🌱 Green Award — SmartRoute (Best Sustainability Solution)
+[GitHub](https://github.com/avkap007/geotab-hackathon-smartroute)
+
+Waste collection route optimizer using the Clarke-Wright savings algorithm — skips bins that don't need servicing, reducing unnecessary trips.
+
+> *"A practical, well-thought-out solution to a real problem. Works today using route data alone, but ready to unlock even greater savings when paired with bin sensors."*
+
+---
+
+### 🤝 Most Collaborative — LP Papillon / Attrix
+[Watch](https://www.youtube.com/watch?v=EiZsIof1Scw)
+
+LP (Attrix, Geotab reseller since 2015) won the community award for consistent generosity throughout the competition — sharing knowledge on Reddit, helping others debug, and keeping the hackathon feeling like a community rather than a competition. His submission: an AI-built Add-In scaffolding toolkit, then "Last Week in Fleet" built with it.
+
+> *"LP stood out not for a single moment of helpfulness, but for a consistent pattern of generosity throughout the entire competition."*
 
 ---
 
