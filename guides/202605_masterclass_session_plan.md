@@ -39,7 +39,6 @@ The Geotab Vibe Coding Challenge ran February 12 – March 2, 2026. Any develope
 
 47 teams submitted projects. 43 repos were cloned and code-reviewed — not by humans reading READMEs, but by Claude Code reading every source file. We used vibe coding to judge vibe coding.
 
-The judging rubric: **Useful (35%)** · **Original (25%)** · **Fun (15%)** · **Well-done (25%)**. Projects that used mock data had their Well-done score capped at 6.
 
 ## The Winners
 
