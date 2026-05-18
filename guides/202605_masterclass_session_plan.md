@@ -263,18 +263,22 @@ Auth comes from the MyGeotab session automatically — nothing extra to wire up.
 
 ## Context 3: ACE via the MCP (GetAceResults)
 
-When Claude is connected to your fleet via the MCP, `GetAceResults` is one of its 20 tools. The important nuance is when to use it versus the direct API.
+When Claude is connected to your fleet via the MCP, `GetAceResults` is one of its 20 tools. The important nuance is knowing when Claude will use it — and when it will use a faster tool instead.
 
-| | GetAceResults (ACE) | Direct API (Get, GetCountOf) |
-|--|---------------------|------------------------------|
+You're always asking Claude in natural language. Claude decides which tool to call. For simple lookups it reaches for `Get` or `GetCountOf` (fast, < 1 second). For trend analysis or complex questions where you need AI reasoning, it calls `GetAceResults` (30–45 seconds). You don't specify the tool — Claude infers it from your question.
+
+| | `GetAceResults` (ACE path) | `Get` / `GetCountOf` (direct path) |
+|--|---------------------------|-------------------------------------|
 | Speed | 30–45 seconds | < 1 second |
-| Query type | Natural language | Structured |
 | Best for | Complex analysis, trend questions | Counts, lookups, real-time data |
-| Caveat | May add implicit filters | 5K result cap without pagination |
+| Caveat | May add implicit filters | 5K result cap per call |
+| Who chooses | Claude, based on your question | Claude, based on your question |
 
-Real benchmark: the same fleet-wide distance question — 41 seconds via ACE, 1.3 seconds via the direct API. For a dashboard that loads on click, that's the difference between fast and broken.
+Real benchmark: the same fleet-wide distance question — 41 seconds via ACE, 1.3 seconds via the direct MCP tool. Both are Claude answering in natural language — just different tools underneath.
 
-Use ACE for questions where you need AI reasoning and can tolerate 45 seconds. Use the direct API when you know what you want and need it now.
+And unlike both ACE and read-only API access, the MCP also has write tools: `Add`, `Set`, `Remove`, `DismissFaults`, group assignments. You can ask Claude to *change* things — and it will.
+
+Full comparison: [guides/DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)
 
 Full comparison: [guides/DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)
 
