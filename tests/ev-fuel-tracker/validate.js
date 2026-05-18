@@ -105,9 +105,16 @@ htmlCheck("initialize calls callback()", function (html) {
     return { pass: true };
 });
 
-htmlCheck("vehicles are clickable (window.parent.location.hash)", function (html) {
+htmlCheck("vehicles use correct device hash format (device,id:<id>)", function (html) {
+    // MyGeotab navigation uses colon separator: device,id:<id>  — not device,id=<id>
     if (!/window\.parent\.location\.hash/.test(html)) {
         return { pass: false, message: "Vehicle navigation requires setting window.parent.location.hash" };
+    }
+    if (/location\.hash\s*=\s*['"]device,id=/.test(html)) {
+        return { pass: false, message: "Hash must use 'device,id:' (colon), not 'device,id=' (equals)" };
+    }
+    if (!/location\.hash.*device,id:/.test(html)) {
+        return { pass: false, message: "Hash must include 'device,id:' for MyGeotab device navigation" };
     }
     return { pass: true };
 });

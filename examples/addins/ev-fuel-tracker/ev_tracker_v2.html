@@ -281,7 +281,7 @@
                 a.onclick = (function (devId) {
                   return function (e) {
                     e.preventDefault();
-                    window.parent.location.hash = 'device,id=' + devId;
+                    window.parent.location.hash = 'device,id:' + devId;
                   };
                 }(item.device.id));
                 tdName.appendChild(a);
