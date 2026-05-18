@@ -213,8 +213,6 @@ Font: **Trebuchet MS** titles · **Calibri** body
 - Title: **"The intelligence layer that's already there"**
 - Main callout card (blue border):
   *"Read the SQL ACE generated. Fastest way to learn the Geotab data model — ACE explains the schema through every query it runs."*
-- Warning card (orange border):
-  *"ACE added IsTracked = TRUE → 304,000 km returned instead of 490,000 km actual. Read the SQL for mission-critical numbers."*
 
 ---
 
