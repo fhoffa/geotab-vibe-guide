@@ -2,7 +2,7 @@
 
 47 teams. 3 weeks. $25,000. February 12 – March 2, 2026.
 
-All projects were built in the open. Browse the repos, watch the videos, steal ideas.
+All projects were built in the open. Browse the repos, watch the videos, learn and collaborate.
 
 **Full playlist:** [youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
 
