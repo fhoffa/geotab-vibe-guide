@@ -3,7 +3,7 @@
 > [!NOTE]
 > **The Geotab Vibe Coding Challenge has wrapped up!** Thank you to everyone who participated. The resources, guides, and videos in this repo are here to stay — use them to keep building fleet intelligence solutions with AI-assisted development.
 >
-> **The winners have been announced!** Check out the [official winner announcement on LinkedIn](https://www.linkedin.com/posts/geotab_the-results-are-in-after-weeks-of-creativity-activity-7441917008083849216-48iL) to see who took home the prizes.
+> **The winners have been announced!** Check out the [official winner announcement on LinkedIn](https://www.linkedin.com/posts/geotab_the-results-are-in-after-weeks-of-creativity-activity-7441917008083849216-48iL) to see who took home the prizes. Browse all 47 projects with GitHub and video links: [guides/HACKATHON_PROJECTS.md](./guides/HACKATHON_PROJECTS.md).
 >
 > **New to the Geotab API?** Watch the kickoff webinar with Felipe and Aaron: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA) — jump to [live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=17), [building an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=155), [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=1360), or [winning strategy](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=2030)
 >
@@ -61,6 +61,8 @@ This repository is a "Vibe Coding" starter kit. You don't need to be an expert c
 
 No coding. No hosting. No technical setup. Just conversation.
 
+When the Add-In outgrows the Gem → [**GEM TO CLAUDE CODE**](./guides/GEM_TO_CLAUDE_CODE.md) — paste your JSON into a real project and keep building.
+
 ---
 
 ### Path B: Explore the API with Claude
@@ -113,6 +115,7 @@ Use this repo as a **60-minute hackathon kickoff workshop** starter for develope
 - **Core curriculum:** [`guides/TUTORIAL_DESIGN.md`](./guides/TUTORIAL_DESIGN.md)
 - **Facilitator materials:** [`slides/README.md`](./slides/README.md)
 - **Project follow-up ideas:** [`guides/HACKATHON_IDEAS.md`](./guides/HACKATHON_IDEAS.md)
+- **Connect Europe 2026 masterclass:** [`guides/202605_masterclass_session_plan.md`](./guides/202605_masterclass_session_plan.md) — full session companion doc (attendee-readable, all resources linked)
 
 ---
 
