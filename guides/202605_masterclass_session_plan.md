@@ -22,12 +22,12 @@ This document serves as both session guide and take-home reference. Everything l
 | Time | Block | What Happens |
 |------|-------|--------------|
 | 02:50 | **Opening** (1 min) | Hackathon summary video |
-| 02:51 | **Hackathon** (14 min) | What developers built, what worked, what didn't |
-| 03:05 | **Gem demo** (10 min) | Build a MyGeotab Add-In live with the audience |
-| 03:15 | **Vibe Guide** (3 min) | What this repo is and how to use it |
-| 03:18 | **ACE** (10 min) | AI queries across three contexts |
-| 03:28 | **Claude + MCP** (15 min) | Official Geotab MCP live demo |
-| 03:43 | **Close + Q&A** (5 min) | Three things to do today |
+| 02:51 | **Hackathon** (5 min) | Winners at a glance — move fast |
+| 02:56 | **Gem demo** (12 min) | Build a MyGeotab Add-In live with the audience |
+| 03:08 | **Vibe Guide** (3 min) | What this repo is and how to use it |
+| 03:11 | **ACE** (10 min) | AI queries across three contexts |
+| 03:21 | **Claude + MCP** (20 min) | Official Geotab MCP live demo |
+| 03:41 | **Close + Q&A** (9 min) | Four things to do today, questions |
 
 ---
 
