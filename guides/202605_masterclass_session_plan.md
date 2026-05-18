@@ -43,7 +43,7 @@ The judging rubric: **Useful (35%)** · **Original (25%)** · **Fun (15%)** · *
 
 ## What the Community Built
 
-All submissions were built in the open. All videos are in the [full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+All submissions were built in the open. All videos are in the [full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG). Full project directory with GitHub links: [guides/HACKATHON_PROJECTS.md](./HACKATHON_PROJECTS.md).
 
 ---
 
