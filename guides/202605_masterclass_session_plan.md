@@ -151,17 +151,11 @@ One prompt rarely produces the final result. The workflow is a conversation:
 
 **Tip:** In Gemini, switch from Fast to Thinking mode for complex requests. Thinking mode reasons through the MyGeotab Add-In constraints before generating code — better results for multi-panel layouts or anything involving async calls.
 
-## Two Paths Forward
+## When to Keep Going
 
-The Gem is the fastest entry point. Where you go next depends on what you're building:
+For many Add-Ins, the Gem is the complete solution — iterate in the conversation until it's right. The signal to move into a real dev environment is complexity: you need tests, version control, external APIs with secret keys, teammates contributing, or the Add-In logic is growing beyond what a single JSON blob handles cleanly. That's when you copy the JSON from the Gem (not from MyGeotab — it strips the assets) and open Claude Code.
 
-| If you're a **fleet manager** | If you're a **developer / reseller** |
-|-------------------------------|--------------------------------------|
-| The Gem is the destination | The Gem is the scaffold |
-| Describe → paste → done | Copy JSON → GitHub → Claude Code |
-| Zero code, zero hosting | Unlimited extension and iteration |
-
-The bridge between Gem and Claude Code: [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md)
+Full guide: [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md)
 
 ---
 
