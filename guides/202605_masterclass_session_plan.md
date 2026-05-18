@@ -238,7 +238,6 @@ Already there. No setup. Fleet managers can ask questions in plain English and g
 
 **Hidden value — read the SQL ACE generates.** ACE shows you the query it ran. This is the fastest way to learn the Geotab data model: ask a question, read the SQL, understand the join. Better than documentation for developers who are new to the schema.
 
-**Important accuracy note:** ACE may add implicit filters you didn't ask for. In one case, ACE added `IsTracked = TRUE` to a distance query — the result was 304,000 km instead of the actual 490,000 km fleet total. The query wasn't wrong from ACE's perspective, but it wasn't the full picture. For mission-critical KPIs, read the SQL and verify the filters. For fleet-wide reporting at scale, the [OData Data Connector](https://helpdesk.geotab.com/hc/en-us/articles/1500001401861-Geotab-Data-Connector-Overview) is more complete.
 
 ---
 
