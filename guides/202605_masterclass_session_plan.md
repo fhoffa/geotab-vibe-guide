@@ -35,8 +35,7 @@ This document serves as both session guide and take-home reference. Everything l
 
 # Part 1 — The Hackathon
 
-> **Opening video:** [youtube.com/watch?v=BD0U9Zf-LvY](https://www.youtube.com/watch?v=BD0U9Zf-LvY) (1 min — plays as Felipe walks on stage)
-
+> **Opening video:** [youtube.com/watch?v=BD0U9Zf-LvY](https://www.youtube.com/watch?v=BD0U9Zf-LvY)
 ## What Happened
 
 The Geotab Vibe Coding Challenge ran February 12 – March 2, 2026. Any developer could participate — resellers, partners, customers, strangers on the internet. The tools: any AI assistant. The data: the Geotab fleet API. The prize: $25,000.
