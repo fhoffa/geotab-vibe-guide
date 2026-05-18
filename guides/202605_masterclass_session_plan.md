@@ -466,7 +466,9 @@ It doesn't need to be Claude either. ChatGPT, Gemini, and [Goose](https://goose-
 Claude is currently the most mature option for non-developer users: the integrations UI is point-and-click, no JSON editing required. The others tend to be more developer-focused. That may change — the ecosystem is moving fast.
 
 **What about driver privacy?**  
-The MCP runs against your Geotab account with the same permission model — users only see vehicles and drivers they already have access to. Fleet data goes from Geotab to your machine. Your credentials are handled by the MCP server, not passed through Claude.
+The MCP runs against your Geotab account with the same permission model — users only see vehicles and drivers they already have access to. Your credentials are handled by the MCP server, not passed through the AI conversation.
+
+But the more important question: the fleet data you query — driver names, locations, behavior events — will be analyzed by your AI provider. That data leaves your machine and goes to Claude, ChatGPT, Gemini, or whichever tool you're using. Make sure your organization has an account and contract with that provider that covers data handling, privacy obligations, and compliance with your applicable AI framework (GDPR, local regulations, internal policy). This isn't specific to Geotab — it applies to any business data you send to an AI assistant. The right provider contract makes this a solved problem; the wrong one makes it a liability.
 
 **Does ACE work inside embedded Add-Ins?**  
 Yes, verified. Auth comes from the MyGeotab session automatically. The async polling pattern is the critical part — the Gem handles it if you ask explicitly.
