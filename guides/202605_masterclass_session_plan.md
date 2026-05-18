@@ -174,7 +174,7 @@ Full guide: [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md)
 | [GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) | How to use the Gem, step by step |
 | [GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md) | Gem → GitHub → Claude Code bridge |
 | [GOOGLE_TOOLS_GUIDE.md](./GOOGLE_TOOLS_GUIDE.md) | Gemini Canvas, AI Studio, Gemini CLI |
-| [BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md) | MCP setup and testing guide |
+| [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) | Build your own Geotab MCP server today (community approach, works now) |
 | [DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) | ACE vs direct API — benchmarks and tradeoffs |
 | [GEOTAB_ADDINS.md](./GEOTAB_ADDINS.md) | Add-In architecture and constraints |
 
@@ -189,8 +189,12 @@ Skills are SKILL.md files that package domain knowledge for AI tools. Any AI too
 | [`skills/geotab-custom-mcp`](../skills/geotab-custom-mcp/) | How to build and deploy custom MCP servers for Geotab |
 
 Load into Claude Code:
+```bash
+git clone https://github.com/fhoffa/geotab-vibe-guide
 ```
-/plugin marketplace add fhoffa/geotab-vibe-guide
+Then tell Claude Code:
+```
+Read skills/geotab/SKILL.md and use it as your Geotab API reference.
 ```
 
 ## Why Skills Matter
@@ -380,11 +384,14 @@ And Claude can connect to your other systems in the same session — your HR pla
 
 ## Beta and Setup
 
-The official Geotab MCP is opening to beta testers. Talk to Geotab at this event to get early access.
+**The official Geotab MCP is coming. Talk to Geotab at this event to get on the early access list — this is the CTA for today.**
 
-**Setup guide:** [guides/BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md)
+The official MCP gives you all 20 tools (full read + write), handles authentication through the server so your password never touches Claude, and is built and supported by Geotab.
 
-**Works today (read-only, ACE-only, 15-minute setup):** [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) — use this as a preview while waiting for beta.
+**While you wait for official beta access — preview with this today:**  
+[github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) — ACE-only, read-only, 15-minute setup. Build the habit of asking your fleet questions through Claude before the full MCP arrives.
+
+**For building your own MCP server:** [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)
 
 ---
 
@@ -416,8 +423,9 @@ Talk to Geotab at this event. When the official MCP opens, you'll be among the f
 | Gem user guide | [guides/GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) |
 | Gem → Claude Code bridge | [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md) |
 | Vibe guide repo | [github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide) |
-| MCP beta setup | [guides/BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md) |
-| Custom MCP demo (works today) | [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) |
+| Official Geotab MCP (coming — sign up at event) | Talk to Geotab at Connect Europe 2026 |
+| ACE-only MCP preview (works today) | [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) |
+| Custom MCP server guide | [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) |
 | ACE vs API comparison | [guides/DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) |
 | Hackathon intro video | [youtube.com/watch?v=BD0U9Zf-LvY](https://www.youtube.com/watch?v=BD0U9Zf-LvY) |
 | FleetShield AI interview | [youtube.com/watch?v=G3A8PjtovN8](https://www.youtube.com/watch?v=G3A8PjtovN8) |
@@ -441,7 +449,7 @@ The MCP runs against your Geotab account with the same permission model — user
 Yes, verified. Auth comes from the MyGeotab session automatically. The async polling pattern is the critical part — the Gem handles it if you ask explicitly.
 
 **Can I build my own MCP server for Geotab?**  
-Yes. [guides/BETA_TESTER_GUIDE.md](./BETA_TESTER_GUIDE.md) covers the official path. For a custom server, see [skills/geotab-custom-mcp](../skills/geotab-custom-mcp/) and [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo).
+Yes. [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) covers the community approach (works now). The official Geotab MCP is the better long-term path — sign up for beta access at this event. For a quick ACE-only preview: [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo).
 
 **How do I teach my AI tool about our internal systems?**  
 Same approach as this repo's skills: write a SKILL.md with your domain knowledge (API patterns, naming conventions, gotchas), commit it to GitHub, load it into your AI tool. Format: [agentskills.io](https://agentskills.io).
