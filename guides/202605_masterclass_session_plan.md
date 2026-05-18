@@ -7,6 +7,10 @@
 
 ---
 
+**Vibe coding** means building software by describing what you want in plain language to an AI tool — and iterating until it works. No syntax memorization, no documentation rabbit holes. You focus on the outcome; the AI handles the code. [Full intro: guides/BEGINNER_GUIDE.md](./BEGINNER_GUIDE.md)
+
+---
+
 This session is the hands-on half of a two-hour AI track. By the time it starts, the audience has seen what vibe coding is (Abhinav), real Geotab projects already in production (Jorge & Ronald), and 20 minutes of networking. This session goes deeper: here's what the developer community built, here's how you can build something right now, and here's what Geotab has opened up for your AI tools.
 
 This document serves as both session guide and take-home reference. Everything linked here is publicly accessible.
@@ -170,6 +174,26 @@ For many Add-Ins, the Gem is the complete solution — iterate in the conversati
 
 Full guide: [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md)
 
+## Bridge Demo: Gem JSON → Claude Code
+
+When the Add-In is ready to grow, the handoff takes one step. Copy the JSON from the Gem conversation (not from MyGeotab — it strips the assets), open Claude Code in an empty folder, and paste:
+
+```
+I have a MyGeotab Add-In I built with the Geotab Gem. Here's the JSON:
+
+[paste JSON]
+
+Please:
+1. Save this as addin.json
+2. Create a CLAUDE.md explaining the Add-In's purpose and Geotab constraints
+3. Initialize a git repository
+4. Write a short README
+
+I want to add [describe next feature].
+```
+
+Claude Code reads the existing Add-In, understands what's there, and continues building. You describe outcomes; it handles the files, the git history, the complexity.
+
 ---
 
 ---
@@ -275,7 +299,9 @@ Auth comes from the MyGeotab session automatically — nothing extra to wire up.
 
 ## Context 3: ACE via the MCP (GetAceResults)
 
-When Claude is connected to your fleet via the MCP, `GetAceResults` is one of its 20 tools. The important nuance is knowing when Claude will use it — and when it will use a faster tool instead.
+*(The next section goes deep on MCP — this is a preview of how ACE fits into it.)*
+
+When Claude is connected to your fleet via the official Geotab MCP, `GetAceResults` is one of its 20 tools. The important nuance is knowing when Claude will use it — and when it will use a faster tool instead.
 
 You're always asking Claude in natural language. Claude decides which tool to call. For simple lookups it reaches for `Get` or `GetCountOf` (fast, < 1 second). For trend analysis or complex questions where you need AI reasoning, it calls `GetAceResults` (30–45 seconds). You don't specify the tool — Claude infers it from your question.
 
@@ -397,6 +423,29 @@ And Claude can connect to your other systems in the same session — your HR pla
 
 ---
 
+## Live Demo: Tour de France Road Closures → Fleet Zones + Alerts
+
+The Tour de France is running through Catalonia today. Real road closures, real routes announced publicly.
+
+The demo conversation:
+
+```
+Search for today's Tour de France stage route through Catalonia — 
+find the road closures and affected municipalities.
+
+For each major closure zone, create a Geotab geofence zone 
+named "TDF Stage [N] - [Municipality]".
+
+Then create an alert rule that notifies fleet managers 
+when any vehicle enters one of these zones.
+```
+
+Claude: searches the web for the route → reads the stage map → calls `Add` to create each zone with the correct coordinates → calls `Add` again to create the notification rule → confirms everything is live.
+
+One conversation. External data + fleet write operations. No dashboard clicked, no form filled.
+
+---
+
 ## Beta and Setup
 
 **The official Geotab MCP is coming. Talk to Geotab at this event to get on the early access list — this is the CTA for today.**
@@ -414,14 +463,24 @@ The official MCP gives you all 20 tools (full read + write), handles authenticat
 
 # Part 6 — Take These Three Things Home
 
-### 1. Try the Gem right now
-[Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO) — describe a fleet problem. A working MyGeotab Add-In in 10 minutes. Free, no code, no hosting. Then iterate with it — one prompt is the start, not the end.
+### 1. Create a demo database — today
+[my.geotab.com/registration.html](https://my.geotab.com/registration.html) — your sandbox. Experiment, break things, iterate, all without touching your production fleet. This is where everything else in this list happens safely.
 
-### 2. Sign up for MCP beta
+### 2. Try the Gem
+[Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO) — describe a fleet problem. A working MyGeotab Add-In in 10 minutes. Free, no code, no hosting. Then iterate — one prompt is the start, not the end.
+
+### 3. Sign up for MCP beta
 Talk to Geotab at this event. When the official MCP opens, you'll be among the first to connect your AI assistant to your live fleet.
 
-### 3. Explore this repo
+### 4. Explore this repo
 [github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide) — all guides, all prompts, all skills, links to all hackathon videos.
+
+### Keep building — the community is there
+
+- **Geotab Community Forums:** [community.geotab.com](https://community.geotab.com) — ask questions, share what you built, find other developers working on the same problems
+- **r/GEOTAB:** [reddit.com/r/GEOTAB](https://www.reddit.com/r/GEOTAB/) — more informal, good for quick questions and sharing projects
+
+There's no announced next hackathon. Don't wait for one. The prize money was the excuse — your fleet's inefficiencies are the reason. Build for your business.
 
 > *"You used to write instructions. Now you describe outcomes.  
 > Bring your AI tools — Geotab is ready for that world."*
