@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <title>Checklist de Instalación GO</title>
+  <script>
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css';
+    document.head.appendChild(link);
+  </script>
+  <style>
+    body { background: #f4f7f9; padding: 16px; font-family: sans-serif; font-size: 13px; }
+    .card { background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); padding: 16px; margin-bottom: 16px; }
+    h4 { color: #002060; margin-bottom: 12px; }
+    .phase-ok    { background: #C6EFCE; color: #006100; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+    .phase-warn  { background: #FFEB9C; color: #9C6500; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+    .phase-fail  { background: #FFC7CE; color: #9C0006; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+    .phase-na    { background: #F2F2F2; color: #595959; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #002060; color: white; padding: 7px 8px; text-align: left; position: sticky; top: 0; }
+    td { padding: 6px 8px; border-bottom: 1px solid #eee; vertical-align: middle; }
+    tr:hover td { background: #f0f4ff; }
+    .btn-primary { background: #002060; border-color: #002060; }
+    .btn-primary:hover { background: #003399; border-color: #003399; }
+    .summary-badge { display: inline-block; margin-right: 8px; font-size: 12px; }
+    #progress-bar-wrap { display: none; margin-top: 8px; }
+    .scroll-table { overflow-x: auto; max-height: 60vh; overflow-y: auto; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h4>🔍 Checklist de Instalación Geotab GO</h4>
+  <div class="row g-2 align-items-end">
+    <div class="col-auto">
+      <label class="form-label mb-1" style="font-weight:600;">Número de vehículos</label>
+      <select id="limit-select" class="form-select form-select-sm" style="width:160px;">
+        <option value="10">10 vehículos</option>
+        <option value="25">25 vehículos</option>
+        <option value="50" selected>50 vehículos</option>
+        <option value="100">100 vehículos</option>
+        <option value="200">200 vehículos</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button id="btn-run" class="btn btn-primary btn-sm" onclick="runChecklist()">▶ Ejecutar checklist</button>
+    </div>
+    <div class="col-auto">
+      <button id="btn-export" class="btn btn-success btn-sm" onclick="exportExcel()" style="display:none;">⬇ Descargar Excel</button>
+    </div>
+    <div class="col">
+      <div id="status-msg" style="color:#555; font-size:12px;"></div>
+    </div>
+  </div>
+  <div id="progress-bar-wrap">
+    <div class="progress" style="height:8px;">
+      <div id="progress-bar" class="progress-bar" role="progressbar" style="width:0%"></div>
+    </div>
+    <div id="progress-label" style="font-size:11px; color:#666; margin-top:2px;"></div>
+  </div>
+</div>
+
+<div id="summary-card" class="card" style="display:none;">
+  <h4>Resumen</h4>
+  <div id="summary-html"></div>
+</div>
+
+<div id="results-card" class="card" style="display:none;">
+  <h4>Detalle por vehículo</h4>
+  <div class="scroll-table">
+    <table id="results-table">
+      <thead>
+        <tr>
+          <th>Vehículo</th>
+          <th>Tipo</th>
+          <th>Serial</th>
+          <th>1 Reportando</th>
+          <th>2 Firmware</th>
+          <th>3 Voltaje (V)</th>
+          <th>4 IOX</th>
+          <th>5 Odómetro</th>
+          <th>6 Faults motor</th>
+          <th>Estado global</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Debug panel -->
+<div style="position:fixed;bottom:0;left:0;right:0;text-align:center;">
+  <button onclick='var d=document.getElementById("debug-log");d.style.display=d.style.display==="none"?"block":"none";' style="background:#e74c3c;color:#fff;border:none;padding:3px 14px;cursor:pointer;font-size:11px;border-radius:4px 4px 0 0;">Debug</button>
+  <pre id="debug-log" style="display:none;background:#1e1e1e;color:#0f0;padding:8px;margin:0;max-height:180px;overflow-y:auto;text-align:left;font-size:10px;"></pre>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+var geotabApi = null;
+var checklistResults = [];
+
+function log(msg) {
+  var el = document.getElementById('debug-log');
+  el.innerHTML += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+  el.scrollTop = el.scrollHeight;
+}
+
+function setStatus(msg) {
+  document.getElementById('status-msg').textContent = msg;
+}
+
+function setProgress(pct, label) {
+  var wrap = document.getElementById('progress-bar-wrap');
+  wrap.style.display = 'block';
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+
+function apiCall(method, params) {
+  return new Promise(function(resolve, reject) {
+    geotabApi.call(method, params, resolve, reject);
+  });
+}
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function hoursAgo(dateStr) {
+  if (!dateStr) return 9999;
+  return (Date.now() - new Date(dateStr).getTime()) / 3600000;
+}
+
+function daysAgo(dateStr) {
+  return hoursAgo(dateStr) / 24;
+}
+
+function isoDate(d) {
+  return d.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+function statusBadge(s) {
+  if (s === 'OK')   return '<span class="phase-ok">✅ OK</span>';
+  if (s === 'WARN') return '<span class="phase-warn">⚠️ ADVERTENCIA</span>';
+  if (s === 'FAIL') return '<span class="phase-fail">❌ FALLA</span>';
+  return '<span class="phase-na">— N/A</span>';
+}
+
+var IOX_NAMES = {
+  4291: 'IOX-USB',
+  4290: 'IOX-Desc.',
+  4194: 'IOX-CAN',
+  4160: 'IOX-RS232',
+  4195: 'IOX-BT',
+  4196: 'IOX-NFC'
+};
+
+// ── per-device checks ─────────────────────────────────────────────────────────
+
+async function checkDevice(device, statusInfoMap) {
+  var id = device.id;
+  var now = new Date();
+  var ago90 = isoDate(new Date(now - 90 * 86400000));
+  var ago30 = isoDate(new Date(now - 30 * 86400000));
+  var today = isoDate(new Date(now - 2 * 86400000)); // last 48h for voltage/odo
+
+  var result = {
+    name:   device.name || id,
+    type:   (device.deviceType || '').replace('Go', 'GO'),
+    serial: device.serialNumber || device.id,
+    isCustom: (device.deviceType || '').toLowerCase().includes('custom'),
+    phases: {}
+  };
+
+  // ── Phase 1: Reporting ──────────────────────────────────────────────────────
+  var info = statusInfoMap[id];
+  var lastComm = info ? (info.dateTime || null) : null;
+  var h = hoursAgo(lastComm);
+  var p1 = h < 24 ? 'OK' : h < 72 ? 'WARN' : 'FAIL';
+  result.phases.reporting = {
+    status: p1,
+    value: lastComm ? (Math.round(h) + 'h atrás') : 'Sin datos',
+    note: lastComm ? new Date(lastComm).toLocaleString() : ''
+  };
+
+  // ── Phase 2: Firmware ───────────────────────────────────────────────────────
+  if (result.isCustom) {
+    result.phases.firmware = { status: 'NA', value: 'N/A (Custom)', note: '' };
+  } else {
+    try {
+      var fwData = await apiCall('Get', {
+        typeName: 'FaultData',
+        search: {
+          deviceSearch: { id: id },
+          diagnosticSearch: { id: 'DiagnosticDeviceRestartedBecauseOfFirmwareUpdateId' },
+          fromDate: ago90
+        }
+      });
+      var p2 = fwData && fwData.length > 0 ? 'OK' : 'WARN';
+      var latestFw = fwData && fwData.length > 0
+        ? new Date(fwData[fwData.length - 1].dateTime).toLocaleDateString()
+        : null;
+      result.phases.firmware = {
+        status: p2,
+        value: fwData && fwData.length > 0 ? ('Actualizado ' + latestFw) : 'Sin update >90d',
+        note: ''
+      };
+    } catch(e) {
+      result.phases.firmware = { status: 'FAIL', value: 'Error', note: String(e) };
+    }
+  }
+
+  // ── Phase 3: Voltage ────────────────────────────────────────────────────────
+  try {
+    var voltData = await apiCall('Get', {
+      typeName: 'StatusData',
+      search: {
+        deviceSearch: { id: id },
+        diagnosticSearch: { id: 'DiagnosticGoDeviceVoltageId' },
+        fromDate: today
+      },
+      resultsLimit: 3
+    });
+    if (voltData && voltData.length > 0) {
+      var v = voltData[voltData.length - 1].data;
+      var p3 = v >= 11 && v <= 15 ? 'OK' : v >= 10 ? 'WARN' : 'FAIL';
+      result.phases.voltage = { status: p3, value: v.toFixed(1) + ' V', note: '' };
+    } else {
+      result.phases.voltage = { status: 'FAIL', value: 'Sin datos', note: '' };
+    }
+  } catch(e) {
+    result.phases.voltage = { status: 'FAIL', value: 'Error', note: String(e) };
+  }
+
+  // ── Phase 4: IOX ─────────────────────────────────────────────────────────────
+  try {
+    var ioxData = await apiCall('Get', {
+      typeName: 'IoxAddOn',
+      search: { deviceSearch: { id: id } }
+    });
+    if (!ioxData || ioxData.length === 0) {
+      result.phases.iox = { status: 'NA', value: 'Sin IOX', note: '' };
+    } else {
+      var active = ioxData.filter(function(x) { return x.channel > 0; });
+      var inactive = ioxData.filter(function(x) { return x.channel === 0; });
+      var names = ioxData.map(function(x) {
+        return (IOX_NAMES[x.type] || 'tipo-' + x.type) + '(ch' + x.channel + ')';
+      }).join(', ');
+      var p4 = inactive.length > 0 ? 'WARN' : 'OK';
+      result.phases.iox = { status: p4, value: names, note: inactive.length + ' en ch.0' };
+    }
+  } catch(e) {
+    result.phases.iox = { status: 'FAIL', value: 'Error', note: String(e) };
+  }
+
+  // ── Phase 5: Odometer ────────────────────────────────────────────────────────
+  try {
+    var odoData = await apiCall('Get', {
+      typeName: 'StatusData',
+      search: {
+        deviceSearch: { id: id },
+        diagnosticSearch: { id: 'DiagnosticOdometerId' },
+        fromDate: today
+      },
+      resultsLimit: 3
+    });
+    if (odoData && odoData.length > 0) {
+      var km = (odoData[odoData.length - 1].data / 1000).toFixed(0);
+      result.phases.odo = { status: 'OK', value: km + ' km', note: '' };
+    } else {
+      result.phases.odo = { status: 'FAIL', value: 'Sin lecturas', note: '' };
+    }
+  } catch(e) {
+    result.phases.odo = { status: 'FAIL', value: 'Error', note: String(e) };
+  }
+
+  // ── Phase 6: Active faults ───────────────────────────────────────────────────
+  try {
+    var faultData = await apiCall('Get', {
+      typeName: 'FaultData',
+      search: {
+        deviceSearch: { id: id },
+        faultStates: ['Active'],
+        fromDate: ago30
+      }
+    });
+    var goDtcs = [], motorDtcs = [];
+    (faultData || []).forEach(function(f) {
+      var ctrl = (f.controller && f.controller.id) ? f.controller.id : '';
+      if (ctrl === 'ControllerGoDeviceId' || ctrl.indexOf('ControllerGoDevice') === 0) {
+        goDtcs.push(f);
+      } else {
+        motorDtcs.push(f);
+      }
+    });
+    var p6 = motorDtcs.length > 0 ? 'FAIL' : goDtcs.length > 0 ? 'WARN' : 'OK';
+    result.phases.faults = {
+      status: p6,
+      value: motorDtcs.length + ' motor / ' + goDtcs.length + ' GO',
+      note: motorDtcs.length > 0 ? motorDtcs.slice(0, 3).map(function(f) {
+        return (f.diagnostic && f.diagnostic.name) ? f.diagnostic.name : f.diagnostic.id;
+      }).join('; ') : ''
+    };
+  } catch(e) {
+    result.phases.faults = { status: 'FAIL', value: 'Error', note: String(e) };
+  }
+
+  // ── Global status ─────────────────────────────────────────────────────────────
+  var statuses = Object.values(result.phases).map(function(p) { return p.status; });
+  result.global = statuses.indexOf('FAIL') >= 0 ? 'FAIL'
+    : statuses.indexOf('WARN') >= 0 ? 'WARN' : 'OK';
+
+  return result;
+}
+
+// ── main flow ─────────────────────────────────────────────────────────────────
+
+async function runChecklist() {
+  document.getElementById('btn-run').disabled = true;
+  document.getElementById('btn-export').style.display = 'none';
+  document.getElementById('results-card').style.display = 'none';
+  document.getElementById('summary-card').style.display = 'none';
+  document.getElementById('results-body').innerHTML = '';
+  checklistResults = [];
+
+  var limit = parseInt(document.getElementById('limit-select').value);
+  setStatus('Cargando dispositivos...');
+  setProgress(5, 'Obteniendo lista de dispositivos...');
+
+  try {
+    var devices = await apiCall('Get', { typeName: 'Device', resultsLimit: limit });
+    log('Devices loaded: ' + devices.length);
+
+    setProgress(10, 'Cargando estado de comunicación...');
+
+    var statusInfoRaw = await apiCall('Get', { typeName: 'DeviceStatusInfo', resultsLimit: 2000 });
+    var statusInfoMap = {};
+    (statusInfoRaw || []).forEach(function(s) {
+      if (s.device && s.device.id) statusInfoMap[s.device.id] = s;
+    });
+    log('StatusInfo loaded: ' + statusInfoRaw.length);
+
+    var total = devices.length;
+    var tbody = document.getElementById('results-body');
+
+    // Process in batches of 10
+    var batchSize = 10;
+    for (var b = 0; b < total; b += batchSize) {
+      var batch = devices.slice(b, Math.min(b + batchSize, total));
+      var batchResults = await Promise.all(batch.map(function(d) {
+        return checkDevice(d, statusInfoMap);
+      }));
+
+      batchResults.forEach(function(r) {
+        checklistResults.push(r);
+        var tr = document.createElement('tr');
+        tr.innerHTML = [
+          '<td><strong>' + escHtml(r.name) + '</strong></td>',
+          '<td>' + escHtml(r.type) + '</td>',
+          '<td style="font-size:11px;color:#666;">' + escHtml(r.serial) + '</td>',
+          '<td>' + statusBadge(r.phases.reporting.status) + '<br><span style="font-size:10px;color:#888;">' + escHtml(r.phases.reporting.value) + '</span></td>',
+          '<td>' + statusBadge(r.phases.firmware.status) + '<br><span style="font-size:10px;color:#888;">' + escHtml(r.phases.firmware.value) + '</span></td>',
+          '<td>' + statusBadge(r.phases.voltage.status) + '<br><span style="font-size:10px;color:#888;">' + escHtml(r.phases.voltage.value) + '</span></td>',
+          '<td>' + statusBadge(r.phases.iox.status) + '<br><span style="font-size:10px;color:#888;">' + escHtml(r.phases.iox.value) + '</span></td>',
+          '<td>' + statusBadge(r.phases.odo.status) + '<br><span style="font-size:10px;color:#888;">' + escHtml(r.phases.odo.value) + '</span></td>',
+          '<td>' + statusBadge(r.phases.faults.status) + '<br><span style="font-size:10px;color:#888;">' + escHtml(r.phases.faults.value) + '</span></td>',
+          '<td>' + statusBadge(r.global) + '</td>'
+        ].join('');
+        tbody.appendChild(tr);
+      });
+
+      var done = Math.min(b + batchSize, total);
+      setProgress(10 + Math.round(85 * done / total), 'Procesados ' + done + ' / ' + total + ' vehículos');
+      setStatus('Procesados ' + done + ' / ' + total + '...');
+    }
+
+    // Summary
+    var ok   = checklistResults.filter(function(r) { return r.global === 'OK'; }).length;
+    var warn = checklistResults.filter(function(r) { return r.global === 'WARN'; }).length;
+    var fail = checklistResults.filter(function(r) { return r.global === 'FAIL'; }).length;
+
+    document.getElementById('summary-html').innerHTML =
+      '<span class="summary-badge phase-ok">✅ OK: ' + ok + '</span>' +
+      '<span class="summary-badge phase-warn">⚠️ Advertencia: ' + warn + '</span>' +
+      '<span class="summary-badge phase-fail">❌ Falla: ' + fail + '</span>' +
+      '<span class="summary-badge phase-na">Total: ' + total + '</span>';
+
+    document.getElementById('summary-card').style.display = 'block';
+    document.getElementById('results-card').style.display = 'block';
+    document.getElementById('btn-export').style.display = '';
+    setProgress(100, 'Listo.');
+    setStatus('Checklist completado — ' + total + ' vehículos.');
+
+  } catch(err) {
+    log('Error: ' + err);
+    setStatus('Error: ' + err);
+  }
+
+  document.getElementById('btn-run').disabled = false;
+}
+
+// ── Excel export ──────────────────────────────────────────────────────────────
+
+function statusText(s) {
+  if (s === 'OK')   return '✅ OK';
+  if (s === 'WARN') return '⚠️ ADVERTENCIA';
+  if (s === 'FAIL') return '❌ FALLA';
+  return '— N/A';
+}
+
+function exportExcel() {
+  if (!checklistResults.length) return;
+
+  var wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Resumen ────────────────────────────────────────────────────────
+  var headers = ['Vehículo', 'Tipo dispositivo', 'Serial',
+    '1 Reportando', '2 Firmware', '3 Voltaje (V)', '4 IOX', '5 Odómetro', '6 Faults motor',
+    'Estado global'];
+  var rows = [headers];
+  checklistResults.forEach(function(r) {
+    rows.push([
+      r.name, r.type, r.serial,
+      statusText(r.phases.reporting.status) + ' — ' + r.phases.reporting.value,
+      statusText(r.phases.firmware.status) + ' — ' + r.phases.firmware.value,
+      statusText(r.phases.voltage.status) + ' — ' + r.phases.voltage.value,
+      statusText(r.phases.iox.status) + ' — ' + r.phases.iox.value,
+      statusText(r.phases.odo.status) + ' — ' + r.phases.odo.value,
+      statusText(r.phases.faults.status) + ' — ' + r.phases.faults.value,
+      statusText(r.global)
+    ]);
+  });
+  var ws1 = XLSX.utils.aoa_to_sheet(rows);
+  ws1['!cols'] = [28, 16, 18, 20, 20, 16, 22, 16, 22, 18].map(function(w) { return { wch: w }; });
+  ws1['!freeze'] = { xSplit: 0, ySplit: 1 };
+  ws1['!autofilter'] = { ref: 'A1:J1' };
+  XLSX.utils.book_append_sheet(wb, ws1, 'Resumen');
+
+  // ── Sheet 2: Detalle ─────────────────────────────────────────────────────────
+  var det = [['Vehículo', 'Serial', 'Fase', 'Estado', 'Valor', 'Notas']];
+  var phaseNames = {
+    reporting: '1 Reportando',
+    firmware:  '2 Firmware',
+    voltage:   '3 Voltaje',
+    iox:       '4 IOX',
+    odo:       '5 Odómetro',
+    faults:    '6 Faults motor'
+  };
+  checklistResults.forEach(function(r) {
+    Object.keys(r.phases).forEach(function(k) {
+      var p = r.phases[k];
+      det.push([r.name, r.serial, phaseNames[k] || k, statusText(p.status), p.value, p.note || '']);
+    });
+  });
+  var ws2 = XLSX.utils.aoa_to_sheet(det);
+  ws2['!cols'] = [28, 18, 18, 20, 24, 40].map(function(w) { return { wch: w }; });
+  XLSX.utils.book_append_sheet(wb, ws2, 'Detalle');
+
+  var fecha = new Date().toISOString().slice(0, 10);
+  XLSX.writeFile(wb, 'checklist_instalacion_' + fecha + '.xlsx');
+}
+
+// ── HTML escaping ─────────────────────────────────────────────────────────────
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Add-In registration ───────────────────────────────────────────────────────
+
+geotab.addin['geotab-install-check'] = function() {
+  return {
+    initialize: function(api, state, callback) {
+      log('Add-In initialized.');
+      geotabApi = api;
+      callback();
+    },
+    focus: function(api, state) {
+      geotabApi = api;
+      log('Add-In focused.');
+    },
+    blur: function(api, state) {
+      log('Add-In blurred.');
+    }
+  };
+};
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "name": "Checklist de Instalación GO",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "1.0",
+  "items": [
+    {
+      "url": "page.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "en": "Install Check",
+        "es": "Checklist Instalación"
+      }
+    }
+  ],
+  "files": {
+    "page.html": "PLACEHOLDER - see install-check.html and generate via build step or paste minified content here"
+  }
+}
