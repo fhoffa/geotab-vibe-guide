@@ -182,7 +182,7 @@
                 (function (id) {
                   a.onclick = function (e) {
                     e.preventDefault();
-                    state.gotoPage("device", { id: id });
+                    window.parent.location.hash = "device,id:" + id;
                   };
                 })(item.id);
                 tdName.appendChild(a);
