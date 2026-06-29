@@ -54,9 +54,41 @@ differs. Trips + exceptions are <15% on top of GPS and rounded into the per-vehi
 | Bronze + silver | **~300 vehicle-years** | 50 vehicles for ~6 yrs · 100 vehicles for ~3 yrs · ~300 vehicles for ~1 yr |
 
 **A small fleet (tens of vehicles) lives in the free tier for years.** A few-hundred-vehicle fleet fits
-for months-to-years depending on whether you keep raw. Compute on Lite (10 CU-hr/mo) easily covers the
-daily loop — it's a handful of Pulse queries of a few seconds each (~1 CU-hr/month for a small fleet),
-so **small fleets effectively run for $0.**
+for months-to-years depending on whether you keep raw.
+
+## Compute: how cheap a refresh is, and how often you can run it free
+
+Pulse (the only Lite Duckling) is metered **per query, minimum 1 CU-second each**, and on Pulse
+1 CU-second ≈ 1 second of query time. The free tier includes **10 CU-hours/month = 36,000 CU-seconds**.
+Measured the actual per-query cost with `EXPLAIN ANALYZE` on the live demo warehouse (server-side time):
+
+| Query in the loop | What it does | Measured time → billed CU-sec |
+|-------------------|--------------|-------------------------------|
+| `SELECT max(event_time)` (watermark) | scans 680 K-row silver | 0.08 s → **1** (floor) |
+| `read_csv_auto(url)` count / probe | HTTP fetch + parse a daily CSV | 1.47 s (≈1.5 s fetch floor, 1 HEAD+1 GET; parse grows with rows) → **~1.5** |
+| bronze `INSERT … read_csv_auto` | fetch + land raw, append-only | ~1.5–3 s → **~2–3** |
+| silver derive (`DISTINCT ON` over all bronze) | type+dedup 680 K rows | 1.07 s → **~1** |
+
+So **one fact table ≈ 4 queries ≈ ~5 CU-seconds**, and a **full 4-table update cycle ≈ ~25–30
+CU-seconds** (incl. logging/verify). Against 36,000 CU-sec/month that is:
+
+> **~1,200 full update cycles per month on the free tier — roughly every ~35 minutes, around the clock,
+> for $0.** Even tripling the estimate for safety leaves ~400/month (~every 2 hours).
+
+**Compute is not the free-tier constraint — storage (10 GB) and Ace's wall-clock are.** The Ace pull
+itself is ~33 s/call (× number of tables), but that runs on Geotab's side, is included in the Go plan,
+and is **not** metered by MotherDuck — it only bounds how *fast* a cycle finishes (~2–3 min for 4
+tables), not what it costs. So **small fleets effectively run for $0**, and you can refresh as often as
+every ~15–30 min without leaving the free tier.
+
+**Caveats:** compute scales with data volume — a large fleet's daily CSV is bigger to parse, and the
+silver derive rescans all of bronze each cycle (~1 s at 680 K rows, more as bronze grows; switch to an
+incremental/clustered derive for very large bronze). One-time **backfill** is heavier (many windows ×
+CSV fetches) but bounded. And **query-history observability is Business-only** — on Lite,
+`MD_INFORMATION_SCHEMA.QUERY_HISTORY` errors with "not available on your plan," so meter compute with
+`EXPLAIN ANALYZE` as done here.
+
+For small fleets, this all stays inside the 10 CU-hr free allotment, so **the bill is $0.**
 
 ## What a large / very large customer should expect
 
