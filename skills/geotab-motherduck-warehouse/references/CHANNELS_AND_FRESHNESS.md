@@ -38,6 +38,22 @@ history but **paginates** (cursor for reference entities; window-splitting for t
 [`ENTITY_CATALOG.md`](ENTITY_CATALOG.md)), so it's painful for bulk. Ace streams an entire window to
 one CSV, which is why it's the bulk workhorse despite the sub-2-min lag and non-determinism.
 
+## Write→Ace propagation: changes lag *far* behind reads
+
+Read-freshness (above) is one axis; **how fast a *change* reaches Ace** is another — and for
+**dimension/config data they are wildly different.** Measured: created a new geofence
+(`Zone` "ZZ_ACE_PROBE_ALPHA") via the Geotab MCP at `21:41:04`. It was visible **instantly** through
+`Get` (the write is synchronous), but Ace still reported **0 zones at T0+11 min** (polled at +0.5, +4,
++6, +10, +11 min — never appeared in that window). So Ace's **dimension/config tables sync on a slow,
+periodic cadence (≫10 min)**, while telematics streams (`GpsLogs`, `StatusData`) land in seconds.
+
+> **Engineering consequence:** for anything you **just created or changed** in MyGeotab — zones, device
+> metadata, groups, rules, users — **read it from `Get`, never Ace.** `Get` is authoritative and
+> immediate; Ace will show stale reference data for many minutes. This is a second, stronger reason for
+> the "dimensions via `Get`" rule (the first being exactness/`IsTracked`). Use Ace for *telematics
+> volume*, `Get` for *current truth*. (Telematics history in Ace is fine — that pipeline is near-real-time;
+> it's the reference/config tables that lag.)
+
 ## The four loading modes — pick by question, not by habit
 
 ```

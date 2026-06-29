@@ -102,36 +102,72 @@ Safety (ExceptionEvent):
 Adjust column names to your target table; Ace will compute derived fields (it converted miles→km and
 produced `driving_duration_minutes` for trips).
 
-## Step 2 — the response is huge; harvest it from the spilled file
+## Step 2 — the response is huge; harvest 3 things from it (never read it whole)
 
-Every `GetAceResults` call here returned **110–192 KB** — even a 3-row answer (110 KB). It exceeds the
-tool's token cap and the harness **saves it to a file** and returns the path. **Do not try to read it
-inline.** Pull exactly what you need:
+Every `GetAceResults` call here returned **110–192 KB** — even a 3-row answer (110 KB), because the
+payload is the whole chat object (reasoning, message history, schema context, generated SQL, a preview)
+— **the data itself is not inline, it's at the signed URL.** In *this* harness the oversized result is
+**spilled to a file** and you get a path. **Treat the blob as data to parse with a tool, never as text
+to read into context.** You need exactly **three** things — the **URL** (to load), the **`columns`**
+(to reconcile), and the **SQL Ace ran** (to verify before loading — quirks #11/#15):
 
 ```bash
 F="<path the tool gave you>"
 
-# The signed CSV URL (this is all you usually need):
+# 1. The signed CSV URL (what you load from):
 grep -oE 'https://[^" ]*storage\.googleapis\.com[^" ]*\.csv[^" ]*' "$F" | head -1
 
-# What Ace ACTUALLY named the columns (reconcile against what you asked for):
+# 2. What Ace ACTUALLY named the columns (reconcile vs what you asked):
 grep -oE '"columns":\[[^]]*\]' "$F" | head -1
 
-# Inline rows for small results (≤10):
+# 3. The SQL Ace actually ran — your pre-load APPROVAL GATE (lint it before any INSERT):
+python3 - "$F" <<'PY'
+import re, sys
+blob = open(sys.argv[1]).read()
+# the executed query is a JSON string value under "query"/"validated_query"/"masked_query"
+qs = re.findall(r'"(?:query|validated_query|masked_query|sql)":"((?:[^"\\]|\\.)*?SELECT(?:[^"\\]|\\.)*?)"', blob, re.I)
+for q in sorted(set(qs), key=len)[-2:]:          # longest match = the real executed query
+    print(q.encode().decode('unicode_escape', 'ignore')); print('-'*60)
+PY
+
+# Bonus: inline rows for tiny results (≤10); message-group health; elapsed time
 grep -oE '"preview_array":\[[^]]*\]' "$F" | head -1
-
-# Sanity: every message group should be DONE
 grep -oE '"status":"[A-Z]+"' "$F" | sort | uniq -c
-
-# How long Ace took (creation → terminal):
-python3 -c "import re,sys; s=open('$F').read(); \
-c=re.search(r'creation_date_unix_milli\":\s*([0-9.]+)',s); t=re.search(r'terminal_date_unix_milli\":\s*([0-9.]+)',s); \
-print('elapsed %.1fs'%((float(t.group(1))-float(c.group(1)))/1000))"
+python3 -c "import re; s=open('$F').read(); c=re.search(r'creation_date_unix_milli\":\s*([0-9.]+)',s); t=re.search(r'terminal_date_unix_milli\":\s*([0-9.]+)',s); print('elapsed %.1fs'%((float(t.group(1))-float(c.group(1)))/1000))"
 ```
+
+Lint the extracted SQL against the checklist in [`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md) §2
+(wrong source table? injected `IsTracked`/`Speed!=0`/`Local_Date`/`GROUP BY`/unit factor?) **before** you
+load — it's free to fix now, expensive after. This is the whole point of Ace returning its SQL (it's a
+designed approval surface, not a leak — see the quirk catalog).
 
 > If the Agent/subagent tool is available and the file is enormous, hand the slicing to a subagent so
 > the 192 KB never enters your main context. Ask it to return only the URL, the `columns` array, the
-> row count, and the min/max timestamp.
+> SQL, the row count, and the min/max timestamp.
+
+### What if your client *doesn't* spill to a file?
+
+Spill-to-a-file is **this harness's** way of handling an oversized tool result; another MCP client may
+return the whole 110–192 KB **inline**, or **truncate** it. The blob is identical — only your access to
+it changes. Rules, in order of preference:
+
+- **Inline and you can run code → offload, then parse.** Write the string to a scratch file (or pipe it
+  straight to the `python`/`grep` above) and extract the three fields. **Never let the 150 KB sit in the
+  model context** — it's data, not reasoning.
+- **Inline, no code execution → scan, don't ingest.** Visually pull just the
+  `storage.googleapis.com/…​.csv?…` URL, the `"columns":[…]`, and the `"query":"SELECT …"`. Ignore the
+  rest.
+- **Truncated (worst case — the tail holding the URL may be cut):** don't trust a partial parse. Fall
+  back to:
+  1. **Continue-chat for a terse restatement of the SQL.** `new_chat=false` + the `chat_id`:
+     *"Reply with only the exact SQL you ran, nothing else."* The follow-up answer is tiny and fits —
+     this is the portable way to **get the SQL for verification** when you can't parse the blob. (Asking
+     about the *prior* turn's SQL is metadata; it does not re-run or degrade the query.)
+  2. **For the URL, prefer the small-result path:** if the result is ≤10 rows, `preview_array` carries
+     the rows inline — skip the URL entirely. Otherwise re-issue the pull in a client that can offload.
+     **Don't** ask Ace to "give me the URL" as a fresh request — that triggers quirk #8 (degraded
+     schema). The URL is a fixed-size string; the blob bloat is reasoning overhead, so shrinking the
+     window barely helps.
 
 **The signed URL shape** (don't persist the query string — it's a credential):
 ```
@@ -239,6 +275,12 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
 17. **Pasting SQL into the prompt can trip the gateway.** The only `invalid_value` HTTP 400 rejections
     we saw (`domain: MyGeotab-MCP`) were on SQL-augmented prompts; they were transient (retry succeeded).
     Plain English never failed. Another reason specificity-in-English beats feeding SQL.
+
+18. **Dimension/config writes lag Ace by many minutes; telematics doesn't.** A new `Zone` created via
+    the API was visible instantly through `Get` but **still absent from Ace at T0+11 min** (its
+    reference/config tables sync on a slow periodic cadence). Telematics (`GpsLogs`, `StatusData`) lands
+    in seconds. → **For anything you just created/changed (zones, device metadata, groups, rules, users)
+    read it from `Get`, not Ace.** See [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
 
 ### Ace's SQL is a feature, not a leak — use it as an approval gate
 

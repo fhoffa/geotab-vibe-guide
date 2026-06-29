@@ -60,6 +60,15 @@ for months-to-years depending on whether you keep raw.
 
 Pulse (the only Lite Duckling) is metered **per query, minimum 1 CU-second each**, and on Pulse
 1 CU-second ≈ 1 second of query time. The free tier includes **10 CU-hours/month = 36,000 CU-seconds**.
+
+> **Do you pay only for query time, or for idle keep-warm?** On **Pulse: query time only.** Pulse has
+> **no cooldown** — you're billed for execution (min 1 CU-sec/query) and nothing while idle, which is
+> exactly right for a bursty/periodic warehouse refresh. The "keep it warm and bill the idle" behavior
+> applies **only to the non-Pulse Ducklings** (Standard/Jumbo/Mega/Giga on Business), whose pricing
+> examples literally add `+ 60s cooldown` (default 1–10 min, configurable up to 24 h) to each session's
+> bill. So the free tier never charges you for sitting idle between updates — the 10 CU-hr math below is
+> pure execution and is, if anything, conservative.
+
 Measured the actual per-query cost with `EXPLAIN ANALYZE` on the live demo warehouse (server-side time):
 
 | Query in the loop | What it does | Measured time → billed CU-sec |

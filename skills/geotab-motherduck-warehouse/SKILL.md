@@ -89,11 +89,11 @@ blind. See [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 ## Critical quirks (all observed in testing)
 
 The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md), which holds
-the **full 17-quirk catalog with evidence**. The decision-critical ones:
+the **full 18-quirk catalog with evidence**. The decision-critical ones:
 
 | # | Quirk | Engineering consequence |
 |---|-------|------------------------|
-| 1 | **Ace MCP response is always huge** (110–192 KB even for 3 rows) and exceeds the tool token cap → spilled to a file | **Never read it inline.** `grep`/`python` the saved file for the URL + `"columns"`. |
+| 1 | **Ace MCP response is always huge** (110–192 KB even for 3 rows — it's the chat object, not the data) and exceeds the token cap → this harness spills it to a file | **Never read it inline; parse it as a file** for the URL, `"columns"`, and the **SQL to verify**. Spill-to-file is harness-specific — if your client returns it inline/truncated, offload to a file first ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Step 2). |
 | 2 | **A signed GCS CSV URL is always returned** (`storage.googleapis.com/planet-user-results-prod-eu/<uuid>-…csv`), even for tiny results; expires in ~24h (`X-Goog-Expires=86399`) | Load via `read_csv_auto('<url>')` directly from MotherDuck — no local download. Load **within 24h**. |
 | 3 | `preview_array` holds the rows **inline for ≤10 rows**; bigger sets need the URL | Small lookups can skip the URL; bulk loads always use it. |
 | 4 | **NULLs are omitted** from the JSON (the key disappears) | "Missing key = null." Don't positional-parse assuming all keys exist. |
@@ -189,7 +189,7 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
    not aggregate," and "include all devices, not just tracked/active." Tested — explicit English is as
    reliable as feeding Ace the SQL, and attaching SQL adds gateway-rejection risk without fixing
    non-determinism ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Does adding SQL help).
-5. **Never read the raw Ace MCP result inline** (quirk #1) — grep the spilled file.
+5. **Never read the raw Ace MCP result inline** (quirk #1) — parse it as a file for the URL, `columns`, and the **SQL** (lint the SQL before loading — it's the approval gate). If your client returns it inline instead of spilling, offload to a file first; never let ~150 KB into context.
 6. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts.
 7. **Test credentials/queries once**, not in a loop. Load CSVs into bronze **within ~24h** before the URL expires.
 8. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead.
