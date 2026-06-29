@@ -40,6 +40,38 @@ Query pre-aggregated fleet KPIs, safety scores, and fault data via the OData Dat
 
 ---
 
+### ✅ geotab-motherduck-warehouse
+**Priority:** HIGH — turns Geotab into a queryable warehouse
+
+Replicate a Geotab database into MotherDuck (DuckDB) and keep it fresh with incremental loads, driven
+entirely through MCP tools (MotherDuck + Geotab Ace + Geotab Get) — no Python.
+
+- **Location:** `skills/geotab-motherduck-warehouse/SKILL.md`
+- **References:**
+  - `references/ACE_TO_CSV.md` — bulk extraction via Ace, the signed-CSV-URL loop, 11 observed quirks, timing/volume benchmarks, continue-chat
+  - `references/MEDALLION_LOADING.md` — table creation from zero, bronze/silver/gold DDL, pre-load shape/size checks, conditional transforms, idempotent inserts, natural-key dedup
+  - `references/INCREMENTAL_BACKFILL.md` — daily-run runbook, `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill
+  - `references/ENTITY_CATALOG.md` — what to replicate beyond GPS, per-entity channel, natural keys, suggested schemas, the `Get` cursor-pagination quirk
+
+**What it teaches:**
+- The "latest timestamp → Ace after timestamp → append CSV URL" 3-call loop, made idempotent
+- Working around Ace MCP quirks (huge spilled responses, always-a-URL, second-precision boundary overlap, inconsistent column honoring, "never ask for the URL", ~33s floor, continue-chat)
+- Medallion layering, watermarks, dedup, gap detection, and historical backfill in bounded windows
+
+**Use Cases:**
+- "Replicate my Geotab data into MotherDuck"
+- "Run my warehouse update daily"
+- "Backfill the last 90 days of GPS and trips"
+- "Find and fill the gaps in my warehouse"
+
+**Lessons Learned (from live testing on `demo_fh4`):** Ace always returns a signed GCS CSV URL (even
+for 3 rows) but the MCP payload is 110–192 KB and must be grepped from a file, never read inline;
+Ace honors a precise lower bound only to the *second*, so every load must dedup; asking Ace for a URL
+in the prompt silently degrades the schema. All SQL (incremental insert, bronze fidelity, gap
+detection, state table) was validated against the live warehouse.
+
+---
+
 ### 📋 geotab-trip-analysis
 **Priority:** HIGH - Very common use case
 
