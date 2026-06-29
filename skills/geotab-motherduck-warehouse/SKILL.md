@@ -117,6 +117,7 @@ DDL + the conditional bronze→silver flow: [`references/MEDALLION_LOADING.md`](
 | [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | Creating tables from zero, bronze/silver/gold DDL, pre-load shape & size checks, conditional transforms, idempotent inserts, dedup anti-join |
 | [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The daily-run runbook, the `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |
+| [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) | Post-load quality tests, predicting problems by reading Ace's generated SQL, the SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap) |
 
 ## Bootstrap vs daily run
 
@@ -137,3 +138,6 @@ DDL + the conditional bronze→silver flow: [`references/MEDALLION_LOADING.md`](
 5. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts.
 6. **Test credentials/queries once**, not in a loop. Load CSVs **within ~24h** before the URL expires.
 7. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead.
+8. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the load**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
+9. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, `GetCountOf` reconciliation). To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace is non-deterministic, so a full re-ask can replace good data with a differently-shaped answer.
+10. **Writes can drop mid-call** — keep them idempotent (`CREATE OR REPLACE`, `IF NOT EXISTS`, watermark/anti-join) and re-check with `list_tables`/`COUNT(*)` before retrying.

@@ -52,6 +52,7 @@ entirely through MCP tools (MotherDuck + Geotab Ace + Geotab Get) — no Python.
   - `references/MEDALLION_LOADING.md` — table creation from zero, bronze/silver/gold DDL, pre-load shape/size checks, conditional transforms, idempotent inserts, natural-key dedup
   - `references/INCREMENTAL_BACKFILL.md` — daily-run runbook, `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill
   - `references/ENTITY_CATALOG.md` — what to replicate beyond GPS, per-entity channel, natural keys, suggested schemas, the `Get` cursor-pagination quirk
+  - `references/QUALITY_AND_REPAIR.md` — post-load quality tests, predicting problems from Ace's generated SQL, SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap)
 
 **What it teaches:**
 - The "latest timestamp → Ace after timestamp → append CSV URL" 3-call loop, made idempotent

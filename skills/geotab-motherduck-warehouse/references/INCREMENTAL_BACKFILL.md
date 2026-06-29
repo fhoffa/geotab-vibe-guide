@@ -143,6 +143,21 @@ Why windows:
 After backfilling, re-run **gap detection** to confirm the history is contiguous, then resume the
 forward daily loop from the newest watermark.
 
+### Backfill reliability
+
+- **Ace is non-deterministic** — re-running a window can return a differently-shaped/counted result
+  (different source table, `IsTracked` population). So backfill **append-only with the anti-join**
+  dedup, never blind-insert, and don't "re-ask the whole thing" to fix a hole — ask for the specific
+  missing window. (Full rationale + decision matrix: [`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md).)
+- **Reconcile each window** against an independent oracle where possible: `GetCountOf <entity>` with
+  the same `fromDate`/`toDate` bounds. Exact match isn't expected for Ace facts (active-only filter),
+  but a wildly different count means the window is wrong — re-pull before trusting it.
+- **Re-pulling a suspect window?** Load into a staging table, validate, then swap it in atomically
+  (staging-and-swap pattern in [`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md)) so a bad re-pull can
+  never corrupt good history.
+- **Log every window** into `warehouse_ingest_log` (watermark_from/to) so backfill is resumable and
+  you can see which windows are done.
+
 ## Health check (run after any load)
 
 ```sql

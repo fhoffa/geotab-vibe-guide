@@ -83,6 +83,30 @@ The live `Get Device` response spelled this out:
 > `"hasMoreResults": true … To fetch the next page: use sort with offset set to the last record's
 > sortBy field value and lastId set to its id, or narrow your fromDate/toDate range.`
 
+### Landing `Get` JSON into a table (validated)
+
+`Get` JSON lands in your context, not at a URL — so you serialize it into SQL. Two ways, both tested
+on the 50-device `demo_fh4` fleet:
+
+- **Generate the `INSERT` with a script** (recommended for reliability): write the JSON to the
+  scratchpad, then a tiny Python pass emits `INSERT … VALUES (…)` with proper quote-escaping and
+  timestamp cleanup. **Geotab timestamps come as `2026-05-15T14:47:06.746Z`** — strip the `Z` and
+  swap `T`→space (`replace('T',' ').replace('Z','')`) so they cast cleanly to `TIMESTAMP` (a bare
+  `Z` string doesn't cast to a plain `TIMESTAMP`). This produced a correct 50-row load.
+- **Cast the JSON array inline** with DuckDB: `SELECT unnest(CAST('<json>' AS STRUCT(id VARCHAR,
+  name VARCHAR, …)[]))`. Elegant for small payloads; the script path scales better and escapes safely.
+
+**`id` is the only safe natural key.** On `demo_fh4`, the 50 devices share just **10 distinct VINs**
+(the demo reuses them) — so never key a device dimension on `vehicleIdentificationNumber`. Refresh
+slowly-changing dims with `CREATE OR REPLACE` or delete-then-insert keyed on `id`.
+
+### Entities cover different device populations
+
+Observed counts on the same fleet/window: GPS **26 devices**, trips **26**, exception events **50**,
+`dim_device` **50**. Facts pulled via Ace reflect only devices with activity (and `IsTracked=TRUE`),
+while the device dimension has the whole fleet. So **a device missing from a fact table isn't
+necessarily a gap** — cross-check against `dim_device` and the entity's own nature before backfilling.
+
 ## Suggested dimension DDL
 
 ```sql
