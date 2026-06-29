@@ -11,11 +11,12 @@
   "plugins": [
     {
       "name": "geotab-skills",
-      "description": "Complete Geotab fleet management development skills — Python API, MyGeotab Add-Ins, Zenith styling, Ace AI queries, n8n automation, and MCP server building",
+      "description": "Complete Geotab fleet management development skills — Python API, MyGeotab Add-Ins, Zenith styling, Ace AI queries, MotherDuck data-warehouse replication, n8n automation, and MCP server building",
       "source": "./",
       "strict": false,
       "skills": [
         "./skills/geotab",
+        "./skills/geotab-motherduck-warehouse",
         "./skills/agentic-n8n",
         "./skills/geotab-custom-mcp"
       ]
