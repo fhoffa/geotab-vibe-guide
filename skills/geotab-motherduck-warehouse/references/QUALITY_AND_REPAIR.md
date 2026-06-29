@@ -94,9 +94,10 @@ also showed it re-resolving context each turn). That reality drives the strategy
 |-----------|---------------------|-----|
 | Transient failure (no `chat_id`, empty, timeout) | **Re-ask the same question**, retry w/ backoff | nothing loaded yet; idempotent to retry |
 | Class A semantic mismatch | **Re-ask with corrected wording** | the data shape is wrong; only a new query fixes it |
-| Known missing rows / a gap (Class B coverage) | **Ask only for the missing window**, load with anti-join | surgical, cheap, idempotent; doesn't disturb good data |
+| Known missing rows / a gap (Class B coverage) | **Ask only for the missing window**, land in bronze, derive silver with anti-join | surgical, cheap, idempotent; doesn't disturb good data |
 | Suspect a whole window is bad | **Re-pull that window into staging, validate, then swap** | a bad re-pull can't corrupt the live table |
-| Accumulated dupes / type errors already in the table | **Repair in SQL** (dedup/cast), don't touch Ace | it's a result problem; re-asking changes nothing |
+| Wrong typing/dedup logic, or accumulated dupes in silver | **Re-derive silver from bronze** (the raw is still there) | bronze is the system of record; rebuild the projection, no re-ask needed |
+| Type errors you can't fix from bronze | **Repair in SQL** (cast), don't touch Ace | it's a result problem; re-asking changes nothing |
 
 **Prefer "ask for the missing data and patch" over "re-ask the whole thing."** Because Ace varies
 between runs, a full re-ask risks *replacing good data with a differently-shaped answer*. A bounded
@@ -104,7 +105,21 @@ between runs, a full re-ask risks *replacing good data with a differently-shaped
 
 **Repair patterns (validated):**
 
-In-place dedup (what we ran — removed exactly 96 excess rows, kept one per key):
+Re-derive from bronze (the preferred fix for *any* silver-side problem — dupes, wrong cast, changed
+dedup logic). Bronze is the system of record, so you rebuild the projection instead of touching Ace:
+
+```sql
+TRUNCATE my_db.planet_gps_pings;
+INSERT INTO my_db.planet_gps_pings
+  (DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed)
+SELECT DISTINCT ON (DeviceId, replace(GpsDateTime,' UTC','')::TIMESTAMP)   -- normalized key (mixed batch formats)
+       DeviceId, DeviceName, DeviceTimeZoneId, Latitude::DOUBLE, Longitude::DOUBLE,
+       replace(GpsDateTime,' UTC','')::TIMESTAMP, Speed::BIGINT
+FROM my_db.bronze_gps_raw;
+```
+
+In-place dedup (only if you have *no* bronze — e.g. a pre-medallion table; what we ran once to remove
+exactly 96 excess rows, kept one per key):
 
 ```sql
 DELETE FROM my_db.planet_gps_pings
@@ -116,13 +131,22 @@ WHERE rowid IN (
 );
 ```
 
-Anti-join gap patch (add only missing rows from a re-pulled window — safe to re-run):
+Anti-join gap patch (add only missing rows from a re-pulled window — safe to re-run). Land raw in
+bronze first, then derive silver from it so the patch is replayable like everything else:
 
 ```sql
+-- 1. land the re-pulled window in bronze (append-only)
+INSERT INTO my_db.bronze_gps_raw
+SELECT *, 'backfill:<window_lo>', now(), 'demo_fh4', 'ace_csv', 'gs://…/<uuid>….csv'
+FROM read_csv_auto('<window url>', all_varchar=true);
+-- 2. derive only the genuinely-missing rows into silver
 INSERT INTO my_db.planet_gps_pings (DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed)
-SELECT c.* FROM read_csv_auto('<window url>') c
+SELECT DISTINCT ON (b.DeviceId, replace(b.GpsDateTime,' UTC','')::TIMESTAMP)
+       b.DeviceId, b.DeviceName, b.DeviceTimeZoneId, b.Latitude::DOUBLE, b.Longitude::DOUBLE,
+       replace(b.GpsDateTime,' UTC','')::TIMESTAMP, b.Speed::BIGINT
+FROM my_db.bronze_gps_raw b
 WHERE NOT EXISTS (SELECT 1 FROM my_db.planet_gps_pings t
-                  WHERE t.DeviceId=c.DeviceId AND t.GpsDateTime=c.GpsDateTime);
+                  WHERE t.DeviceId=b.DeviceId AND t.GpsDateTime=replace(b.GpsDateTime,' UTC','')::TIMESTAMP);
 ```
 
 Staging-and-swap (atomic replacement of a suspect window — a bad re-pull never touches live data):
@@ -140,7 +164,8 @@ DROP TABLE my_db._stg_gps;
 ## 5. Operational resilience
 
 - **`query_rw` can drop mid-call** (we hit a "permission stream closed" during a CTAS). Always make
-  writes **idempotent and re-runnable**: `CREATE OR REPLACE` / `CREATE TABLE IF NOT EXISTS`, watermark/
+  writes **idempotent and re-runnable**: `CREATE OR REPLACE` / `CREATE TABLE IF NOT EXISTS` for
+  silver/gold/staging (**never `CREATE OR REPLACE` bronze** — it's append-only), watermark/
   anti-join inserts. After a failure, **re-check with `list_tables`/a `COUNT(*)`** before retrying —
   don't assume it didn't run.
 - **Load CSVs within ~24h** (signed URL expiry). If a repair spans days, re-mint the URL per window.

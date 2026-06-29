@@ -40,20 +40,25 @@ The data table is the source of truth; the log is for observability and gap reas
 For each fact table, run the 3-call loop. Pseudocode the agent executes with MCP calls:
 
 ```
-for table in [planet_gps_pings, trips, status_data, exception_events]:
-  1. watermark = MotherDuck:  SELECT max(<event_time>) FROM my_db.<table>;
+for table in [planet_gps_pings, trips, status_data, exception_events]:   # silver names
+  1. watermark = MotherDuck:  SELECT max(<event_time>) FROM my_db.<silver>;
   2. ace_file  = Geotab Ace:  GetAceResults(new_chat=true, database=<db>,
                               prompt="<entity> rows after <watermark> UTC, columns: …")   # ~33–60s
      url, cols = grep(ace_file)                                                            # never inline
   3. probe     = MotherDuck:  DESCRIBE + COUNT/min/max from read_csv_auto(url)             # shape & size check
-     if schema mismatch -> transform or re-ask; if new_rows==0 -> skip
-     MotherDuck (rw): INSERT … SELECT FROM read_csv_auto(url) WHERE <event_time> > watermark;
-  4. log:      INSERT INTO warehouse_ingest_log (…) VALUES (…);
-  5. verify:   SELECT count(*), max(<event_time>) FROM my_db.<table>;
+     if schema mismatch -> map by position in the derive or re-ask; if new_rows==0 -> skip (no append)
+  4. land      = MotherDuck (rw): INSERT INTO <bronze> SELECT *, provenance                # append-only, all_varchar
+                              FROM read_csv_auto(url, all_varchar=true);                   # lossless, no dedup
+  5. derive    = MotherDuck (rw): INSERT INTO <silver> SELECT <typed,deduped>              # deterministic projection
+                              FROM <bronze> WHERE <event_time> > coalesce(watermark, '1970-01-01');
+  6. log:      INSERT INTO warehouse_ingest_log (…) VALUES (…);
+  7. verify:   SELECT count(*), max(<event_time>) FROM my_db.<silver>;
 ```
 
-- **Idempotent:** re-running the same day inserts 0 (watermark already advanced). Safe to retry after a
-  failure.
+- **Idempotent:** re-running the same day appends the raw rows to bronze again (bronze keeps
+  everything) but the silver derive inserts 0 (watermark already advanced) and dedups on the natural
+  key, so silver is unchanged. Safe to retry after a failure. (If you want bronze itself idempotent
+  too, skip the append when `new_rows==0`, or de-dupe bronze by `_batch_id` on replay.)
 - **Cost:** ~33–60 s of Ace time per fact table + a couple of fast MotherDuck calls. Four fact tables
   ≈ a few minutes. Dimensions (via `Get`) are sub-second; refresh them weekly, not daily.
 - **Ordering:** load dimensions first (so joins resolve), then facts.
@@ -126,8 +131,11 @@ target_start = 2026-01-01
 cursor       = current earliest in table (or "now")
 while cursor > target_start:
   window_lo = max(cursor - INTERVAL 1 DAY, target_start)
-  Ace: "<entity> rows where <event_time> >= <window_lo> and < <cursor> UTC, columns: …"
-  MotherDuck: INSERT … SELECT FROM read_csv_auto(url) with the ANTI-JOIN dedup   # windows can overlap
+  Ace: "<entity> rows where <event_time> >= <window_lo> and <event_time> < <cursor> UTC, columns: …"
+       # repeat <event_time> on BOTH sides — Ace drops a bare "< <cursor>" and returns the whole tail
+  MotherDuck (rw): INSERT INTO <bronze> SELECT *, provenance ('backfill:<window_lo>' as _batch_id)
+                   FROM read_csv_auto(url, all_varchar=true);                   # land raw, append-only
+  MotherDuck (rw): INSERT INTO <silver> … FROM <bronze> with the ANTI-JOIN dedup  # windows can overlap
   log the window into warehouse_ingest_log (watermark_from=window_lo, watermark_to=cursor)
   cursor = window_lo
 ```

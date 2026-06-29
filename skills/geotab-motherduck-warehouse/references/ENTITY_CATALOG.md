@@ -33,8 +33,10 @@ real-time, and permission-scoped, while Ace filters to `IsTracked=TRUE` and pre-
 ## Facts via Ace
 
 Same loop as GPS — see [`ACE_TO_CSV.md`](ACE_TO_CSV.md) for prompts (GPS, trips, status, exceptions
-are pre-written there). Each gets its own silver table, watermark column, and `warehouse_ingest_log`
-rows. The watermark column is the entity's event time:
+are pre-written there). Each fact gets its own **append-only `bronze_*_raw`** table (lossless landing)
+**and** a silver table derived from it, plus a watermark column and `warehouse_ingest_log` rows.
+Bronze is mandatory for these because Ace's output isn't reproducible (URL expiry + non-determinism) —
+see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the entity's event time:
 
 | Table | Watermark column |
 |-------|------------------|
@@ -132,8 +134,8 @@ before designing a wide dimension.
 
 ## Minimal vs full mirror
 
-- **Minimal mirror (most demos):** `planet_gps_pings` (fact) + `dim_device` (dimension). Enough to map,
-  measure distance, and label vehicles.
+- **Minimal mirror (most demos):** `planet_gps_pings` (fact, with its `bronze_gps_raw` underneath) +
+  `dim_device` (dimension, no bronze). Enough to map, measure distance, and label vehicles.
 - **Operational mirror:** add `trips`, `exception_events`, `status_data`, plus `dim_user`, `dim_zone`,
   `dim_rule`, `dim_diagnostic` so facts are human-readable.
 - **Full replica:** iterate `ListEntities` and replicate everything relevant to the user's use case —

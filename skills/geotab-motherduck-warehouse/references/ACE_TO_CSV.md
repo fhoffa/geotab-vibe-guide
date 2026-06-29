@@ -105,13 +105,15 @@ https://storage.googleapis.com/planet-user-results-prod-eu/<uuid>-000000000000.c
 ```
 `X-Goog-Expires=86399` ≈ **24h**. Load it into MotherDuck the same session.
 
-## Step 3 — reconcile columns, then hand the URL to MotherDuck
+## Step 3 — land the URL in bronze, then derive silver
 
-Compare the `columns` array to your target table. **If it matches** → straight `INSERT … SELECT FROM
-read_csv_auto('<url>') WHERE event_time > watermark`. **If it differs** (renames, dropped/extra cols,
-case changes) → either transform in the `SELECT` (alias by position) or re-ask Ace with tighter
-wording. See [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). DuckDB reads the signed URL directly via
-the pre-installed `httpfs` extension — no download needed.
+Hand the signed URL to MotherDuck as an **append-only bronze load** (`read_csv_auto('<url>',
+all_varchar=true)` + provenance) — never straight into silver. The URL expires in ~24 h and Ace is
+non-deterministic, so bronze is your only replayable record. Then compare the `columns` array to your
+silver target and **derive**: if it matches, a typed/deduped `INSERT … FROM bronze WHERE event_time >
+watermark`; if it differs (renames, dropped/extra cols, case changes), map by position in the derive
+or re-ask Ace with tighter wording. See [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). DuckDB reads the
+signed URL directly via the pre-installed `httpfs` extension — no download needed.
 
 ## The quirk catalog (with evidence)
 

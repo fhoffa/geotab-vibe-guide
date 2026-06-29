@@ -32,22 +32,26 @@ keep analysis out of the ingestion path.)
 Tool prefixes (`mcp__MotherDuck__`, `mcp__Geotab_MCP__`) may differ in another client — match by the
 server names the user has connected.
 
-## The core loop (≈3 MCP calls per table per run)
+## The core loop (≈4 MCP calls per fact table per run)
 
-This is the "hey MotherDuck / hey Ace / hey MotherDuck" pattern, made robust:
+The "hey MotherDuck / hey Ace / hey MotherDuck" pattern, made robust. **Ace data always lands in
+bronze first; silver is derived from bronze** — never loaded straight from the URL (the URL expires in
+~24 h and Ace is non-deterministic, so bronze is your only replayable record — see "Layers" below):
 
 ```
-1. mcp__MotherDuck__query     → SELECT max(event_time) FROM warehouse.table   (the watermark)
+1. mcp__MotherDuck__query     → SELECT max(event_time) FROM warehouse.silver_table   (the watermark)
 2. mcp__Geotab_MCP__GetAceResults → "give me all <entity> rows after <watermark>, columns: ..."
                                      (do NOT ask for a URL — see quirk #8 — Ace returns one anyway)
-3. mcp__MotherDuck__query_rw  → INSERT ... SELECT FROM read_csv_auto('<signed URL>')
-                                 WHERE event_time > <watermark>   (idempotent dedup)
+3. mcp__MotherDuck__query_rw  → INSERT INTO bronze_table SELECT *, provenance
+                                 FROM read_csv_auto('<URL>', all_varchar=true)   (append-only, lossless)
+4. mcp__MotherDuck__query_rw  → INSERT INTO silver_table SELECT <typed, deduped>
+                                 FROM bronze_table WHERE event_time > <watermark>  (derive + idempotent dedup)
 ```
 
-Worked example we actually ran (GPS, `my_db.planet_gps_pings`):
+Worked example we actually ran (GPS, `my_db.bronze_gps_raw` → `my_db.planet_gps_pings`):
 
 ```sql
--- 1. Watermark
+-- 1. Watermark (from silver — the source of truth for "what's already typed")
 SELECT max(GpsDateTime) FROM my_db.planet_gps_pings;          -- 2026-06-26 01:42:40.779
 ```
 ```
@@ -58,18 +62,29 @@ SELECT max(GpsDateTime) FROM my_db.planet_gps_pings;          -- 2026-06-26 01:4
    → ~40 s, response 166 KB (spilled to file), signed CSV URL inside, 157,419 rows.
 ```
 ```sql
--- 3. Append, idempotently (excludes the boundary-second overlap automatically)
+-- 3. Land raw in bronze, append-only, lossless (no dedup, no watermark — keep everything)
+INSERT INTO my_db.bronze_gps_raw
+SELECT *, 'ace:<chat-uuid>', now(), 'demo_fh4', 'ace_csv', 'gs://…/<uuid>….csv'
+FROM read_csv_auto('https://storage.googleapis.com/planet-user-results-prod-eu/<uuid>-000000000000.csv?X-Goog-...',
+                   all_varchar=true);
+   → 157,419 rows appended. bronze_gps_raw: 522,162 (bootstrap) → 679,581.
+```
+```sql
+-- 4. Derive silver from bronze: type-cast, strip ' UTC', dedup on the NORMALIZED natural key
 INSERT INTO my_db.planet_gps_pings
   (DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed)
-SELECT DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed
-FROM read_csv_auto('https://storage.googleapis.com/planet-user-results-prod-eu/<uuid>-000000000000.csv?X-Goog-...')
-WHERE GpsDateTime > (SELECT max(GpsDateTime) FROM my_db.planet_gps_pings);
-   → 157,415 rows inserted (4 boundary-second rows correctly skipped). Table: 522,258 → 679,673.
+SELECT DISTINCT ON (DeviceId, replace(GpsDateTime,' UTC','')::TIMESTAMP)
+       DeviceId, DeviceName, DeviceTimeZoneId, Latitude::DOUBLE, Longitude::DOUBLE,
+       replace(GpsDateTime,' UTC','')::TIMESTAMP, Speed::BIGINT
+FROM my_db.bronze_gps_raw
+WHERE replace(GpsDateTime,' UTC','')::TIMESTAMP
+      > (SELECT coalesce(max(GpsDateTime), TIMESTAMP '1970-01-01') FROM my_db.planet_gps_pings);
+   → silver advances to 679,577 (boundary-second dupes collapse on the parsed key).
 ```
 
-**Before every load, inspect what came back** (shape + size) and decide: append as-is, transform
-first, or re-ask Ace. Never pipe Ace straight into `INSERT` blind. See
-[`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
+**Before deriving silver, inspect what came back** (shape + size) and decide: derive as-is, map
+columns by position, or re-ask Ace. Bronze append is unconditional (lossless); never derive silver
+blind. See [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 
 ## Critical quirks (all observed in testing)
 
@@ -104,40 +119,56 @@ A `dim_device` from `Get` also resolves Ace's `DeviceName`↔`DeviceId` and enri
 | Layer | Purpose | Example | Dedup? |
 |-------|---------|---------|--------|
 | **Bronze** | Lossless landing, exactly as returned (`all_varchar=true`) + provenance cols | `bronze_gps_raw` | no (append-only) |
-| **Silver** | Typed, conformed, deduped on natural key — the queryable table | `planet_gps_pings` | yes |
+| **Silver** | Typed, conformed, deduped on natural key — the queryable table, **a deterministic projection of bronze** | `planet_gps_pings` | yes |
 | **Gold** | Business marts/aggregates (built later, for analysis) | `daily_device_km` | n/a |
 
-DDL + the conditional bronze→silver flow: [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
+**The bronze rule (the decision that matters):** bronze is **mandatory for Ace-sourced facts** and
+**skipped for `Get`-sourced dimensions.** Why: Ace's output is *not reproducible* — the signed CSV URL
+expires in ~24 h and Ace is non-deterministic, so bronze is the only durable, replayable record of what
+you ingested, and silver is derived from it. `Get` is exact and reproducible any time (reconciles with
+`GetCountOf`), so dimensions land straight to a typed `dim_*` with no bronze. Don't load a fact silver
+straight from the URL, and don't put bronze under a dimension.
+
+DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 
 ## Reference files
 
 | Reference | When to read |
 |-----------|--------------|
 | [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 11 quirks in depth, timing/volume benchmarks, continue-chat |
-| [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | Creating tables from zero, bronze/silver/gold DDL, pre-load shape & size checks, conditional transforms, idempotent inserts, dedup anti-join |
+| [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | The bronze-vs-`Get` decision rule, bronze/silver/gold DDL, append-only bronze + deriving silver from it, the brownfield bootstrap, shape checks, normalized-key dedup, full replay |
 | [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The daily-run runbook, the `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |
 | [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) | Post-load quality tests, predicting problems by reading Ace's generated SQL, the SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap) |
 
 ## Bootstrap vs daily run
 
-- **0 → warehouse (first time):** create the warehouse db → create bronze + silver tables → do one
-  *bounded historical* Ace pull per fact entity (e.g. one day at a time) → load dimensions via `Get`.
-  See [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) §Backfill.
-- **Daily update (steady state):** for each table run the 3-call loop above, then append a row to
-  `warehouse_ingest_log`. Re-running is safe (the `> watermark` filter makes it idempotent). The user
-  can ask you to "run the warehouse update" on a schedule.
+- **0 → warehouse (first time):** create the warehouse db → create bronze + silver tables → per fact
+  entity, run *bounded historical* Ace pulls (a day at a time) into **bronze**, then derive silver →
+  load dimensions via `Get` (no bronze). If a silver table already exists without a bronze under it,
+  reconstruct bronze from silver once (the brownfield bootstrap) so silver becomes rebuildable.
+  See [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) §Backfill and
+  [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §Brownfield.
+- **Daily update (steady state):** for each fact table run the 4-call loop above (watermark → Ace →
+  append bronze → derive silver), then append a row to `warehouse_ingest_log`. Re-running is safe (the
+  `> watermark` derive is idempotent). The user can ask you to "run the warehouse update" on a schedule.
 
 ## Non-negotiable rules
 
-1. **Always check shape & size before loading.** `DESCRIBE SELECT * FROM read_csv_auto('<url>')` and a
-   `COUNT(*)` + `min/max(event_time)`. Confirm columns/types match the target *or* transform.
-2. **Dedup every load** (quirk #6) — `> watermark` filter or natural-key anti-join. Never trust Ace's boundary.
-3. **Never ask Ace for a URL/CSV/download** (quirk #8). Ask for data + columns.
-4. **Never read the raw Ace MCP result inline** (quirk #1) — grep the spilled file.
-5. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts.
-6. **Test credentials/queries once**, not in a loop. Load CSVs **within ~24h** before the URL expires.
-7. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead.
-8. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the load**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
-9. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, `GetCountOf` reconciliation). To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace is non-deterministic, so a full re-ask can replace good data with a differently-shaped answer.
-10. **Writes can drop mid-call** — keep them idempotent (`CREATE OR REPLACE`, `IF NOT EXISTS`, watermark/anti-join) and re-check with `list_tables`/`COUNT(*)` before retrying.
+1. **Ace facts land in bronze first; silver is derived from bronze** — never load a fact silver
+   straight from the URL. `Get` dimensions skip bronze (reproducible) and land straight to `dim_*`.
+   The source is non-reproducible (URL expires ~24 h, Ace is non-deterministic) so bronze is the only
+   replayable record. Bronze is **append-only** (`CREATE TABLE IF NOT EXISTS` + `INSERT`, never
+   `CREATE OR REPLACE`); stamp every batch with provenance (`_batch_id`, `_source_channel`, …).
+2. **Always check shape & size before deriving.** `DESCRIBE SELECT * FROM read_csv_auto('<url>')` and a
+   `COUNT(*)` + `min/max(event_time)`. Confirm columns/types *or* map by position in the derive.
+3. **Dedup every silver derive** (quirk #6) — `> watermark` filter or natural-key anti-join, and dedup
+   on the **parsed/normalized** key (bronze mixes ` UTC`-suffixed and clean timestamps). Never trust Ace's boundary.
+4. **Never ask Ace for a URL/CSV/download** (quirk #8). Ask for data + columns.
+5. **Never read the raw Ace MCP result inline** (quirk #1) — grep the spilled file.
+6. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts.
+7. **Test credentials/queries once**, not in a loop. Load CSVs into bronze **within ~24h** before the URL expires.
+8. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead.
+9. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the derive**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
+10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, `GetCountOf` reconciliation). To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace is non-deterministic, so a full re-ask can replace good data with a differently-shaped answer.
+11. **Writes can drop mid-call** — keep them idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying.
