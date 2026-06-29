@@ -46,8 +46,10 @@ two different `LogRecord` windows for one device both returned **16,098,152** (t
 `Trip` window returned **1,388,687** (all trips). So `GetCountOf LogRecord` answers "how many logs
 exist in total," not "how many in my window." To reconcile a fact window, **count rows from a bounded
 `Get` read of the same window** (e.g. `Get LogRecord` with `deviceSearch`+`fromDate`/`toDate`), or
-compare Ace against the warehouse silver — never against `GetCountOf`. (And expect Ace's count to wobble
-a few % anyway — it's non-deterministic; see §4.) Details: [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
+compare Ace against the warehouse silver — never against `GetCountOf`. (And if two Ace runs of the
+"same" question disagree, suspect a **different source table**, not random drift — an identical prompt
+was stable at 49 across 3 runs while a re-phrasing answered 47 from `Trip`; see §4 and
+[`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md). Read the returned SQL to tell which.)
 
 **Record results.** Add a `warehouse_quality_checks(run_id, check, value, passed, checked_at)` table
 (or extend `warehouse_ingest_log`) so you get a time series and can alert on regressions.
@@ -92,8 +94,11 @@ the `columns` array (quirk #7/#8), a short/partial window, or accumulated dupes 
 
 ## 4. Repair: re-ask the same question, or ask for the gap and patch?
 
-Ace is **non-deterministic** — re-running the *same* prompt can pick a different source table and
-return differently-shaped/counted data (we saw the engine choose `VehicleKPI_Daily`; continue-chat
+Ace's **source-table selection is not guaranteed** — re-asking a question (especially re-phrased) can
+land on a different `FROM` and return differently-shaped/counted data. Observed 2026-06-29: a
+"distinct GPS devices" question gave 49 from `GpsLogs` on 3 identical runs but 47 from `Trip` when
+re-phrased with an attached SQL (which it ignored); separately the engine chose `VehicleKPI_Daily` for a
+distance ask. (An *identical* prompt was stable; it's the *selection* across phrasings that varies.) Continue-chat
 also showed it re-resolving context each turn). That reality drives the strategy:
 
 | Situation | Most reliable action | Why |

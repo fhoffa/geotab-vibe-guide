@@ -58,7 +58,7 @@ run** — and scored the generated SQL, columns, and counts against the warehous
 | GPS columns + 2-day window | ✓ right cols/table; injected harmless `DATE(...) >= ...` prune | ✓ ran verbatim, no injection |
 | Raw trips, no unit conversion | ✓ km kept, right cols/table | **2 transient `invalid_value` 400s**, then ✓ verbatim |
 | UTC day count | ✓ UTC bounds, exact (1756) | ✓ verbatim (1756) |
-| Distinct devices, no IsTracked | ✓ no filter (49) | ✓ ran it (47 — non-determinism) |
+| Distinct devices, no IsTracked | ✓ no filter, `GpsLogs` → **49** | answered **47** from `Trip` — **ignored the GpsLogs SQL** we supplied (source-selection, not noise; see below) |
 | No speed/ignition filter | ✓ no filter (955) | ✓ (959 — live growth) |
 
 **Conclusion: well-specified English is as reliable as English+SQL on correctness.** Every documented
@@ -69,8 +69,9 @@ filters, forcing UTC. What moves reliability is **prompt specificity, not attach
 Attaching SQL has one upside and two downsides:
 - **+** Ace runs it near-verbatim, so it skips the small (harmless) partition-prune predicates it adds
   in English-only mode.
-- **−** It does **not** fix non-determinism — the same forced query returned **49 then 47** distinct
-  devices over a *settled* past day.
+- **−** It is **not even guaranteed to run** — the "distinct devices" test *supplied* `…FROM GpsLogs`
+  SQL, yet Ace answered **47 from the `Trip` table** (the plain-English run used `GpsLogs` → 49, stable
+  across 3 identical runs). An attached SQL is a hint Ace can override; it does not pin the source.
 - **−** It correlated with **more failures** — the only `invalid_value` HTTP 400 gateway rejections we
   saw (2 of them) were on SQL-augmented calls; plain English never failed.
 
@@ -261,10 +262,15 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     "GPS / trips / activity" request can silently drop stationary points. Say "include stationary points
     (speed 0, ignition off); do not filter on speed, ignition, or motion" to get raw completeness.
 
-15. **It is non-deterministic — even for a settled past window.** The *same* `COUNT(DISTINCT DeviceId)`
-    over a fixed UTC day returned **49** one run and **47** the next; handing it identical SQL did not
-    stabilize it. Treat Ace counts as ±a few %, never exact. This is the core reason every fact load is
-    append-to-bronze + dedup and every repair prefers re-deriving from bronze over re-asking.
+15. **Source-table selection varies for the same question — and an explicit SQL doesn't pin it.** This
+    is *not* numeric noise on a fixed query. The question "distinct devices with a raw GPS log on
+    2026-06-28" returned **49** (from `GpsLogs`) on **three identical plain-English runs** — stable. The
+    *same* question with `Run exactly: …FROM GpsLogs` appended returned **47**, answered from the `Trip`
+    table (a clean Trip query confirms 47 devices took a trip vs 49 that logged GPS — both correct for
+    their table). So a count that differs across runs is almost always a **different `FROM`**, not
+    randomness — **read the returned SQL**, pin the table, and don't trust an attached SQL to force the
+    source. This source-selection variability is why every fact load is append-to-bronze + dedup and
+    every repair prefers re-deriving from bronze over re-asking. *(Re-confirmed 2026-06-29; n=4.)*
 
 16. **It is near-real-time for continuous streams (tens of s – ~2 min), not batch.** Measured across
     four tables: `GpsLogs` max `21:37:15` vs now `21:37:34` → **~19 s** (a separate run: ~98 s);
@@ -281,8 +287,9 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     Plain English never failed. Another reason specificity-in-English beats feeding SQL.
 
 18. **Dimension/config writes lag Ace by many minutes; telematics doesn't.** A new `Zone` created via
-    the **Get API** (`Add`) was visible instantly through the **Get API** (`Get`) but **still absent from
-    Ace (`GetAceResults`) at T0+14 min** (Ace's reference/config tables sync on a slow periodic cadence).
+    the **Get API** (`Add`) was visible instantly through the **Get API** (`Get`) but **took ~15–30 min to
+    appear in Ace (`GetAceResults`)** — absent at T0+14 min, present by T0+29 min (Ace's reference/config
+    tables sync on a slow periodic cadence).
     Telematics (`GpsLogs`, `StatusData`) lands in seconds. → **For anything you just created/changed
     (zones, device metadata, groups, rules, users) read it from the Get API, not Ace.** See
     [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).

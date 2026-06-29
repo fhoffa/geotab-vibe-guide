@@ -45,9 +45,10 @@ Read-freshness (above) is one axis; **how fast a *change* reaches Ace** is anoth
 **dimension/config data they are wildly different.** Measured 2026-06-29: created a new geofence
 (`Zone` "ZZ_ACE_PROBE_ALPHA") via the **Get API** write (`mcp__Geotab_MCP__Add`) at `21:41:04`. It was
 visible **instantly** through the **Get API** (`Get` — the write is synchronous), but **Ace**
-(`GetAceResults`) still reported **0 zones at T0+14 min** (polled at +0.5, +4, +6, +10, +11, +14 min —
-never appeared in that window). So **Ace's** dimension/config tables sync on a slow, periodic cadence
-(≫14 min), while telematics streams (`GpsLogs`, `StatusData`) land in seconds.
+(`GetAceResults`) **lagged ~15–30 min**: it reported 0 zones at every poll up to T0+14 min (`21:55`) and
+first returned the zone at T0+~29 min (`22:09`). So **Ace's** dimension/config tables sync on a slow,
+periodic cadence (here **between 14 and 29 minutes**), while telematics streams (`GpsLogs`,
+`StatusData`) land in seconds.
 
 > **Engineering consequence:** for anything you **just created or changed** in MyGeotab — zones, device
 > metadata, groups, rules, users — **read it from `Get`, never Ace.** `Get` is authoritative and
@@ -105,7 +106,7 @@ load. See the prompting rules in [`ACE_TO_CSV.md`](ACE_TO_CSV.md).
 ## `GetCountOf` (Get API, **not** Ace) is not a windowed oracle for facts
 
 > This is a **Get API** quirk — the classic `mcp__Geotab_MCP__GetCountOf` method — **not** an
-> Ace/`GetAceResults` behavior. (Ace's own count caveat is non-determinism, in the next section.)
+> Ace/`GetAceResults` behavior. (Ace's own count caveat — source-table *selection* — is two sections down.)
 
 `GetCountOf` ignores the `fromDate`/`toDate`/`deviceSearch` in the search for high-volume entities:
 two different `LogRecord` windows for one device both returned **16,098,152** (the whole table), and a
@@ -114,9 +115,23 @@ in total," **not** "how many in my window." Use it only for **dimensions** (`Get
 reconciles exactly with `dim_device`). For fact reconciliation, count rows from a bounded `Get`
 read of the same window, or cross-check Ace against the warehouse — never against `GetCountOf`.
 
-## Non-determinism is real even for settled days
+## Same question, different *source table* — read the SQL (2026-06-29)
 
-The same logical query — `COUNT(DISTINCT DeviceId)` over a *fixed, past* UTC day — returned **49** one
-run and **47** the next. Over a settled window that should be constant. This is why every fact load is
+Ace's variability is **source-table selection, not numeric noise on a pinned query.** Measured: the
+question *"how many distinct devices produced a raw GPS log on 2026-06-28 (no tracked filter)?"* was
+asked four times.
+
+- **Three identical plain-English runs → `49` every time, from `GpsLogs`.** A pinned prompt is **stable**,
+  not random.
+- **A fourth run — the *same* English question but with `Run exactly: SELECT COUNT(DISTINCT DeviceId) …
+  FROM GpsLogs …` appended — returned `47`, answered from the `Trip` table.** Ace picked a *different
+  source* and **ignored the GpsLogs SQL we supplied.** A clean Trip query confirms **47** devices took a
+  trip that day, vs **49** that logged GPS — *both numbers are correct for their table.*
+
+So the "49 vs 47" was **two different sources answering one question**, not a count that drifts. The
+engineering consequences are the same and still hold: **read the returned SQL every time** (a differing
+count across runs is almost always a different `FROM`, diagnosable — not noise), **pin the table** in the
+prompt, and don't assume an attached SQL forces the source. This source-selection variability is *why* a
+full re-ask can replace good data with a differently-shaped answer — so every fact load is
 append-to-bronze + dedup, every backfill is anti-join, and every repair prefers re-deriving from bronze
-over re-asking Ace. Treat Ace counts as ~±a few %, not exact.
+over re-asking Ace.
