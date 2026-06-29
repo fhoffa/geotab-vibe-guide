@@ -42,10 +42,11 @@ one CSV, which is why it's the bulk workhorse despite the sub-2-min lag and non-
 
 Read-freshness (above) is one axis; **how fast a *change* reaches Ace** is another — and for
 **dimension/config data they are wildly different.** Measured: created a new geofence
-(`Zone` "ZZ_ACE_PROBE_ALPHA") via the Geotab MCP at `21:41:04`. It was visible **instantly** through
-`Get` (the write is synchronous), but Ace still reported **0 zones at T0+11 min** (polled at +0.5, +4,
-+6, +10, +11 min — never appeared in that window). So Ace's **dimension/config tables sync on a slow,
-periodic cadence (≫10 min)**, while telematics streams (`GpsLogs`, `StatusData`) land in seconds.
+(`Zone` "ZZ_ACE_PROBE_ALPHA") via the **Get API** write (`mcp__Geotab_MCP__Add`) at `21:41:04`. It was
+visible **instantly** through the **Get API** (`Get` — the write is synchronous), but **Ace**
+(`GetAceResults`) still reported **0 zones at T0+14 min** (polled at +0.5, +4, +6, +10, +11, +14 min —
+never appeared in that window). So **Ace's** dimension/config tables sync on a slow, periodic cadence
+(≫14 min), while telematics streams (`GpsLogs`, `StatusData`) land in seconds.
 
 > **Engineering consequence:** for anything you **just created or changed** in MyGeotab — zones, device
 > metadata, groups, rules, users — **read it from `Get`, never Ace.** `Get` is authoritative and
@@ -100,7 +101,10 @@ you want the whole fleet, say so explicitly (and verify device count against `di
 which is the exact roster). This is a coverage bug that no amount of dedup fixes — it's upstream of the
 load. See the prompting rules in [`ACE_TO_CSV.md`](ACE_TO_CSV.md).
 
-## `GetCountOf` is **not** a windowed oracle for facts
+## `GetCountOf` (Get API, **not** Ace) is not a windowed oracle for facts
+
+> This is a **Get API** quirk — the classic `mcp__Geotab_MCP__GetCountOf` method — **not** an
+> Ace/`GetAceResults` behavior. (Ace's own count caveat is non-determinism, in the next section.)
 
 `GetCountOf` ignores the `fromDate`/`toDate`/`deviceSearch` in the search for high-volume entities:
 two different `LogRecord` windows for one device both returned **16,098,152** (the whole table), and a

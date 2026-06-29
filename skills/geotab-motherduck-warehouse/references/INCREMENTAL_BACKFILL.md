@@ -189,8 +189,9 @@ missing whole devices. Compare across channels:
   query returns rows, your facts were pulled active-only — re-pull the window with the IsTracked
   exclusion lifted (prompt rules in [`ACE_TO_CSV.md`](ACE_TO_CSV.md)).
 - **Window row-count vs an independent read.** To check a window isn't short, count it from a bounded
-  **`Get LogRecord`** read of the *same* window — **not `GetCountOf`**, which ignores date/device filters
-  for facts and returns the whole-table count (16,098,152 for two different windows in testing). See
+  **Get API `Get LogRecord`** read of the *same* window — **not the Get API `GetCountOf`** (same family,
+  but `GetCountOf` ignores date/device filters for facts and returns the whole-table count: 16,098,152
+  for two different windows in testing). Neither of these is Ace. See
   [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
 - **Real-time tail.** Because Ace lags ~1–2 min, the newest sliver may be absent until the next run;
   that's expected, not a gap. Top it up with a small `Get LogRecord` read if you need it now.

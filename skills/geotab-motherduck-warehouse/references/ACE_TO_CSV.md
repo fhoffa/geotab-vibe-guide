@@ -277,10 +277,11 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     Plain English never failed. Another reason specificity-in-English beats feeding SQL.
 
 18. **Dimension/config writes lag Ace by many minutes; telematics doesn't.** A new `Zone` created via
-    the API was visible instantly through `Get` but **still absent from Ace at T0+11 min** (its
-    reference/config tables sync on a slow periodic cadence). Telematics (`GpsLogs`, `StatusData`) lands
-    in seconds. → **For anything you just created/changed (zones, device metadata, groups, rules, users)
-    read it from `Get`, not Ace.** See [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
+    the **Get API** (`Add`) was visible instantly through the **Get API** (`Get`) but **still absent from
+    Ace (`GetAceResults`) at T0+14 min** (Ace's reference/config tables sync on a slow periodic cadence).
+    Telematics (`GpsLogs`, `StatusData`) lands in seconds. → **For anything you just created/changed
+    (zones, device metadata, groups, rules, users) read it from the Get API, not Ace.** See
+    [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
 
 ### Ace's SQL is a feature, not a leak — use it as an approval gate
 

@@ -37,7 +37,8 @@ UNION ALL SELECT 'trips: device not in dim', count(DISTINCT t.DeviceId) FILTER (
        FROM my_db.trips t LEFT JOIN my_db.dim_device d ON d.id=t.DeviceId;
 ```
 
-**Cross-source reconciliation (the strongest test) — but pick the right oracle.** `GetCountOf` is an
+**Cross-source reconciliation (the strongest test) — but pick the right oracle.** `GetCountOf` here is
+the **Get API** method (`mcp__Geotab_MCP__GetCountOf`), **not** Ace/`GetAceResults`. It is an
 exact oracle **only for dimensions**: `GetCountOf Device = 50` and `dim_device = 50` ✓. For
 high-volume **facts it is useless as a windowed check — it ignores the date/device search entirely**:
 two different `LogRecord` windows for one device both returned **16,098,152** (the whole table), and a

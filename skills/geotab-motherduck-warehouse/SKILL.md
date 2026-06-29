@@ -32,6 +32,12 @@ keep analysis out of the ingestion path.)
 Tool prefixes (`mcp__MotherDuck__`, `mcp__Geotab_MCP__`) may differ in another client — match by the
 server names the user has connected.
 
+> **Naming convention used throughout this skill — two distinct Geotab MCP tools, never conflated:**
+> **"Ace"** = `mcp__Geotab_MCP__GetAceResults` (natural language → generated SQL → signed CSV URL).
+> **"Get API"** = `mcp__Geotab_MCP__Get` / `GetCountOf` / `ListEntities` (classic JSON entity calls).
+> They have *different* behaviors (e.g. `GetCountOf` ignoring date filters is a **Get API** quirk, not
+> an Ace one; the ~33 s floor and non-determinism are **Ace** quirks). Every finding below says which.
+
 ## The core loop (≈4 MCP calls per fact table per run)
 
 The "hey MotherDuck / hey Ace / hey MotherDuck" pattern, made robust. **Ace data always lands in
