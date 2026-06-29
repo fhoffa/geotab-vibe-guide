@@ -194,7 +194,8 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     `DeviceName = 'Demo - 22'` (the #1 from the previous turn). Use this to refine a pull without
     re-stating context. A new `new_chat=true` starts fresh.
 
-11. **Pre-aggregated, active-filtered engine.** Leaked SQL for the distance query:
+11. **Pre-aggregated, active-filtered engine.** Ace **shows the SQL it ran** (see "Ace's SQL is a
+    feature" below) — for the distance query it was:
     ```sql
     FROM `VehicleKPI_Daily` t_vehicle
     JOIN `LatestVehicleMetadata` t_meta ON t_vehicle.DeviceId = t_meta.DeviceId
@@ -205,6 +206,51 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     **device-local**; inactive/untracked devices are excluded. For exact GPS replication, ask for raw
     position rows with explicit **UTC** and a precise lower bound (Ace then uses a positions source,
     not the rollup).
+
+12. **It injects unrequested partition-prune predicates.** Even in plain-English mode and even when
+    handed exact SQL, Ace tends to add a `DATE(<ts>) >= DATE('…')` / `DATE(<ts>) BETWEEN …` guard it
+    wasn't asked for (BigQuery partition pruning). Harmless when it's a *superset* of your range (we saw
+    `DATE(GpsDateTime) >= DATE('2026-06-27')` on a `>= 2026-06-28` ask), but it means "Ace ran my query
+    verbatim" is rare — **always read the returned SQL and confirm the guard doesn't clip your window.**
+
+13. **It converts units unless you pin them.** Distances/speeds silently flip km↔miles
+    (`ROUND(TripDistance_Km * 0.621, 2) AS Distance_Miles`). Say "in kilometers, do not convert units"
+    and it keeps `TripDistance_Km`.
+
+14. **It injects activity filters (`Speed != 0`, `Ignition = 1`) on motion-flavored asks.** A naive
+    "GPS / trips / activity" request can silently drop stationary points. Say "include stationary points
+    (speed 0, ignition off); do not filter on speed, ignition, or motion" to get raw completeness.
+
+15. **It is non-deterministic — even for a settled past window.** The *same* `COUNT(DISTINCT DeviceId)`
+    over a fixed UTC day returned **49** one run and **47** the next; handing it identical SQL did not
+    stabilize it. Treat Ace counts as ±a few %, never exact. This is the core reason every fact load is
+    append-to-bronze + dedup and every repair prefers re-deriving from bronze over re-asking.
+
+16. **It is near-real-time (~1–2 min lag), not batch.** A GPS pull whose URL was minted at `20:49:54Z`
+    had `max(UTC_GpsTimestamp) = 20:48:16` — ~98 s behind. Don't treat Ace as "yesterday's data." (Top
+    up the last sliver with a small `Get LogRecord` read if you need true real-time —
+    [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)
+
+17. **Pasting SQL into the prompt can trip the gateway.** The only `invalid_value` HTTP 400 rejections
+    we saw (`domain: MyGeotab-MCP`) were on SQL-augmented prompts; they were transient (retry succeeded).
+    Plain English never failed. Another reason specificity-in-English beats feeding SQL.
+
+### Ace's SQL is a feature, not a leak — use it as an approval gate
+
+Ace **deliberately returns the SQL it generated and ran**, so you can examine, approve, and learn from
+it. That transparency is the single best quality tool in this skill: reading it *before* loading catches
+every Class-A semantic problem (wrong source table, injected filter, unit/timezone, aggregation) while
+it's still free to fix. Treat the returned SQL as the contract you're accepting — grep it from the
+spilled file (next section) and lint it against the checklist in
+[`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md) §2.
+
+**Ace's table vocabulary (handy when reading its SQL).** Raw positions: `` `GpsLogs` `` (`DeviceId,
+UTC_GpsTimestamp, GpsDateTime, Latitude, Longitude, Speed, Ignition`). Trips: `` `Trip` `` /
+`t_trip_details` (`UTC_TripStartTimestamp`, `UTC_TripEndTimestamp`, `TripDistance_Km`, …). Rollup:
+`` `VehicleKPI_Daily` `` (pre-aggregated, **avoid for raw**). Metadata/roster: `` `LatestVehicleMetadata` ``
+(`Device_ActiveFrom/To`, `IsTracked`, `DeviceTimeZoneId`). Geofences: `` `Zones` ``. Reverse-geocode:
+`ReverseGeocoding_Geohash5/8/9`. Seeing `VehicleKPI_Daily`, `Local_Date`, `IsTracked`, `GROUP BY`, or a
+unit factor in the SQL is your cue to re-ask for raw rows in UTC.
 
 ## Timing & volume benchmarks (observed)
 

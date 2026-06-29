@@ -88,7 +88,8 @@ blind. See [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 
 ## Critical quirks (all observed in testing)
 
-The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md). Summary:
+The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md), which holds
+the **full 17-quirk catalog with evidence**. The decision-critical ones:
 
 | # | Quirk | Engineering consequence |
 |---|-------|------------------------|
@@ -103,6 +104,10 @@ The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO
 | 9 | **~33 s fixed floor per Ace call** (31–40 s observed), independent of result size | Budget ~30–60 s/call; space calls ≥ a few seconds; **don't parallelize Ace calls**. |
 | 10 | **Continue-chat works** (`new_chat=false` + `chat_id`) and **retains context** | Use for iterative refinement; a fresh `new_chat=true` forgets everything. |
 | 11 | Ace's engine uses **pre-aggregated, active-filtered sources** (`VehicleKPI_Daily`, `LatestVehicleMetadata`, `IsTracked=TRUE`, inclusive **device-local** `Local_Date BETWEEN`) | Ace counts/distances ≠ raw API/haversine; date ranges are inclusive & local unless you force UTC. For exact replication, request raw rows with explicit UTC bounds. |
+| 12 | **Injects unrequested predicates** — partition `DATE(...)` guards, `Speed != 0`/`Ignition = 1`, unit conversions (km↔miles) — even when handed exact SQL | **Read the returned SQL every time.** Pin units, say "include stationary points," forbid the active filter. "Ace ran my query verbatim" is rare. |
+| 13 | **Non-deterministic** — the same settled-day `COUNT(DISTINCT DeviceId)` returned **49 then 47**; forcing SQL didn't help | Treat Ace counts as ±a few %; this is *why* every load is append-to-bronze + dedup and repairs re-derive from bronze. |
+| 14 | **Near-real-time (~1–2 min lag)**, not batch — data max `20:48:16` from a URL minted `20:49:54` | Ace is fine for fresh loads; top up the last sliver with `Get LogRecord` only if you need true real-time ([`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md)). |
+| 15 | **Ace returns the SQL it ran, by design** — a transparency/approval surface, not a leak | **Lint it before loading** — it catches every Class-A semantic problem while it's free to fix ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). |
 
 ## Three source channels — pick per entity *and* per freshness need
 
@@ -142,22 +147,30 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 |-----------|--------------|
 | [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 11 quirks in depth, timing/volume benchmarks, continue-chat |
 | [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | The bronze-vs-`Get` decision rule, bronze/silver/gold DDL, append-only bronze + deriving silver from it, the brownfield bootstrap, shape checks, normalized-key dedup, full replay |
-| [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The daily-run runbook, the `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill |
+| [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The three backfills (forward catch-up, historical recovery, cross-channel reconciliation), the `warehouse_ingest_log` state table, watermarks, gap detection, the active-only population check, and the settle loop |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |
 | [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) | Post-load quality tests, predicting problems by reading Ace's generated SQL, the SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap) |
 | [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) | How fresh each channel is (Ace ~1–2 min, `Get` to now, `DeviceStatusInfo` live), the live/bulk/backfill/settle decision matrix, the active-only coverage trap, and why `GetCountOf` can't reconcile fact windows |
 
-## Bootstrap vs daily run
+## Bootstrap vs daily run vs the three backfills
 
 - **0 → warehouse (first time):** create the warehouse db → create bronze + silver tables → per fact
   entity, run *bounded historical* Ace pulls (a day at a time) into **bronze**, then derive silver →
   load dimensions via `Get` (no bronze). If a silver table already exists without a bronze under it,
   reconstruct bronze from silver once (the brownfield bootstrap) so silver becomes rebuildable.
-  See [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) §Backfill and
-  [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §Brownfield.
+  See [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §Brownfield.
 - **Daily update (steady state):** for each fact table run the 4-call loop above (watermark → Ace →
   append bronze → derive silver), then append a row to `warehouse_ingest_log`. Re-running is safe (the
   `> watermark` derive is idempotent). The user can ask you to "run the warehouse update" on a schedule.
+
+**"Backfill" means three different operations — name which one before you start** (full runbooks in
+[`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md)):
+
+| Ask | Operation | Direction |
+|-----|-----------|-----------|
+| "get me everything missing **forward**" | forward catch-up (= the daily loop / after-downtime) | watermark → now |
+| "recover **more past** data" | historical recovery (windowed walk backward + anti-join) | oldest → earlier target |
+| "re-check **`Get` + Ace** aren't missing rows" | cross-channel reconciliation (gap detection + population/count cross-checks + settle loop) | interior holes & channel disagreements |
 
 ## Non-negotiable rules
 
