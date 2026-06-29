@@ -33,7 +33,7 @@ It hinges on **one question: can you reproduce the source on demand?**
 so it grows ~2× silver. That's intended — full raw is the point. Pruning *stable, old* raw batches is a
 later optimization once a window is proven settled; don't pre-optimize it away.
 
-## Isolate each Geotab source — a schema per source (default), or a database per source
+## Isolate each Geotab source — database per source, schema per layer (recommended)
 
 **Will running this skill for a second Geotab database overwrite the first? No — it does something
 worse: it *mixes and collides* them.** Tables are created `IF NOT EXISTS` and loads *append*, so a
@@ -46,49 +46,56 @@ second source doesn't replace the first — it lands rows into the same tables. 
   DB-A's `b3` and DB-B's `b3` **dedup into one silver row**, and `dim_device.id = 'b2'` from one source
   **overwrites** the other. Both mirrors are corrupted, silently.
 
-**The fix is to give every source its own table namespace.** Two ways, both prevent the collision:
+**The fix is to give every source its own table namespace.** There are two things to organize — the
+**Geotab source** and the **medallion layer** — and MotherDuck gives you two nesting levels (database →
+schema). Map them like this:
 
-### Default — one MotherDuck *schema* per Geotab database
+### Recommended — database per Geotab source, schema per layer
 
-Put all sources in one MotherDuck database and isolate by schema:
-`geotab.demo_fh4.planet_gps_pings`, `geotab.acme_prod.planet_gps_pings`, … Same table names live side
-by side without touching each other.
-
-```sql
-CREATE SCHEMA IF NOT EXISTS geotab.demo_fh4;     -- one schema per Geotab source DB
--- then: geotab.demo_fh4.bronze_gps_raw, geotab.demo_fh4.planet_gps_pings, …
-```
-
-> Validated 2026-06-29: created `planet_gps_pings` in a second schema of `my_db` — it held its own rows
-> (1) entirely independent of `main.planet_gps_pings` (679,577). `DROP SCHEMA … CASCADE` removes a
-> source cleanly. Prefer this when **one owner manages several Geotab databases**: a single connection,
-> one platform-fee context, and trivial cross-fleet joins (`geotab.demo_fh4.x JOIN geotab.acme_prod.y`,
-> no `ATTACH`).
-
-### Escalate — one MotherDuck *database* per Geotab source
+One MotherDuck **database per Geotab database**, and a **schema per medallion layer** (`bronze` /
+`silver` / `gold`) inside it. Names announce exactly what a table is:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS geotab_demo_fh4;   -- fully separate database per source
+CREATE DATABASE IF NOT EXISTS geotab_demo_fh4;          -- one per Geotab source DB
+CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.bronze;
+CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.silver;
+CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.gold;
+-- geotab_demo_fh4.bronze.gps_raw  ·  geotab_demo_fh4.silver.planet_gps_pings
+-- geotab_demo_fh4.silver.dim_device  ·  geotab_demo_fh4.gold.daily_device_km
 ```
 
-Use this when you need **database-scoped** features *per source*, because in MotherDuck these are set at
-the database level, not the schema level:
+Why this is the default:
+- **Source isolation is the strong, database-level boundary** — exactly where MotherDuck scopes the
+  things you want *per customer/source*: **Sharing** (zero-copy Shares are per-database — share one
+  source without exposing the others), **retention/backup** (`historical_bytes` 0–90 days, point-in-time
+  restore, `TRANSIENT` are per-database), **access control**, and **cost attribution**.
+- **Layers as schemas** is the conventional medallion shape — you can grant analysts read on
+  `silver`/`gold` while restricting `bronze`, and the layer of any table is obvious from its name.
 
-- **Sharing / multi-tenant privacy.** Shares are zero-copy at the *database* granularity — to share one
-  customer's data without exposing the others, each must be its own database. (Schema-per-source would
-  force you to share the whole database = every tenant.)
-- **Retention & backup.** `historical_bytes` (0–90 days), point-in-time restore, and `TRANSIENT` are
-  per-database settings.
-- **Access control** (a hard tenant boundary) and **cost attribution** per source.
+### Alternative — one shared database, schema per source (layer as table prefix)
 
-**Rule of thumb:** your own several fleets → **schema per source**; separate customers/tenants or
-differing share/retention/access needs → **database per source**. **Never** put two sources in the same
-schema/tables.
+If a **single owner** mirrors several of their **own** fleets and wants cross-fleet joins without
+`ATTACH` (and doesn't need per-source sharing/retention/access boundaries), collapse source to a schema
+and carry the layer in the table name:
+
+```sql
+CREATE SCHEMA IF NOT EXISTS geotab.demo_fh4;     -- source = schema; layer = bronze_/silver_ prefix
+-- geotab.demo_fh4.bronze_gps_raw  ·  geotab.demo_fh4.planet_gps_pings
+```
+
+> Validated 2026-06-29: a second schema's `planet_gps_pings` held its own rows (1) entirely independent
+> of `main.planet_gps_pings` (679,577); `DROP SCHEMA … CASCADE` removes a source cleanly. (You can't have
+> schema-per-source *and* schema-per-layer — there's only one schema level — so here the layer is a
+> prefix.) Cross-fleet joins are trivial (`geotab.demo_fh4.x JOIN geotab.acme_prod.y`, no `ATTACH`).
+
+**Rule of thumb:** serving separate customers / need per-source sharing, retention, or access → **database
+per source + schema per layer** (recommended). Your own handful of fleets, want easy cross-fleet joins →
+**one database, schema per source**. **Never** put two sources in the same schema/tables.
 
 (The demo warehouse here is `my_db.main.*` mirroring only `demo_fh4` — a generic name that doesn't
-announce its source; rename to `geotab` + a `demo_fh4` schema, or `geotab_demo_fh4`, once you mirror a
-second database.) Whichever you pick, **keep `_source_db` populated in bronze** for provenance —
-it tags a row's origin but, on its own, does *not* stop the silver/dim key collisions above.
+announce its source or layer; migrate to `geotab_demo_fh4` with `bronze`/`silver`/`gold` schemas before
+you mirror a second database.) Whichever you pick, **keep `_source_db` populated in bronze** for
+provenance — it tags a row's origin but, on its own, does *not* stop the silver/dim key collisions above.
 
 ## Always inspect before you derive
 

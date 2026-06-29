@@ -270,7 +270,8 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     their table). So a count that differs across runs is almost always a **different `FROM`**, not
     randomness — **read the returned SQL**, pin the table, and don't trust an attached SQL to force the
     source. This source-selection variability is why every fact load is append-to-bronze + dedup and
-    every repair prefers re-deriving from bronze over re-asking. *(Re-confirmed 2026-06-29; n=4.)*
+    every repair prefers re-deriving from bronze over re-asking. *(Re-confirmed 2026-06-29; n=4 — exact
+    prompts/replies/SQL/chat_ids in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md) §A.)*
 
 16. **It is near-real-time for continuous streams (tens of s – ~2 min), not batch.** Measured across
     four tables: `GpsLogs` max `21:37:15` vs now `21:37:34` → **~19 s** (a separate run: ~98 s);
