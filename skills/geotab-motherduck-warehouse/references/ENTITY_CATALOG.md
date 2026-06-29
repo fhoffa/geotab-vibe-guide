@@ -104,8 +104,8 @@ slowly-changing dims with `CREATE OR REPLACE` or delete-then-insert keyed on `id
 
 ### Entities cover different device populations
 
-Observed counts on the same fleet/window: GPS **26 devices**, trips **26**, exception events **50**,
-`dim_device` **50**. Facts pulled via Ace reflect only devices with activity (and `IsTracked=TRUE`),
+Observed counts (2026-06-29, `demo_fh4`; point-in-time) on the same fleet/window: GPS **26 devices**,
+trips **26**, exception events **50**, `dim_device` **50**. Facts pulled via Ace reflect only devices with activity (and `IsTracked=TRUE`),
 while the device dimension has the whole fleet. So **a device missing from a fact table isn't
 necessarily a gap** — cross-check against `dim_device` and the entity's own nature before backfilling.
 

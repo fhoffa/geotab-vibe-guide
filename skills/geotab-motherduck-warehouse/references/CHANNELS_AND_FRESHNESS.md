@@ -6,8 +6,9 @@ Which source gives you data *how fresh*, and how to decide between **live reads*
 
 ## Is Ace "only late data"? No — continuous streams lag tens of seconds to ~2 min
 
-Measured across **four entity types**, comparing Ace's `max(event_time)` to the true current time
-(Ace's own `CURRENT_TIMESTAMP`, cross-checked against the live `Get` API):
+Measured **2026-06-29 on `demo_fh4`** across **four entity types** (point-in-time — re-verify and
+update the date), comparing Ace's `max(event_time)` to the true current time (Ace's own
+`CURRENT_TIMESTAMP`, cross-checked against the live `Get` API):
 
 | Ace table | Cadence | Most-recent in Ace | "Now" | Real pipeline lag |
 |-----------|---------|--------------------|-------|-------------------|
@@ -41,7 +42,7 @@ one CSV, which is why it's the bulk workhorse despite the sub-2-min lag and non-
 ## Write→Ace propagation: changes lag *far* behind reads
 
 Read-freshness (above) is one axis; **how fast a *change* reaches Ace** is another — and for
-**dimension/config data they are wildly different.** Measured: created a new geofence
+**dimension/config data they are wildly different.** Measured 2026-06-29: created a new geofence
 (`Zone` "ZZ_ACE_PROBE_ALPHA") via the **Get API** write (`mcp__Geotab_MCP__Add`) at `21:41:04`. It was
 visible **instantly** through the **Get API** (`Get` — the write is synchronous), but **Ace**
 (`GetAceResults`) still reported **0 zones at T0+14 min** (polled at +0.5, +4, +6, +10, +11, +14 min —

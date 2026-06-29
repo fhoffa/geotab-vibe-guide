@@ -31,7 +31,8 @@ the 99.9% SLA / point-in-time restore.
 
 ## Measured storage (the anchor — not guessed)
 
-`PRAGMA database_size` on the live demo warehouse (`my_db`): **35.2 MiB** total, holding **679,577**
+`PRAGMA database_size` on the live demo warehouse (`my_db`), **measured 2026-06-29**: **35.2 MiB**
+total, holding **679,577**
 unique GPS pings — kept **twice** (append-only `bronze_gps_raw` as `all_varchar` + typed
 `planet_gps_pings`) — plus trips, exceptions, and dimensions. The source CSV was 11.8 MB for 157,419
 rows (~75 B/row); DuckDB compresses the typed silver to roughly a quarter of that. Derived rates:
@@ -69,7 +70,8 @@ Pulse (the only Lite Duckling) is metered **per query, minimum 1 CU-second each*
 > bill. So the free tier never charges you for sitting idle between updates — the 10 CU-hr math below is
 > pure execution and is, if anything, conservative.
 
-Measured the actual per-query cost with `EXPLAIN ANALYZE` on the live demo warehouse (server-side time):
+Measured the actual per-query cost with `EXPLAIN ANALYZE` on the live demo warehouse (server-side time,
+**2026-06-29**; re-measure as data volume grows):
 
 | Query in the loop | What it does | Measured time → billed CU-sec |
 |-------------------|--------------|-------------------------------|

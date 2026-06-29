@@ -4,7 +4,8 @@ A warehouse is only as good as your trust in it. This file covers (1) the qualit
 every load, (2) how to **predict** problems by reading Ace's generated SQL, (3) the crucial distinction
 between *SQL* problems and *result* problems, and (4) how to repair — re-ask vs. patch the gap.
 
-Everything here was exercised live on the `my_db` warehouse built from `demo_fh4`.
+Everything here was exercised live on the `my_db` warehouse built from `demo_fh4`, **2026-06-29**. The
+"Live result" figures are point-in-time observations — re-verify and re-date them when you re-run.
 
 ## 1. Pipeline quality tests
 

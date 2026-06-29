@@ -48,9 +48,9 @@ Rules, each tied to an observed quirk:
 - **NEVER say "url", "csv", "download", "link", or "export."** Asking for the artifact makes Ace drop
   your column spec and return a degraded default schema (quirk #8). You get a URL regardless.
 
-### Does adding the expected SQL to the prompt help? (5 paired tests)
+### Does adding the expected SQL to the prompt help? (5 paired tests, 2026-06-29)
 
-We ran 5 scenarios twice each — **plain explicit English** vs **the same English + the exact SQL to
+_Measured 2026-06-29 on `demo_fh4`._ We ran 5 scenarios twice each — **plain explicit English** vs **the same English + the exact SQL to
 run** — and scored the generated SQL, columns, and counts against the warehouse. Result:
 
 | Scenario | English only | English + SQL |
@@ -188,6 +188,10 @@ or re-ask Ace with tighter wording. See [`MEDALLION_LOADING.md`](MEDALLION_LOADI
 signed URL directly via the pre-installed `httpfs` extension — no download needed.
 
 ## The quirk catalog (with evidence)
+
+> **All quirks below are point-in-time observations, measured 2026-06-29 on `demo_fh4`** (a ~50-vehicle
+> demo) via the Geotab MCP. Ace is an evolving product — treat these as "true as of that date," re-verify
+> periodically, and update the date when you do. Each dated number is an observation, not a guarantee.
 
 1. **Always-huge response.** 166 KB (157K-row GPS), 192 KB (trips), 110 KB (top-3 aggregation). The
    payload is the whole chat object (reasoning, generated SQL, message history) — not the data.

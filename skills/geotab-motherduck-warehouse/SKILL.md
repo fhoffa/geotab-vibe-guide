@@ -17,7 +17,9 @@ see [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) for the
 keep analysis out of the ingestion path.)
 
 > Everything below was validated live against MotherDuck + Geotab Ace on `demo_fh4`
-> (a 26–50 vehicle Iberia demo fleet). Row counts, timings, and quirks are **observed, not guessed.**
+> (a 26–50 vehicle Iberia demo fleet), **measured 2026-06-29**. Row counts, timings, and quirks are
+> **observed, not guessed** — and therefore **point-in-time**: every number/quirk is dated where it
+> appears; treat them as "true as of that date," re-verify against your own database, and update the date.
 
 ## Tools you drive
 
@@ -202,3 +204,4 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 9. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the derive**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
 10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, reconciliation). Reconcile **dimensions** with `GetCountOf` (exact); reconcile **fact windows** with a bounded `Get` read of the same window — **`GetCountOf` ignores date/device filters for facts** and returns the whole-table count. To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace is non-deterministic (the same settled query returned 49 then 47), so a full re-ask can replace good data with a differently-shaped answer.
 11. **Writes can drop mid-call** — keep them idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying.
+12. **One MotherDuck database per Geotab source DB**, named after the source (e.g. `geotab_demo_fh4`). Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so loading a second source into the same tables **collides** in silver/dims (it appends+dedups, not overwrites — worse). Don't mix sources; keep `_source_db` in bronze for provenance. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolation.)

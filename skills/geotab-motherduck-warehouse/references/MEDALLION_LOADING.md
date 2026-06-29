@@ -33,6 +33,36 @@ It hinges on **one question: can you reproduce the source on demand?**
 so it grows ~2× silver. That's intended — full raw is the point. Pruning *stable, old* raw batches is a
 later optimization once a window is proven settled; don't pre-optimize it away.
 
+## One MotherDuck database per Geotab source database (isolation)
+
+**Will running this skill for a second Geotab database overwrite the first? No — it does something
+worse: it *mixes and collides* them.** Tables are created `IF NOT EXISTS` and loads *append*, so a
+second source doesn't replace the first — it lands rows into the same tables. And the keys collide:
+
+- **Geotab entity IDs are unique only *within* one database.** Every Geotab DB reuses `b1`, `b2`,
+  `b3`, … for devices (and for zones, rules, users, groups). Two databases both have a device `b3`.
+- Silver dedups on the **natural key** (`(DeviceId, GpsDateTime)`), and dimensions key on **`id`**.
+  Neither includes the source DB (only **bronze** carries `_source_db`/`_batch_id` provenance). So
+  DB-A's `b3` and DB-B's `b3` **dedup into one silver row**, and `dim_device.id = 'b2'` from one source
+  **overwrites** the other. Both mirrors are corrupted, silently.
+
+**Rule: give every Geotab source database its own MotherDuck database, named after the source** — e.g.
+`geotab_demo_fh4`, `geotab_acme_prod`. This isolates storage, cost, and IDs completely, and lets you
+drop or rebuild one source without touching another. (The demo warehouse here is `my_db` mirroring only
+`demo_fh4` — a generic name that *doesn't* announce its source; prefer a source-named DB so it's obvious
+what's inside.)
+
+```sql
+CREATE DATABASE IF NOT EXISTS geotab_demo_fh4;   -- one per Geotab source; all tables live here
+-- then: geotab_demo_fh4.bronze_gps_raw, geotab_demo_fh4.planet_gps_pings, …
+```
+
+If you *must* co-locate multiple sources in one MotherDuck database, the bare minimum is to add
+`_source_db` to **every silver natural key and every dimension PK** and filter all reads by it — but
+separate databases are simpler and safer. Either way, **keep `_source_db` populated in bronze** so a row
+can always be traced to its origin. (`_source_db` in bronze is *provenance*, not *isolation* — it tags
+rows but doesn't stop the silver/dim key collisions above.)
+
 ## Always inspect before you derive
 
 Appending to **bronze is unconditional** — it's lossless `all_varchar`, so it can't be "wrong"; just
