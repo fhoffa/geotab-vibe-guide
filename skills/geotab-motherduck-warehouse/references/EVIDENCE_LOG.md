@@ -1,131 +1,80 @@
-# Evidence log — exact prompts, replies & SQL behind the claims
+# Evidence log — reusable probes + an append-only results ledger
 
-Every empirical claim in this skill traces to a call here. All runs: **Geotab MCP + MotherDuck on
-`demo_fh4` / `my_db`, 2026-06-29** (~50-vehicle demo). These are **point-in-time observations** — to
-rebuild or investigate, re-run the prompt (or continue the chat via its `chat_id` while it's still
-live), and update the dates. "Executed SQL" is what Ace returned in its response (grepped from the
-spilled payload — see [`ACE_TO_CSV.md`](ACE_TO_CSV.md) §Step 2); note Ace often injects extra
-`DATE(...)` partition guards (quirk #12), preserved verbatim below.
+Every empirical claim in this skill is **observed, point-in-time, and re-measurable**. Ace, MotherDuck,
+and a given fleet all change, so this file is built to **accumulate runs over time, not be overwritten.**
+
+**How to use / how to add next week's run:**
+1. Re-run the **probes** in §1 (stable prompts/SQL — they rarely change).
+2. **Append a row** to the §2 ledger for each probe: `date · probe · result · chat_id/artifact · notes`.
+   Don't edit old rows — add new ones, so drift is visible over time.
+3. If you want the full verbatim prompt+answer+SQL for a run, drop a dated block in §3 (Run archives).
+4. If a number changed enough to matter, update the dated figure in the prose docs **and** cite the new
+   ledger row. (Claims in SKILL/refs point here; the *latest* ledger row is the current truth.)
 
 > Tool legend: **Ace** = `mcp__Geotab_MCP__GetAceResults`; **Get API** = `mcp__Geotab_MCP__Get` /
 > `GetCountOf` / `Add` / `Remove`; **MotherDuck** = `mcp__MotherDuck__query` / `query_rw`.
+> `chat_id`s let you continue a past Ace chat *while it's still live*; the prompts are always re-runnable.
 
 ---
 
-## A. Source-table selection — the "49 vs 47" (Ace)
+## 1. Probe catalog (stable — re-run these)
 
-**Claim:** the *same question* can be answered from a *different source table* across runs; an attached
-SQL is a hint Ace can override; an identical prompt is otherwise stable. (Not numeric non-determinism.)
-
-| Run | chat_id | time (UTC) | Prompt (verbatim) | Answer | Executed `FROM` | Result |
-|-----|---------|-----------|-------------------|--------|-----------------|--------|
-| 4A | `53Li6zrprm7N9NSvcPaE` | 21:01:15 | "How many distinct devices produced at least one raw GPS position log on calendar day 2026-06-28 UTC …? Count every device … do not restrict to active/tracked/IsTracked … Return only the number." | "49 distinct devices…" | `GpsLogs` | **49** |
-| R2 | `xfRC82AvU9Su4u0BsTYM` | 22:04:50 | *(identical to 4A)* | "49 distinct devices…" | `GpsLogs` | **49** |
-| R3 | `BC8CnzGtRIwGR02epyiT` | 22:05:29 | *(identical to 4A)* | "…there were 49…" | `GpsLogs` | **49** |
-| 4B | `MbJ6VAoCle52iGd6m0YR` | 21:02:11 | *(same question)* **+ "Run exactly: SELECT COUNT(DISTINCT DeviceId) AS n FROM GpsLogs WHERE UTC_GpsTimestamp >= '2026-06-28 00:00:00 UTC' AND UTC_GpsTimestamp < '2026-06-29 00:00:00 UTC'"** | "47 distinct devices…" | **`Trip`** (ignored supplied SQL) | **47** |
-| Trip check | `SaV8GtVptocbsPPgKIw1` | 22:07:03 | "How many distinct devices had at least one trip that started on calendar day 2026-06-28 UTC …? Return only the number." | "47 distinct devices…" | `Trip` | **47** |
-
-Exact executed SQL:
-- **4A / R2:** `SELECT COUNT(DISTINCT DeviceId) FROM `GpsLogs` WHERE UTC_GpsTimestamp >= '2026-06-28 00:00:00 UTC' AND UTC_GpsTimestamp < '2026-06-29 00:00:00 UTC'`
-- **R3** (note injected guard): `… FROM `GpsLogs` WHERE UTC_GpsTimestamp >= TIMESTAMP('2026-06-28 00:00:00 UTC') AND UTC_GpsTimestamp < TIMESTAMP('2026-06-29 00:00:00 UTC') AND DATE(GpsDateTime) = DATE('2026-06-28')`
-- **4B** (the supplied SQL said `FROM GpsLogs`; Ace ran): `SELECT COUNT(DISTINCT DeviceId) AS n FROM `Trip` WHERE UTC_TripStartTimestamp >= '2026-06-28 00:00:00 UTC' AND UTC_TripStartTimestamp < '2026-06-29 00:00:00 UTC' AND DATE(TripStartDateTime) BETWEEN DATE('2026-06-27') AND DATE('2026-06-29')`
-- **Trip check:** `SELECT COUNT(DISTINCT t_t.DeviceId) FROM `Trip` AS t_t WHERE t_t.UTC_TripStartTimestamp >= TIMESTAMP('2026-06-28 00:00:00 UTC') AND t_t.UTC_TripStartTimestamp < TIMESTAMP('2026-06-29 00:00:00 UTC')`
-
-**Reading:** 49 = devices that logged GPS; 47 = devices that took a trip — both correct. The gap was a
-source-table difference, not drift. GpsLogs is stable across 3 identical runs. To investigate, continue
-chat `MbJ6VAoCle52iGd6m0YR` and ask why it used `Trip`.
+| ID | Tool | What it measures | Prompt / SQL (substitute your DB/dates) | How to read the result |
+|----|------|------------------|------------------------------------------|------------------------|
+| **P1** | Ace | GPS pipeline lag | "Across all devices, what is the single most recent raw GPS position log timestamp, in UTC? …Also report the current UTC time now. Return just those two values." | now − max = lag (continuous stream) |
+| **P2** | Ace | StatusData lag | "…single most recent raw status data (engine/sensor) timestamp, in UTC? …raw, not a rollup." | compare to live `DeviceStatusInfo` |
+| **P3** | Ace | Trip arrival (event) | "…most recent trip end timestamp, UTC? Also how many trips ended in the last 15 minutes." | gauge by *count in window*, not max-vs-now |
+| **P4** | Ace | source selection (GPS) | "How many distinct devices produced at least one raw GPS position log on calendar day `<D>` UTC …? …do not restrict to active/tracked… Return only the number." | **read the returned `FROM`**; expect stable across identical runs |
+| **P5** | Ace | does an attached SQL pin the source? | P4 prompt **+** "Run exactly: `SELECT COUNT(DISTINCT DeviceId) AS n FROM GpsLogs WHERE …`" | check whether the executed `FROM` is actually `GpsLogs` |
+| **P6** | Ace | Trip distinct devices (control for P4/P5) | "How many distinct devices had at least one trip that started on `<D>` UTC? Return only the number." | the Trip-population number |
+| **P7** | Get API | is `GetCountOf` window-aware? | `GetCountOf LogRecord {deviceSearch, fromDate, toDate}` twice w/ different windows; `GetCountOf Device` | facts → same whole-table count (ignored); Device → exact |
+| **P8** | Get API + Ace | dimension write→Ace propagation | `Add Zone {name:'ZZ_ACE_PROBE_<n>', points:[…]}`; poll Ace "is zone ZZ_ACE_PROBE_`<n>` there?" every few min; `Remove Zone` after | latency from add-time to first Ace sighting |
+| **P9** | MotherDuck | compute per query | `EXPLAIN ANALYZE <watermark>` / `<silver derive>` / `<read_csv_auto count of a signed URL>` | "Total Time" line = CU-seconds (Pulse) |
+| **P10** | MotherDuck | storage footprint | `PRAGMA database_size;` | total ÷ unique pings = bytes/ping |
+| **P11** | MotherDuck | dedup-key correctness | `COUNT(*)` of `DISTINCT ON (DeviceId, GpsDateTime)` vs `DISTINCT ON (DeviceId, replace(GpsDateTime,' UTC','')::TIMESTAMP)` over bronze | parsed key must collapse cross-batch dupes |
 
 ---
 
-## B. Freshness — continuous streams vs event tables (Ace)
+## 2. Results ledger (append-only — newest at the bottom)
 
-`max(event_time)` compared to Ace's own `CURRENT_TIMESTAMP`:
+| Date | DB | Probe | Result | chat_id / artifact | Notes |
+|------|----|-------|--------|--------------------|-------|
+| 2026-06-29 | demo_fh4 | P1 | GPS max `21:37:15` vs now `21:37:34` → **~19 s** (a separate run ~98 s) | `fLPYaGZErt5woI4dH0cP` | continuous → near-real-time |
+| 2026-06-29 | demo_fh4 | P2 | `21:34:48.455` — **identical to live `DeviceStatusInfo`** | `mXdb0QGjzvxehI1CCa7F` | sub-minute |
+| 2026-06-29 | demo_fh4 | P3 | last end `21:30:34`; **20 trips ended in last 15 min** | `Aad71Hlt3n0EfjoNggC7` | event cadence, not lag |
+| 2026-06-29 | demo_fh4 | P4 | **49** from `GpsLogs`, on **3 identical runs** | `53Li6zrprm7N9NSvcPaE`, `xfRC82AvU9Su4u0BsTYM`, `BC8CnzGtRIwGR02epyiT` | pinned prompt is stable |
+| 2026-06-29 | demo_fh4 | P5 | **47** — Ace ran `FROM Trip`, **ignored the supplied `FROM GpsLogs` SQL** | `MbJ6VAoCle52iGd6m0YR` | attached SQL is a hint, not a contract |
+| 2026-06-29 | demo_fh4 | P6 | **47** distinct trip devices | `SaV8GtVptocbsPPgKIw1` | confirms 49≠47 is GpsLogs-vs-Trip, not noise |
+| 2026-06-29 | demo_fh4 | P7 | LogRecord window = **16,098,152** (twice, window ignored); Trip = 1,388,687; Device = 50 ✓ | Get API | GetCountOf is total-only for facts |
+| 2026-06-29 | demo_fh4 | P8 | add `21:41:04`; absent through T0+14 min (`21:55`); present at T0+~29 min (`22:09:42`) → **15–30 min** | poll chat_ids in §3 | dimension sync ≫ telematics |
+| 2026-06-29 | my_db | P9 | watermark `0.082 s`; silver derive (679,581) `1.07 s`; read_csv_auto (2,679 rows, 149 KiB) `1.47 s` | EXPLAIN ANALYZE | Pulse per-query, min 1 CU-s |
+| 2026-06-29 | my_db | P10 | **35.2 MiB** / 679,577 pings → ~16 B/ping silver, ~54 B bronze+silver | PRAGMA | drives COST_AND_SIZING |
+| 2026-06-29 | my_db | P11 | raw-string key → **679,581**; parsed-timestamp key → **679,577** | MotherDuck | dedup on the parsed key |
 
-| Entity | chat_id | time | Answer | Executed SQL `FROM` |
-|--------|---------|------|--------|---------------------|
-| GPS | `fLPYaGZErt5woI4dH0cP` | 21:37:17 | max `21:37:15.035`, now `21:37:34.366` → **~19 s** | `GpsLogs` (`MAX(UTC_GpsTimestamp), CURRENT_TIMESTAMP()`, 7-day guard) |
-| StatusData | `mXdb0QGjzvxehI1CCa7F` | 21:35:32 | max `21:34:48.455` (= live `DeviceStatusInfo`) | `StatusData` (`MAX(UTC_StatusTimestamp)`, 30-day guard) |
-| Trip | `Aad71Hlt3n0EfjoNggC7` | 21:36:26 | most-recent end `21:30:34.098`; **20 trips ended in last 15 min** | `Trip` (`MAX(UTC_TripEndTimestamp), COUNTIF(... 15 MINUTE)`) |
-| FaultData (Get API) | — | ~21:34 | newest fault `12:07–12:18` (no fault since noon — sparsity, not lag) | `Get FaultData` window |
-
-**Reading:** continuous streams (GPS/StatusData) lag tens of seconds; event tables look "old" only when
-no event occurred — gauge them by counting events in a window, not max-vs-now.
-
----
-
-## C. Five paired tests — English vs English+SQL (Ace)
-
-All device `b3`. Result = the reconciled fact; **bold** = the reliability signal.
-
-| # | Arm | chat_id | Answer | Executed SQL (key points) |
-|---|-----|---------|--------|---------------------------|
-| 1A | English | `mNRpRf7SlRISGtxXohXX` | cols honored `DeviceId,GpsDateTime,…` | `FROM GpsLogs … AND DATE(GpsDateTime) >= DATE('2026-06-27')` ← **injected guard** |
-| 1B | +SQL | `fi8B4okL8scSNDc51JPR` | same cols | ran my query **verbatim**, no injection |
-| 2A | English | `QguIzUYZktPTMbqx6lRf` | 16 trips, **km kept** | `FROM Trip … TripDistance_Km` (no miles) |
-| 2B | +SQL | `jlew0E4tiA9HVDKVDMeA` | 16 trips | verbatim — **but 2 prior attempts failed `invalid_value` 400** (transient) |
-| 3A | English | `JwbtKfkJYhY0eTSuwgk7` | **1756** (UTC) | `FROM GpsLogs` UTC bounds + injected `DATE BETWEEN` |
-| 3B | +SQL | `fMlPvRdY0JyUTltd3MuJ` | **1756** | verbatim |
-| 4A/4B | — | *(see §A)* | 49 / 47 | GpsLogs vs Trip |
-| 5A | English | `FrF7EqUPoabUU01X0Sbq` | **955** | `FROM GpsLogs` no speed/ignition filter ✓ |
-| 5B | +SQL | `uK609RhO2Ip3bDac72Wv` | **959** (live growth) | verbatim, no filter |
-
-**Reading:** explicit English matched English+SQL on correctness in every test; the only failures
-(2× `invalid_value` 400) and the only source-flip (4B) were on SQL-augmented prompts. Specificity beats
-attaching SQL.
+_(append the next run's rows here)_
 
 ---
 
-## D. Zone write → Ace propagation (Get API write, Ace read)
+## 3. Run archives (verbatim, per session)
 
-- **Add (Get API):** `Add Zone {name:'ZZ_ACE_PROBE_ALPHA', points:[…]}` → id `b1`, at **21:41:04** (clock from a `DeviceStatusInfo` read).
-- **Visible via Get API instantly** (`Get Zone` returned it immediately).
-- **Ace polls** (each `new_chat=true`, "how many zones / is ZZ_ACE_PROBE_ALPHA there?"):
+### Run 2026-06-29 (demo_fh4 / my_db) — full detail
 
-| Poll time | T0+ | Ace answer | chat_id |
-|-----------|-----|-----------|---------|
-| 21:41:38 | 0.5 m | 0 zones | `y9F6AR7RZQSV1Sptai9Z` |
-| 21:45:04 | 4 m | 0 zones | `mNQPkyHcauLiukdxTDk8` |
-| 21:47:13 | 6 m | 0 zones | `uBozVjFuyyoDxNwOTTmM` |
-| 21:51:21 | 10 m | 0 zones | `fMlPvRdY0JyUTltd3MuJ`* |
-| 21:52:24 | 11 m | not found | `Qr8kNvIbeoxTVPPVoQOL` |
-| 21:55:02 | 14 m | not found | `JrEcc5QYtlzcjOUc3qvJ` |
-| **22:09:42** | **~29 m** | **"Yes, ZZ_ACE_PROBE_ALPHA exists. 1 zone."** | `5E0H7Un0GPulkcLCzINp` |
+**P4/P5/P6 — source-table selection (the "49 vs 47").** Same English question; only P5 adds the SQL.
+- **P4 4A** `53Li6zrprm7N9NSvcPaE`: *"How many distinct devices produced at least one raw GPS position log on calendar day 2026-06-28 UTC … do not restrict to active/tracked/IsTracked … Return only the number."* → **49**. SQL: `SELECT COUNT(DISTINCT DeviceId) FROM \`GpsLogs\` WHERE UTC_GpsTimestamp >= '2026-06-28 00:00:00 UTC' AND UTC_GpsTimestamp < '2026-06-29 00:00:00 UTC'`
+- **P4 R2/R3** `xfRC82AvU9Su4u0BsTYM`, `BC8CnzGtRIwGR02epyiT`: identical prompt → **49**, **49** (R3 injected `AND DATE(GpsDateTime)=DATE('2026-06-28')`).
+- **P5 4B** `MbJ6VAoCle52iGd6m0YR`: P4 prompt **+** *"Run exactly: SELECT COUNT(DISTINCT DeviceId) AS n FROM GpsLogs WHERE UTC_GpsTimestamp >= '2026-06-28 00:00:00 UTC' AND UTC_GpsTimestamp < '2026-06-29 00:00:00 UTC'"* → **47**, executed `SELECT COUNT(DISTINCT DeviceId) AS n FROM \`Trip\` WHERE UTC_TripStartTimestamp >= '2026-06-28 00:00:00 UTC' AND UTC_TripStartTimestamp < '2026-06-29 00:00:00 UTC' AND DATE(TripStartDateTime) BETWEEN DATE('2026-06-27') AND DATE('2026-06-29')`.
+- **P6** `SaV8GtVptocbsPPgKIw1`: *"How many distinct devices had at least one trip that started on calendar day 2026-06-28 UTC? …Return only the number."* → **47** from `Trip`.
 
-- **Remove (Get API):** `Remove Zone {id:'b1'}` after confirmation (cleanup).
+**P1/P2/P3 — freshness.**
+- P1 `fLPYaGZErt5woI4dH0cP`: max `2026-06-29 21:37:15.035`, now `21:37:34.366`. SQL `SELECT MAX(UTC_GpsTimestamp), CURRENT_TIMESTAMP() FROM \`GpsLogs\` WHERE GpsDateTime >= DATETIME_SUB(CURRENT_DATETIME(), INTERVAL 7 DAY)`.
+- P2 `mXdb0QGjzvxehI1CCa7F`: `2026-06-29 21:34:48.455 UTC`. SQL `SELECT MAX(UTC_StatusTimestamp) FROM \`StatusData\` WHERE StatusDateTime BETWEEN DATETIME_SUB(CURRENT_DATETIME(), INTERVAL 30 DAY) AND CURRENT_DATETIME()`.
+- P3 `Aad71Hlt3n0EfjoNggC7`: end `21:30:34.098`; 20 in last 15 min. SQL uses `MAX(UTC_TripEndTimestamp), COUNTIF(... INTERVAL 15 MINUTE) FROM \`Trip\``.
 
-**Reading:** dimension/config propagation to Ace took **between 14 and 29 minutes** (vs seconds for
-telematics). For freshly-changed reference data, read the Get API, not Ace.
+**P8 — zone propagation poll timeline** (add via Get `Add Zone` id `b1` at `21:41:04`; removed after):
+`21:41:38` 0 (`y9F6AR7RZQSV1Sptai9Z`) · `21:45:04` 0 (`mNQPkyHcauLiukdxTDk8`) · `21:47:13` 0 (`uBozVjFuyyoDxNwOTTmM`) · `21:52:24` not found (`Qr8kNvIbeoxTVPPVoQOL`) · `21:55:02` not found (`JrEcc5QYtlzcjOUc3qvJ`) · **`22:09:42` present** (`5E0H7Un0GPulkcLCzINp`).
 
----
+**Five paired tests (English vs English+SQL), device b3** — `chat_id`s: 1A `mNRpRf7SlRISGtxXohXX` (cols honored; injected `DATE>=`), 1B `fi8B4okL8scSNDc51JPR` (verbatim), 2A `QguIzUYZktPTMbqx6lRf` (16 trips, km kept), 2B `jlew0E4tiA9HVDKVDMeA` (verbatim; **2 prior `invalid_value` 400s**), 3A `JwbtKfkJYhY0eTSuwgk7` (**1756**, UTC + injected `DATE BETWEEN`), 3B `fMlPvRdY0JyUTltd3MuJ` (**1756**), 5A `FrF7EqUPoabUU01X0Sbq` (**955**, no speed/ignition filter), 5B `uK609RhO2Ip3bDac72Wv` (**959**). Probe (response-size + schema discovery) `5GHBDuynCYAFTIVGCO6E` (577 rows; revealed `GpsLogs`, `Trip`, `VehicleKPI_Daily`, `LatestVehicleMetadata`, `Zones`).
 
-## E. `GetCountOf` ignores fact windows (Get API — NOT Ace)
+**Device population (active-only trap):** GPS-active **49** (P4) · trip-active **47** (P6) · `dim_device` **50** (Get) · warehouse silver (built from an `IsTracked=TRUE` pull) **~25–26**.
 
-`mcp__Geotab__GetCountOf`, 2026-06-29:
-
-| Call | Search | Result |
-|------|--------|--------|
-| `LogRecord` | `deviceSearch b3`, `2026-06-28 → 2026-06-29` | **16,098,152** |
-| `LogRecord` | `deviceSearch b3`, `2026-06-29 → 2026-06-29T21:00` | **16,098,152** (identical — window ignored) |
-| `Trip` | `deviceSearch b3`, `2026-06-28 → 2026-06-29T21:00` | **1,388,687** (all trips) |
-| `Device` | (none) | 50 (✓ matches `dim_device`) |
-
-**Reading:** `GetCountOf` returns whole-table totals for facts (ignores date/device search) — useful
-only for dimensions. Reconcile fact windows with a bounded `Get` read instead.
-
----
-
-## F. Compute & storage (MotherDuck, `my_db`, 2026-06-29)
-
-- `PRAGMA database_size` → **35.2 MiB** (679,577 unique GPS pings as bronze `all_varchar` + typed silver, + trips/exc/dims).
-- `EXPLAIN ANALYZE` server-side times: watermark `max()` over 679,577 = **0.0822 s**; full silver derive (`DISTINCT ON`, 679,581 rows) = **1.07 s**; `read_csv_auto` count over a signed URL (2,679 rows, 149.3 KiB, 1 HEAD + 1 GET) = **1.47 s**.
-- Dedup-key proof: `DISTINCT ON` on **raw string** key → **679,581**; on **parsed timestamp** key → **679,577** (4 boundary dupes collapse).
-- Bronze batches: `bootstrap_from_silver` 522,162 + `ace_csv` 157,419 = 679,581 raw → 679,577 silver.
-- `MD_INFORMATION_SCHEMA.QUERY_HISTORY` → error "not available on your plan" (Lite); use `EXPLAIN ANALYZE`.
-
----
-
-## G. Device population — the active-only trap (2026-06-29)
-
-GPS-active devices **49** (Ace `GpsLogs`, §A) · trip-active **47** (Ace `Trip`, §A) · `dim_device` **50**
-(Get API) · warehouse silver (built from an `IsTracked=TRUE` Ace pull) **~25–26**. The silver undercount
-is the active-only default; lifting it returns the fuller 47–49.
+_(add the next session as "### Run YYYY-MM-DD" below)_

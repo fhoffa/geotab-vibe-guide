@@ -162,7 +162,7 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 | [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) | Post-load quality tests, predicting problems by reading Ace's generated SQL, the SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap) |
 | [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) | How fresh each channel is (Ace ~1–2 min, `Get` to now, `DeviceStatusInfo` live), the live/bulk/backfill/settle decision matrix, the active-only coverage trap, and why `GetCountOf` can't reconcile fact windows |
 | [`COST_AND_SIZING.md`](references/COST_AND_SIZING.md) | What it costs to run: Ace/MCP are free on the Geotab Go plan; MotherDuck Lite free tier (10 GB); measured ~16–54 B per GPS ping; free-tier capacity in vehicle-years; and small→very-large fleet monthly estimates |
-| [`EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) | **Reproducibility appendix** — the exact prompts, replies, executed SQL, `chat_id`s, and timestamps behind every empirical claim (source-selection 49/47, freshness, the 5 paired tests, zone propagation, `GetCountOf`, compute/storage). Start here to rebuild or investigate a finding. |
+| [`EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) | **Reproducibility ledger** — reusable probes (stable prompts/SQL, IDs P1–P11) + an **append-only dated results table** + per-run verbatim archives. Re-run a probe, append a row; the latest row is current truth. Start here to rebuild, investigate, or re-measure a claim. |
 
 ## First run on a new Geotab database — isolate BEFORE you write
 
