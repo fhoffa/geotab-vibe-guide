@@ -17,7 +17,7 @@ warehouse are shown so you know what "good" looks like (and what slips through).
 | **Bounds** lat∈[-90,90], lng∈[-180,180], speed≥0 | corrupt coordinates, bad sensors | 0 bad |
 | **Not-null** on key columns (DeviceId, event-time) | dropped/blank keys | 0 null |
 | **No future rows** (`event_time <= now()`) | clock/timezone bugs, bad parse | 0 future |
-| **Freshness** `now() - max(event_time)` | stale pipeline, Ace lag | 1.3 h (Ace lag — expected) |
+| **Freshness** `now() - max(event_time)` | stale pipeline (≠ Ace lag) | measures time since last load; Ace's *own* lag is only ~1–2 min (see [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md)) |
 | **Referential integrity** fact.DeviceId ∈ `dim_device.id` | facts for unknown devices | 0 orphans (gps/trips/exc) |
 | **Range sanity** trip end ≥ start, duration ≥ 0 | logic/parse errors | 0 bad |
 | **Row-count plausibility** vs historical daily mean | silent under/over-pull | compare to prior runs in `warehouse_ingest_log` |
@@ -37,11 +37,15 @@ UNION ALL SELECT 'trips: device not in dim', count(DISTINCT t.DeviceId) FILTER (
        FROM my_db.trips t LEFT JOIN my_db.dim_device d ON d.id=t.DeviceId;
 ```
 
-**Cross-source reconciliation (the strongest test).** The direct API `GetCountOf` is an independent
-oracle. For dimensions it should match exactly — `GetCountOf Device = 50` and `dim_device = 50` ✓.
-For Ace-sourced facts it **won't** match (Ace filters `IsTracked=TRUE`; see quirk #11) — that's
-expected, not a bug. Use `GetCountOf` to bound-check ("Ace gave 2,907 trips; API says 3,1xx total
-incl. untracked — plausible"), not for exact equality.
+**Cross-source reconciliation (the strongest test) — but pick the right oracle.** `GetCountOf` is an
+exact oracle **only for dimensions**: `GetCountOf Device = 50` and `dim_device = 50` ✓. For
+high-volume **facts it is useless as a windowed check — it ignores the date/device search entirely**:
+two different `LogRecord` windows for one device both returned **16,098,152** (the whole table), and a
+`Trip` window returned **1,388,687** (all trips). So `GetCountOf LogRecord` answers "how many logs
+exist in total," not "how many in my window." To reconcile a fact window, **count rows from a bounded
+`Get` read of the same window** (e.g. `Get LogRecord` with `deviceSearch`+`fromDate`/`toDate`), or
+compare Ace against the warehouse silver — never against `GetCountOf`. (And expect Ace's count to wobble
+a few % anyway — it's non-deterministic; see §4.) Details: [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
 
 **Record results.** Add a `warehouse_quality_checks(run_id, check, value, passed, checked_at)` table
 (or extend `warehouse_ingest_log`) so you get a time series and can alert on regressions.

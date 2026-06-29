@@ -39,8 +39,44 @@ Rules, each tied to an observed quirk:
 - **Give a precise lower bound** ("after 2026-06-26 01:42:40 UTC"). But know Ace honors it only to the
   **second** (quirk #6) — you will get the boundary second back, so dedup on load.
 - **Say "raw rows, do not aggregate"** when you want entity-level data; otherwise Ace may roll up.
+- **Pin units** ("distance in kilometers, do not convert units"). Ace will silently convert km↔miles
+  otherwise. With the unit pinned it kept `TripDistance_Km` correctly in testing.
+- **Forbid the active-only filter** when you want the whole fleet: *"include every device with data; do
+  not restrict to active, tracked, or IsTracked devices."* Ace's **default population is tracked-only**
+  — the reason a naive GPS pull saw ~25 devices when the fleet has 50. See
+  [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md) §active-only trap.
 - **NEVER say "url", "csv", "download", "link", or "export."** Asking for the artifact makes Ace drop
   your column spec and return a degraded default schema (quirk #8). You get a URL regardless.
+
+### Does adding the expected SQL to the prompt help? (5 paired tests)
+
+We ran 5 scenarios twice each — **plain explicit English** vs **the same English + the exact SQL to
+run** — and scored the generated SQL, columns, and counts against the warehouse. Result:
+
+| Scenario | English only | English + SQL |
+|----------|-------------|---------------|
+| GPS columns + 2-day window | ✓ right cols/table; injected harmless `DATE(...) >= ...` prune | ✓ ran verbatim, no injection |
+| Raw trips, no unit conversion | ✓ km kept, right cols/table | **2 transient `invalid_value` 400s**, then ✓ verbatim |
+| UTC day count | ✓ UTC bounds, exact (1756) | ✓ verbatim (1756) |
+| Distinct devices, no IsTracked | ✓ no filter (49) | ✓ ran it (47 — non-determinism) |
+| No speed/ignition filter | ✓ no filter (955) | ✓ (959 — live growth) |
+
+**Conclusion: well-specified English is as reliable as English+SQL on correctness.** Every documented
+quirk (miles conversion, `IsTracked`, `Speed!=0`/`Ignition`, `Local_Date`, column rename) was
+suppressed by *explicit English* in both arms — naming exact columns, pinning units, forbidding the
+filters, forcing UTC. What moves reliability is **prompt specificity, not attaching SQL.**
+
+Attaching SQL has one upside and two downsides:
+- **+** Ace runs it near-verbatim, so it skips the small (harmless) partition-prune predicates it adds
+  in English-only mode.
+- **−** It does **not** fix non-determinism — the same forced query returned **49 then 47** distinct
+  devices over a *settled* past day.
+- **−** It correlated with **more failures** — the only `invalid_value` HTTP 400 gateway rejections we
+  saw (2 of them) were on SQL-augmented calls; plain English never failed.
+
+So: **write emphatic English; treat any SQL you add as a hint, not a contract; always reconcile the
+returned `columns` array and counts regardless.** Reading Ace's *returned* SQL as a pre-load gate
+(see [`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md)) catches far more than feeding SQL in ever did.
 
 ### Copy-paste prompts per fact entity
 

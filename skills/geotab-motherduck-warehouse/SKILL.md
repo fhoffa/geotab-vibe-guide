@@ -1,6 +1,6 @@
 ---
 name: geotab-motherduck-warehouse
-description: Replicate Geotab fleet data into a MotherDuck (DuckDB) warehouse and keep it fresh with incremental loads — driven entirely through MCP tools, no Python required. Use when a user wants to "copy/replicate/sync my Geotab data into MotherDuck", build a GPS/trip/fault data warehouse, run a daily update job, set up bronze/silver/gold layers, or backfill history. Covers the Geotab Ace → signed CSV URL → MotherDuck loop, the direct Get → table path for dimensions, watermarks, dedup, gap detection, and every Ace quirk we hit in testing.
+description: Replicate Geotab fleet data into a MotherDuck (DuckDB) warehouse and keep it fresh with incremental loads — driven entirely through MCP tools, no Python required. Use when a user wants to "copy/replicate/sync my Geotab data into MotherDuck", build a GPS/trip/fault data warehouse, run a daily update job, set up bronze/silver/gold layers, or backfill history. Covers the Geotab Ace → signed CSV URL → MotherDuck loop, the direct Get → table path for dimensions, live snapshots via DeviceStatusInfo, channel freshness (Ace lags only ~1–2 min), watermarks, dedup, gap detection, and every Ace quirk we hit in testing.
 license: Apache-2.0
 metadata:
   author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
@@ -104,15 +104,20 @@ The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO
 | 10 | **Continue-chat works** (`new_chat=false` + `chat_id`) and **retains context** | Use for iterative refinement; a fresh `new_chat=true` forgets everything. |
 | 11 | Ace's engine uses **pre-aggregated, active-filtered sources** (`VehicleKPI_Daily`, `LatestVehicleMetadata`, `IsTracked=TRUE`, inclusive **device-local** `Local_Date BETWEEN`) | Ace counts/distances ≠ raw API/haversine; date ranges are inclusive & local unless you force UTC. For exact replication, request raw rows with explicit UTC bounds. |
 
-## Two source channels — pick per entity
+## Three source channels — pick per entity *and* per freshness need
 
-| Channel | Best for | Shape | Speed | Reference |
-|---------|----------|-------|-------|-----------|
-| **Ace → CSV URL** | High-volume **facts**: GPS (`LogRecord`), trips, status/engine, exceptions, faults | signed CSV, bulk | ~30–60 s | [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) |
-| **Get → JSON** | **Dimensions** & small/precise sets: `Device`, `User`, `Zone`, `Group`, `Diagnostic`, `Rule` | JSON, paged | ~0.5–2 s | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) |
+| Channel | Best for | Shape | Freshness (observed) | Reference |
+|---------|----------|-------|----------------------|-----------|
+| **Ace → CSV URL** | High-volume **facts**: GPS (`LogRecord`), trips, status/engine, exceptions, faults | signed CSV, bulk | **~1–2 min behind** | [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) |
+| **Get → JSON** | **Dimensions** & small/precise sets: `Device`, `User`, `Zone`, `Group`, `Diagnostic`, `Rule`; raw `LogRecord` for a window | JSON, paged | **to ~now** (full-res raw) | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) |
+| **Get `DeviceStatusInfo`** | **Live** position/speed/ignition snapshot per device | JSON, 1 row/device | **~sub-second** | [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) |
 
-Rule of thumb: **dimensions via `Get` (authoritative, real-time, exact), facts via Ace (bulk export).**
-A `dim_device` from `Get` also resolves Ace's `DeviceName`↔`DeviceId` and enriches every fact table.
+Rule of thumb: **dimensions via `Get` (authoritative, exact), facts via Ace (bulk export), live map via
+`Get DeviceStatusInfo`.** Ace is **not** "late data" — it lags only ~1–2 min; the freshest sliver Ace
+hasn't caught up to can be topped up with a small raw `Get LogRecord` read. A `dim_device` from `Get`
+also resolves Ace's `DeviceName`↔`DeviceId` and enriches every fact table. **Don't historize
+`DeviceStatusInfo`** — it's a snapshot, not an event stream. Full decision matrix (live / bulk window /
+historical backfill / settle the gaps): [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md).
 
 ## Layers (bronze / silver / gold)
 
@@ -140,6 +145,7 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 | [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The daily-run runbook, the `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |
 | [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) | Post-load quality tests, predicting problems by reading Ace's generated SQL, the SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap) |
+| [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) | How fresh each channel is (Ace ~1–2 min, `Get` to now, `DeviceStatusInfo` live), the live/bulk/backfill/settle decision matrix, the active-only coverage trap, and why `GetCountOf` can't reconcile fact windows |
 
 ## Bootstrap vs daily run
 
@@ -164,11 +170,15 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
    `COUNT(*)` + `min/max(event_time)`. Confirm columns/types *or* map by position in the derive.
 3. **Dedup every silver derive** (quirk #6) — `> watermark` filter or natural-key anti-join, and dedup
    on the **parsed/normalized** key (bronze mixes ` UTC`-suffixed and clean timestamps). Never trust Ace's boundary.
-4. **Never ask Ace for a URL/CSV/download** (quirk #8). Ask for data + columns.
+4. **Never ask Ace for a URL/CSV/download** (quirk #8). Ask for data + columns. **Specificity beats
+   SQL:** name exact columns, pin units ("in km, don't convert"), force "Use UTC," say "raw rows, do
+   not aggregate," and "include all devices, not just tracked/active." Tested — explicit English is as
+   reliable as feeding Ace the SQL, and attaching SQL adds gateway-rejection risk without fixing
+   non-determinism ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Does adding SQL help).
 5. **Never read the raw Ace MCP result inline** (quirk #1) — grep the spilled file.
 6. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts.
 7. **Test credentials/queries once**, not in a loop. Load CSVs into bronze **within ~24h** before the URL expires.
 8. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead.
 9. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the derive**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
-10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, `GetCountOf` reconciliation). To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace is non-deterministic, so a full re-ask can replace good data with a differently-shaped answer.
+10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, reconciliation). Reconcile **dimensions** with `GetCountOf` (exact); reconcile **fact windows** with a bounded `Get` read of the same window — **`GetCountOf` ignores date/device filters for facts** and returns the whole-table count. To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace is non-deterministic (the same settled query returned 49 then 47), so a full re-ask can replace good data with a differently-shaped answer.
 11. **Writes can drop mid-call** — keep them idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying.
