@@ -56,7 +56,9 @@ bronze first; silver is derived from bronze** — never loaded straight from the
                                  FROM bronze_table WHERE event_time > <watermark>  (derive + idempotent dedup)
 ```
 
-Worked example we actually ran (GPS, `my_db.bronze_gps_raw` → `my_db.planet_gps_pings`):
+Worked example we actually ran (GPS, `my_db.bronze_gps_raw` → `my_db.planet_gps_pings`). **`my_db` is
+this session's demo warehouse for `demo_fh4` — for a new source, substitute your isolated
+`geotab_<source>` database first (see "First run" below); don't write to another source's database.**
 
 ```sql
 -- 1. Watermark (from silver — the source of truth for "what's already typed")
@@ -162,9 +164,34 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 | [`COST_AND_SIZING.md`](references/COST_AND_SIZING.md) | What it costs to run: Ace/MCP are free on the Geotab Go plan; MotherDuck Lite free tier (10 GB); measured ~16–54 B per GPS ping; free-tier capacity in vehicle-years; and small→very-large fleet monthly estimates |
 | [`EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) | **Reproducibility appendix** — the exact prompts, replies, executed SQL, `chat_id`s, and timestamps behind every empirical claim (source-selection 49/47, freshness, the 5 paired tests, zone propagation, `GetCountOf`, compute/storage). Start here to rebuild or investigate a finding. |
 
+## First run on a new Geotab database — isolate BEFORE you write
+
+The examples in this skill use **`my_db`**, the demo warehouse for `demo_fh4`. **For a different Geotab
+database, never reuse `my_db` or any other source's database** — Geotab IDs (`b1`,`b2`,…) repeat across
+databases, so sharing tables silently collides (Non-negotiable #12). Do this Step 0 first:
+
+1. **See what already exists** — `mcp__MotherDuck__list_databases` (or `SHOW DATABASES`). Confirm the
+   name you're about to use is new and isn't another source's warehouse. (This account already holds
+   `my_db` = `demo_fh4`, plus `sample_data` — so a new source needs its own database.)
+2. **Create an isolated namespace** (recommended: **database per source + schema per layer**):
+   ```sql
+   CREATE DATABASE IF NOT EXISTS geotab_<source>;
+   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.bronze;
+   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.silver;
+   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.gold;
+   ```
+   Use `geotab_<source>` (with `bronze`/`silver`/`gold` schemas) everywhere the examples say `my_db`, and
+   stamp `_source_db='<source>'` in every bronze insert.
+3. **Gate before the first write:** the target database name must encode *this* source and must not be an
+   existing other-source DB. `IF NOT EXISTS` keeps a re-run safe. Then proceed to the loop / backfill.
+
+Two sources must never share a database+schema. Rationale + the schema-per-source alternative:
+[`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
+
 ## Bootstrap vs daily run vs the three backfills
 
-- **0 → warehouse (first time):** create the warehouse db → create bronze + silver tables → per fact
+- **0 → warehouse (first time):** **isolate first** (§First run — create `geotab_<source>` + layer
+  schemas, never reuse another source's DB) → create bronze + silver tables → per fact
   entity, run *bounded historical* Ace pulls (a day at a time) into **bronze**, then derive silver →
   load dimensions via `Get` (no bronze). If a silver table already exists without a bronze under it,
   reconstruct bronze from silver once (the brownfield bootstrap) so silver becomes rebuildable.
@@ -205,4 +232,4 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 9. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the derive**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
 10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, reconciliation). Reconcile **dimensions** with `GetCountOf` (exact); reconcile **fact windows** with a bounded `Get` read of the same window — **`GetCountOf` ignores date/device filters for facts** and returns the whole-table count. To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace can answer the same question from a different source table across runs (a "distinct devices" ask resolved to `GpsLogs`=49 vs `Trip`=47), so a full re-ask can replace good data with a differently-shaped answer.
 11. **Writes can drop mid-call** — keep them idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying.
-12. **Isolate each Geotab source.** Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so loading a second source into the *same* tables **collides** in silver/dims (it appends+dedups, not overwrites — worse). **Recommended: a MotherDuck database per Geotab source + a schema per medallion layer** (`geotab_demo_fh4.bronze.*` / `.silver.*` / `.gold.*`) — source isolation lands at the database level where Sharing, retention, access, and cost are scoped, and layers read cleanly as schemas. Alternative for one owner's own fleets wanting easy cross-fleet joins: one shared database, **schema per source** (layer as table prefix). Never mix sources in one schema; keep `_source_db` in bronze for provenance. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.)
+12. **Isolate each Geotab source.** Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so loading a second source into the *same* tables **collides** in silver/dims (it appends+dedups, not overwrites — worse). **Recommended: a MotherDuck database per Geotab source + a schema per medallion layer** (`geotab_demo_fh4.bronze.*` / `.silver.*` / `.gold.*`) — source isolation lands at the database level where Sharing, retention, access, and cost are scoped, and layers read cleanly as schemas. Alternative for one owner's own fleets wanting easy cross-fleet joins: one shared database, **schema per source** (layer as table prefix). **On a new source, `list_databases` FIRST and create a fresh `geotab_<source>`; never write into a database that already holds another source.** Never mix sources in one schema; keep `_source_db` in bronze for provenance. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate, [`SKILL.md`](SKILL.md) §First run.)
