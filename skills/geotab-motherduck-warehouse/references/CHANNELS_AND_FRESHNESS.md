@@ -4,24 +4,39 @@ Which source gives you data *how fresh*, and how to decide between **live reads*
 **historical backfill**, and **settling the gaps**. All numbers observed live on `demo_fh4`
 (2026-06-29, ~50-vehicle Iberia demo fleet).
 
-## Is Ace "only late data"? No — it lags ~1–2 minutes
+## Is Ace "only late data"? No — continuous streams lag tens of seconds to ~2 min
 
-Measured directly: an Ace GPS pull whose signed URL was minted at **20:49:54 UTC** returned data with
-`max(UTC_GpsTimestamp) = 20:48:16` → **~98 s behind real time.** Ace is *near*-real-time, not a
-batch-only/hours-late source. (The skill's earlier "1.3 h freshness" was **load staleness** — the
-warehouse simply hadn't been refreshed in 1.3 h — *not* Ace's intrinsic lag. Don't conflate the two.)
+Measured across **four entity types**, comparing Ace's `max(event_time)` to the true current time
+(Ace's own `CURRENT_TIMESTAMP`, cross-checked against the live `Get` API):
+
+| Ace table | Cadence | Most-recent in Ace | "Now" | Real pipeline lag |
+|-----------|---------|--------------------|-------|-------------------|
+| `GpsLogs` | continuous | `21:37:15.035` | `21:37:34.366` | **~19 s** (a separate run measured ~98 s) |
+| `StatusData` (engine/sensor) | continuous | `21:34:48.455` | ~`21:35` | **sub-minute** — *identical* to the live `DeviceStatusInfo` API's freshest reading |
+| `Trip` | event (on trip end) | `21:30:34` | ~`21:36` | **not lag** — 20 trips ended in the last 15 min; latest end is just the last vehicle that parked |
+| `FaultData` | event (rare) | `12:07–12:18` | ~`21:34` | **not lag** — no fault has occurred since noon |
+
+**The takeaway, refined: for *continuous* streams (GPS, StatusData) Ace is near-real-time — tens of
+seconds to ~2 minutes behind.** It is *not* batch/"yesterday's data." (The skill's earlier "1.3 h
+freshness" was **load staleness** — the warehouse hadn't been refreshed in 1.3 h — not Ace's lag.)
+
+> **Don't measure freshness of event-driven tables with `max(timestamp)` vs now.** Trips, faults, and
+> exceptions only get a row *when the event happens*, so a "stale" max just means nothing happened
+> recently. `FaultData`'s newest row was 9 h old — yet that's correct, not lagged. To gauge those, count
+> **events in a recent window** (e.g. "20 trips ended in the last 15 min" → the pipeline is current);
+> reserve max-vs-now for the continuous streams.
 
 | Channel | Tool | Freshness (observed) | Shape | Best for |
 |---------|------|----------------------|-------|----------|
 | **Live snapshot** | `Get DeviceStatusInfo` | **~sub-second** (current position/speed/ignition per device) | JSON, one row per device | live map, "where is everything right now" |
 | **Raw event read** | `Get LogRecord` (+ window) | **to ~now** (full-resolution raw rows; b3 to `20:40+` at `~20:48`) | JSON, cursor-paginated | a specific device/window, gap-filling, an independent oracle |
-| **Bulk export** | `GetAceResults` → CSV URL | **~1–2 min behind** | signed CSV, whole window in one file | warehouse bulk: daily incremental + historical backfill |
+| **Bulk export** | `GetAceResults` → CSV URL | **tens of s – ~2 min** (continuous streams) | signed CSV, whole window in one file | warehouse bulk: daily incremental + historical backfill |
 
 So all three are effectively current; they differ in **shape and volume**, not in being "live vs late."
 `DeviceStatusInfo` is a *snapshot* (it has no history — don't historize it). `Get LogRecord` is full
 history but **paginates** (cursor for reference entities; window-splitting for time-series — see
 [`ENTITY_CATALOG.md`](ENTITY_CATALOG.md)), so it's painful for bulk. Ace streams an entire window to
-one CSV, which is why it's the bulk workhorse despite the ~2-min lag and non-determinism.
+one CSV, which is why it's the bulk workhorse despite the sub-2-min lag and non-determinism.
 
 ## The four loading modes — pick by question, not by habit
 

@@ -226,10 +226,15 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     stabilize it. Treat Ace counts as ±a few %, never exact. This is the core reason every fact load is
     append-to-bronze + dedup and every repair prefers re-deriving from bronze over re-asking.
 
-16. **It is near-real-time (~1–2 min lag), not batch.** A GPS pull whose URL was minted at `20:49:54Z`
-    had `max(UTC_GpsTimestamp) = 20:48:16` — ~98 s behind. Don't treat Ace as "yesterday's data." (Top
-    up the last sliver with a small `Get LogRecord` read if you need true real-time —
-    [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)
+16. **It is near-real-time for continuous streams (tens of s – ~2 min), not batch.** Measured across
+    four tables: `GpsLogs` max `21:37:15` vs now `21:37:34` → **~19 s** (a separate run: ~98 s);
+    `StatusData` max `21:34:48.455` — **identical** to the live `DeviceStatusInfo` API's freshest reading.
+    Don't treat Ace as "yesterday's data." **But event-driven tables (`Trip`, `FaultData`,
+    `ExceptionEvent`) are different:** they only get a row when the event fires, so `max(timestamp)`
+    looks old when nothing happened recently (FaultData's newest was 9 h old; trips' newest end was 6 min
+    old *but 20 trips ended in the last 15 min*). Gauge those by **counting events in a recent window**,
+    not max-vs-now. Top up the last sliver with a small `Get LogRecord` read if you need true real-time —
+    [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
 
 17. **Pasting SQL into the prompt can trip the gateway.** The only `invalid_value` HTTP 400 rejections
     we saw (`domain: MyGeotab-MCP`) were on SQL-augmented prompts; they were transient (retry succeeded).
