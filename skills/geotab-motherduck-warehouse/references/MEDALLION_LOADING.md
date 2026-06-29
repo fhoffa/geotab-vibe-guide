@@ -92,10 +92,12 @@ CREATE SCHEMA IF NOT EXISTS geotab.demo_fh4;     -- source = schema; layer = bro
 per source + schema per layer** (recommended). Your own handful of fleets, want easy cross-fleet joins →
 **one database, schema per source**. **Never** put two sources in the same schema/tables.
 
-(The demo warehouse here is `my_db.main.*` mirroring only `demo_fh4` — a generic name that doesn't
-announce its source or layer; migrate to `geotab_demo_fh4` with `bronze`/`silver`/`gold` schemas before
-you mirror a second database.) Whichever you pick, **keep `_source_db` populated in bronze** for
-provenance — it tags a row's origin but, on its own, does *not* stop the silver/dim key collisions above.
+(The demo warehouse was migrated 2026-06-29 from the generic `my_db.main.*` to this recommended layout:
+**`geotab_demo_fh4`** with `bronze`/`silver`/`gold` schemas — `bronze.gps_raw`, `silver.planet_gps_pings`,
+`silver.dim_device`, etc. The worked-SQL examples in this skill still use the short `my_db.<table>` form
+for brevity; read them as `geotab_<source>.<layer>.<table>`.) Whichever layout you pick, **keep
+`_source_db` populated in bronze** for provenance — it tags a row's origin but, on its own, does *not*
+stop the silver/dim key collisions above.
 
 ## Always inspect before you derive
 

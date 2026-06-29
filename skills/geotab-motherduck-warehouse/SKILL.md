@@ -56,9 +56,11 @@ bronze first; silver is derived from bronze** — never loaded straight from the
                                  FROM bronze_table WHERE event_time > <watermark>  (derive + idempotent dedup)
 ```
 
-Worked example we actually ran (GPS, `my_db.bronze_gps_raw` → `my_db.planet_gps_pings`). **`my_db` is
-this session's demo warehouse for `demo_fh4` — for a new source, substitute your isolated
-`geotab_<source>` database first (see "First run" below); don't write to another source's database.**
+Worked example we actually ran (GPS, bronze raw → silver). **The examples use the short `my_db.<table>`
+form for brevity; the live demo warehouse is now `geotab_demo_fh4` with `bronze`/`silver`/`gold` schemas
+(`my_db.bronze_gps_raw` → `geotab_demo_fh4.bronze.gps_raw`, `my_db.planet_gps_pings` →
+`geotab_demo_fh4.silver.planet_gps_pings`). For a new source, create your own `geotab_<source>` first
+(see "First run" below); never write to another source's database.**
 
 ```sql
 -- 1. Watermark (from silver — the source of truth for "what's already typed")
@@ -172,7 +174,8 @@ databases, so sharing tables silently collides (Non-negotiable #12). Do this Ste
 
 1. **See what already exists** — `mcp__MotherDuck__list_databases` (or `SHOW DATABASES`). Confirm the
    name you're about to use is new and isn't another source's warehouse. (This account already holds
-   `my_db` = `demo_fh4`, plus `sample_data` — so a new source needs its own database.)
+   **`geotab_demo_fh4`** — the demo, in the recommended `bronze`/`silver`/`gold` layout — plus
+   `sample_data`, so a new source needs its own `geotab_<source>` database.)
 2. **Create an isolated namespace** (recommended: **database per source + schema per layer**):
    ```sql
    CREATE DATABASE IF NOT EXISTS geotab_<source>;

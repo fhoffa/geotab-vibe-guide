@@ -11,6 +11,10 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 4. If a number changed enough to matter, update the dated figure in the prose docs **and** cite the new
    ledger row. (Claims in SKILL/refs point here; the *latest* ledger row is the current truth.)
 
+> **Note:** rows below labelled DB `my_db` were measured before the warehouse was migrated (2026-06-29)
+> to the recommended layout **`geotab_demo_fh4`** with `bronze`/`silver`/`gold` schemas
+> (`my_db.bronze_gps_raw` → `geotab_demo_fh4.bronze.gps_raw`, etc.). The figures stand; only the location moved.
+
 > Tool legend: **Ace** = `mcp__Geotab_MCP__GetAceResults`; **Get API** = `mcp__Geotab_MCP__Get` /
 > `GetCountOf` / `Add` / `Remove`; **MotherDuck** = `mcp__MotherDuck__query` / `query_rw`.
 > `chat_id`s let you continue a past Ace chat *while it's still live*; the prompts are always re-runnable.
