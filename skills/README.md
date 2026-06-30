@@ -8,7 +8,7 @@ These skills follow the open [Agent Skills](https://agentskills.io) format — e
 
 | Skill | Description |
 |-------|-------------|
-| [`geotab`](geotab/SKILL.md) | Complete Geotab development guide — Python API, MyGeotab Add-Ins, Zenith styling, Ace AI queries |
+| [`geotab`](geotab/SKILL.md) | Complete Geotab development guide — Python API, MyGeotab Add-Ins, Zenith styling, Ace AI queries, driver/trip assignment |
 | [`geotab-motherduck-warehouse`](geotab-motherduck-warehouse/SKILL.md) | Replicate Geotab data into a MotherDuck (DuckDB) warehouse via MCP — incremental loads, bronze/silver/gold, dedup, gap detection, backfill, and the Ace → signed-CSV-URL loop |
 | [`agentic-n8n`](agentic-n8n/SKILL.md) | Build automated fleet monitoring workflows with n8n |
 | [`geotab-custom-mcp`](geotab-custom-mcp/SKILL.md) | Build MCP servers for conversational fleet management via Claude Desktop |

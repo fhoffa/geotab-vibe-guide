@@ -57,6 +57,7 @@ Full comparison with benchmarks: [DATA_ACCESS_COMPARISON.md](../../guides/DATA_A
 | [DATA_CONNECTOR.md](references/DATA_CONNECTOR.md) | Pre-aggregated fleet KPIs via OData (daily/hourly/monthly distance, fuel, idle, safety) |
 | [SPEED_DATA.md](references/SPEED_DATA.md) | Working with vehicle speed data, LogRecord queries |
 | [TRIP_ANALYSIS.md](references/TRIP_ANALYSIS.md) | Analyzing trip data, fuel efficiency, distance calculations |
+| [DRIVER_TRIP_ASSIGNMENT.md](references/DRIVER_TRIP_ASSIGNMENT.md) | Creating drivers and assigning them to trips via DriverChange (TripDriver/Driver), MCP-vs-REST, demo cleanup |
 
 ### Add-In Development
 
