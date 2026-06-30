@@ -40,6 +40,7 @@ Then:  pip install requests python-dotenv  &&  python assign_drivers_to_trips.py
 
 import os
 import sys
+import time
 from datetime import datetime, timedelta, timezone
 
 import requests
@@ -174,15 +175,51 @@ def assign_driver_to_trip(api, driver_id, device_id, trip):
     return when
 
 
-def verify(api, trip_id):
-    """Re-fetch the trip and report who its driver resolved to."""
-    trips = api.call("Get", typeName="Trip", search={"id": trip_id})
-    if not trips:
-        return "(trip not found on re-fetch)"
-    driver = trips[0].get("driver")
-    if not driver or driver.get("id") in (None, "UnknownDriverId"):
-        return "UnknownDriver"
-    return driver.get("id")
+def _parse(ts):
+    """Parse a Geotab ISO8601 timestamp into an aware datetime."""
+    return datetime.fromisoformat(ts.replace("Z", "+00:00"))
+
+
+def verify(api, device_id, when, driver_id, attempts=6, delay=10):
+    """Confirm the assignment landed by RE-QUERYING the device's trips over the
+    target time window -- never by the original trip id.
+
+    Adding a DriverChange makes Geotab asynchronously re-process and re-split
+    trips, so the trip that now covers `when` can have a different id than the
+    one we started from. Looking it up by the old id would falsely report
+    "not found"/UnknownDriver even on success. We instead find the trip that
+    contains `when` and poll briefly for the driver to resolve.
+
+    Returns (trip_id_or_None, resolved_driver_id_or_label).
+    """
+    target = _parse(when)
+    from_date = (target - timedelta(minutes=5)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    to_date = (target + timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    last = (None, "UnknownDriver")
+    for attempt in range(attempts):
+        trips = api.call("Get", typeName="Trip", resultsLimit=5000, search={
+            "deviceSearch": {"id": device_id},
+            "fromDate": from_date,
+            "toDate": to_date,
+        })
+        # Prefer the trip whose start..stop straddles `when`; otherwise the
+        # first trip starting at/after `when`.
+        covering = [t for t in trips if t.get("stop")
+                    and _parse(t["start"]) <= target <= _parse(t["stop"])]
+        candidates = covering or sorted(
+            (t for t in trips if _parse(t["start"]) >= target),
+            key=lambda t: t["start"])
+        if candidates:
+            t = candidates[0]
+            driver = t.get("driver")
+            drv_id = driver.get("id") if isinstance(driver, dict) else None
+            if drv_id and drv_id != "UnknownDriverId":
+                return t["id"], drv_id
+            last = (t["id"], "UnknownDriver")
+        if attempt < attempts - 1:
+            time.sleep(delay)  # let async trip re-processing catch up
+    return last
 
 
 def main():
@@ -199,10 +236,10 @@ def main():
             continue
 
         when = assign_driver_to_trip(api, driver_id, spec["device"], trip)
-        resolved = verify(api, trip["id"])
-        ok = "OK" if resolved == driver_id else "check"
-        print(f"  trip {trip['id']} @ {when}")
-        print(f"  Trip.driver now -> {resolved}  [{ok}]")
+        resolved_trip, resolved = verify(api, spec["device"], when, driver_id)
+        ok = "OK" if resolved == driver_id else "pending (async re-split)"
+        print(f"  assigned at {when} (started from trip {trip['id']})")
+        print(f"  trip now {resolved_trip} -> Trip.driver {resolved}  [{ok}]")
 
     print("\nDone.")
 
