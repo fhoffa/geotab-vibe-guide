@@ -98,31 +98,35 @@ WHERE replace(GpsDateTime,' UTC','')::TIMESTAMP
 columns by position, or re-ask Ace. Bronze append is unconditional (lossless); never derive silver
 blind. See [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 
-## Critical quirks (all observed in testing)
+## Ace quirks — by severity (be aware of these while managing the warehouse)
 
-The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md), which holds
-the **full 20-quirk catalog with evidence** — that catalog's numbering is canonical (bare `quirk #N`
-references point to it). The decision-critical ones below (rows 1–11 share its numbers; 12+ are a
-curated subset):
+Full handling + SQL examples: [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md) (canonical, numbered).
+Measurements/proof: [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) §1b, keyed by the same `#`.
+Numbers are **stable IDs** (grouped by severity, never renumbered) so bare `quirk #N` references resolve.
 
-| # | Quirk | Engineering consequence |
-|---|-------|------------------------|
-| 1 | **Ace MCP response is always huge** (110–192 KB even for 3 rows — it's the chat object, not the data) and exceeds the token cap → this harness spills it to a file | **Never read it inline; parse it as a file** for the URL, `"columns"`, and the **SQL to verify**. Spill-to-file is harness-specific — if your client returns it inline/truncated, offload to a file first ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Step 2). |
-| 2 | **A signed GCS CSV URL is always returned** (`storage.googleapis.com/planet-user-results-prod-<region>/<uuid>-…csv` — region varies, e.g. `-eu`,`-us`), even for tiny results; **`signed_urls` SHARDS for large exports** (23.15M rows → 10 shard URLs); expires ~24h | `read_csv_auto('<url>')` per shard from MotherDuck — **load *every* shard** or counts are wrong. Load within 24h; match by shape, not a fixed region host. |
-| 3 | `preview_array` holds the rows **inline for ≤10 rows**; bigger sets need the URL | Small lookups can skip the URL; bulk loads always use it. |
-| 4 | **NULLs are omitted** from the JSON (the key disappears) | "Missing key = null." Don't positional-parse assuming all keys exist. |
-| 5 | **Timestamps carry a literal ` UTC` suffix** (`2026-06-26 01:42:40.423 UTC`) with **variable fractional digits** (`.423`, `.55`, `.685`) | `read_csv_auto` coerces to `TIMESTAMP` automatically; if you parse by hand, strip ` UTC` + `::TIMESTAMP` — **never a fixed `strptime`**. |
-| 6 | **"after HH:MM:SS.mmm" is honored only to the second** → results re-include the boundary second (we saw 4 overlap rows ≤ watermark) | **Dedup is mandatory.** Filter `WHERE event_time > watermark` or anti-join on the natural key. |
-| 7 | **Column-name honoring is inconsistent** — it honored `vehicle_label`/`distance_km`/the GPS set exactly, but uppercased `day`→`DAY` | **Key by the returned `columns` array**, never by the name/case you asked for. |
-| 8 | **Asking for a URL/CSV/download in the prompt degrades the result** — it drops your column spec and returns a default schema (`UTC_GpsTimestamp`, no `DeviceName`/`Speed`) | **Never say url/csv/download/export.** Just ask for the data + exact columns; the URL comes anyway. |
-| 9 | **~33 s fixed floor per Ace call** (31–40 s observed), independent of result size | Budget ~30–60 s/call; space calls ≥ a few seconds; **don't parallelize Ace calls**. |
-| 10 | **Continue-chat works** (`new_chat=false` + `chat_id`) and **retains context** | Use for iterative refinement; a fresh `new_chat=true` forgets everything. |
-| 11 | Ace's engine uses **pre-aggregated, active-filtered sources** (`VehicleKPI_Daily`, `LatestVehicleMetadata`, `IsTracked=TRUE`, inclusive **device-local** `Local_Date BETWEEN`) | Ace counts/distances ≠ raw API/haversine; date ranges are inclusive & local unless you force UTC. For exact replication, request raw rows with explicit UTC bounds. |
-| 12 | **Injects unrequested predicates** — partition `DATE(...)` guards, `Speed != 0`/`Ignition = 1`, unit conversions (km↔miles) — even when handed exact SQL | **Read the returned SQL every time.** Pin units, say "include stationary points," forbid the active filter. "Ace ran my query verbatim" is rare. |
-| 13 | **Source-table selection varies for the same question** (not numeric noise) — "distinct GPS devices on a day" gave **49** from `GpsLogs` on 3 identical runs, but **47** from `Trip` when an explicit `…FROM GpsLogs` SQL was attached (Ace ignored it) | A differing count across runs is usually a different `FROM`, not randomness — **read the returned SQL**, pin the table, don't trust an attached SQL to force the source. This is *why* loads are append-to-bronze + dedup and repairs re-derive from bronze. |
-| 14 | **Near-real-time for continuous streams** (GPS ~19–98 s; StatusData = live API's exact freshest), not batch. **Event tables** (`Trip`/`FaultData`/`ExceptionEvent`) only update when an event fires | Ace is fine for fresh loads. Gauge event tables by **counting events in a recent window**, not `max(ts)` vs now (a 9 h-old fault ≠ lag). ([`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md)) |
-| 15 | **Ace returns the SQL it ran, by design** — a transparency/approval surface, not a leak | **Lint it before loading** — it catches every Class-A semantic problem while it's free to fix ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). |
-| 16 | **Injected window's *upper bound* can drop the current day** (catalog #20) — same "most recent raw status" prompt returned the live max on some calls but `2026-06-29 23:59:59.xxx` on others, because the guard sometimes upper-bounds on `CURRENT_DATE()` (midnight today) instead of `CURRENT_DATETIME()`. Per-call, non-DB-stable; seen on both DBs 2026-06-30 | **Don't use Ace for freshness/watermark** (it can under-report by a day — use `Get`/`DeviceStatusInfo`). On windowed exports, confirm the SQL's upper bound is `CURRENT_DATETIME()`/your `hi`, not `CURRENT_DATE()`. A `…23:59:59.xxx` "latest" is the fingerprint. |
+**🔴 Critical — silently produces wrong/incomplete data:**
+- **#2** — URL *always* returned; **shards only for large exports** (size-dependent) → when sharded, **load *every* shard** or counts are short (expires ~24 h).
+- **#6** — Boundary second re-included (~always, tiny) **and** full ~2× duplication on *some* exports (intermittent — GPS windows doubled; the 23M StatusData export didn't) → **dedup on the parsed natural key every load** (you can't predict which pull doubles).
+- **#11** — *By default on metric/KPI asks*, engine is pre-aggregated + `IsTracked`-only + device-local dates → counts/distances ≠ raw; for exact replication **ask for raw rows with explicit UTC bounds**.
+- **#12** — Predicate injection *common* (partition guards — harmful only when they *narrow*); the `LatestVehicleMetadata` join flips LEFT↔inner *intermittently* (only on `DeviceName` asks) → **read the SQL; run the device-population check**.
+- **#13** — Unit conversion km↔miles, *only on distance/speed asks* → pin *"in kilometers, do not convert units"*.
+- **#14** — Activity filters (`Speed != 0`/`Ignition = 1`) *only on motion-flavored asks* → **forbid them in the prompt**.
+- **#15** — Source table can change for the "same" question — **treat as non-deterministic** (LLM-generated SQL; we saw per-call variation in #20). Identical English *happened to* stay on `GpsLogs` (49×3) in a small sample and only switched to `Trip`=47 with SQL attached, but **don't bank on it** → **read the `FROM` every load**; loads are append-to-bronze + dedup, repairs re-derive from bronze.
+- **#20** — *Intermittent* (~1/3 of calls, unpredictable, not DB-stable): injected **upper bound** clips the current day (`CURRENT_DATE()` → `…23:59:59.xxx` artifact) → **don't use Ace for freshness/watermark** (use `Get`/`DeviceStatusInfo`); on exports verify the upper bound is *now*/your `hi`.
+
+**🟡 Operational — derails or misleads the run (usually visible):**
+- **#7** — Column-case drift (`day`→`DAY`) → **key by the returned `columns` array**, not the case you asked for.
+- **#8** — Asking for a "URL/CSV/download" **degrades the schema** → ask for **data + exact columns** (the URL comes anyway); never say url/csv/export.
+- **#16** — Continuous streams ~real-time; **event tables** (`Trip`/`FaultData`/`ExceptionEvent`) update only on an event → gauge them by **counting events in a recent window**, not `max(ts)` vs now.
+- **#17** — SQL pasted into the prompt can 400 (transient) → **prefer specific English; retry**.
+- **#18** — Config/dimension writes lag Ace ~15–30 min → **read just-changed config from `Get`, not Ace**.
+- **#19** — ChatGPT: **both MCP servers must be the same mode**; **preflight Ace** with a tiny call before any DDL.
+
+**⚪ Informational — good to know, no data hazard:**
+- **#1** — Response is always huge (the chat object, not the data) and the harness spills it to a file → **parse the file** for the URL, `"columns"`, and the SQL ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Step 2); if your client returns it inline/truncated, offload to a file first.
+- **#3** `preview_array` inline for ≤10 rows · **#4** NULL keys omitted ("missing key = null") · **#5** ` UTC` suffix + variable fraction (`read_csv_auto` handles it; else `replace(…,' UTC','')::TIMESTAMP`) · **#9** ~33 s floor, **don't parallelize** Ace calls · **#10** continue-chat retains context.
+
+**Always:** Ace **returns the SQL it ran** — by design, an approval surface, not a leak. **Lint it before loading** — the SQL exposes the *semantic* 🔴 issues (#11 pre-agg, #12 predicates, #13 units, #14 filters, #15 source table, #20 window bound) while they're still free to fix ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). The *data-shape* 🔴s aren't in the SQL: **#2** needs you to harvest **every shard URL**, and **#6** needs the **silver dedup** after load — linting won't surface either.
 
 ## Three source channels — pick per entity *and* per freshness need
 

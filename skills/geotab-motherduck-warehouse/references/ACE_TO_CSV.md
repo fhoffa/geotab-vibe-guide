@@ -190,159 +190,97 @@ watermark`; if it differs (renames, dropped/extra cols, case changes), map by po
 or re-ask Ace with tighter wording. See [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). DuckDB reads the
 signed URL directly via the pre-installed `httpfs` extension — no download needed.
 
-## The quirk catalog (with evidence)
+## The quirk catalog — what to be aware of, by severity
 
-> **All quirks below are point-in-time observations, measured 2026-06-29 on `demo_fh4`** (a ~50-vehicle
-> demo) via the Geotab MCP. Ace is an evolving product — treat these as "true as of that date," re-verify
-> periodically, and update the date when you do. Each dated number is an observation, not a guarantee.
+**Lean by design.** Each entry is *what to be aware of and why* + the one thing to do. **Numbers are
+stable IDs** (grouped by severity, never renumbered) so `quirk #N` cross-references resolve. The
+**measurements, SQL, and chat_ids behind every quirk** live in
+[`EVIDENCE_LOG.md` §1b (Quirk → evidence map)](EVIDENCE_LOG.md) keyed by the same number — go there for
+proof; don't carry it while managing the warehouse. All point-in-time (2026-06-29/30); re-verify.
 
-1. **Always-huge response.** 166 KB (157K-row GPS), 192 KB (trips), 110 KB (top-3 aggregation). The
-   payload is the whole chat object (reasoning, generated SQL, message history) — not the data.
-   → Grep the file; never inline.
+> **Assume non-determinism.** Ace generates its SQL with an LLM, so *any* behavior here can vary run to
+> run (we directly observed it — see #20). The "frequency" notes below are **observed tendencies from a
+> small sample, not guarantees**. The safe engineering stance is the same for every quirk: **read the
+> returned SQL on every load, land raw to bronze, dedup in silver** — so a surprise costs nothing.
 
-2. **A signed CSV URL is always present** — even for the 3-row top-N query — and **`signed_urls` is an
-   array that SHARDS for large exports** (a 23.15M-row StatusData pull returned **10** shard URLs
-   `…-000000000000.csv` … `…-000000000009.csv`). **Load every shard**, not just the first, or your counts
-   are silently wrong. (`preview_array` is a bonus for small sets.)
+### 🔴 Critical — silently produces wrong/incomplete data (handle these or the mirror is quietly wrong)
 
-3. **`preview_array` = inline rows for ≤10.** Example (top-3 distance):
-   `[{"distance_km":2624.65,"vehicle_label":"Demo - 22"}, …]`. Beyond 10 rows, use the URL.
+- **#2 — A signed CSV URL is *always* returned; it *shards* only for large exports** (size-dependent).
+  The URL is always there (even 3 rows); a 23.15M-row pull returned **10** shard URLs, small pulls return
+  one. **When sharded, load every shard URL** or your counts are silently short. (`preview_array` carries
+  small results inline.)
+- **#6 — Duplicate rows — two effects, so dedup every load.** (a) *Boundary second — ~always, tiny:* the
+  "after `HH:MM:SS.mmm`" lower bound is honored only to the **second**, so the boundary second re-appears
+  (a handful of rows — P11: 679,581→679,577 = 4). (b) *Full ~2× duplication — intermittent:* **some**
+  exports return every row ~2× (GPS backfill windows: 3.53M→1.76M, etc.) but **not** others (the 23M
+  StatusData export had 605 dupes; the GPS bootstrap had 4) — you **can't predict which**. So **dedup on
+  the parsed natural key every load** (`DISTINCT ON` / anti-join on `replace(ts,' UTC','')::TIMESTAMP`);
+  bronze keeps dupes (append-only), silver collapses them. *(P11; ev #6.)*
+- **#11 — *By default, on metric/KPI-flavored asks*, the engine is pre-aggregated and active-filtered, so
+  counts/distances ≠ raw.** Triggered by aggregate questions ("distance", "counts"): it favors daily
+  rollups (`VehicleKPI_Daily`), inclusive **device-local** dates, and `IsTracked = TRUE`. **Avoid it by
+  asking for raw rows with explicit UTC bounds** (then Ace uses a positions source, not the rollup).
+- **#12 — It injects predicates (*common*) and flips a metadata join (*intermittent*).** A partition
+  `DATE() >=/BETWEEN` guard is added on most date-scoped pulls — benign if it *widens*, dangerous only
+  when it *narrows* your UTC window (occasional; #20 is the specific upper-bound case). Separately, a
+  `DeviceName` ask joins `LatestVehicleMetadata` as **LEFT one run, inner the next** (inner silently drops
+  devices missing metadata) — only on metadata asks, varies per run. **Read the returned SQL every load;
+  run the row-count + device-population check.**
+- **#13 — *On distance/speed asks*, it converts km↔miles unless pinned** (silent). Only metric-bearing
+  asks; pin with *"in kilometers, do not convert units."*
+- **#14 — *On motion-flavored asks*, it injects activity filters (`Speed != 0`, `Ignition = 1`)**,
+  dropping stationary points. Triggered by motion/activity phrasing; forbid with *"include stationary
+  points; do not filter on speed/ignition/motion."*
+- **#15 — Source table can change for the "same" question — treat it as non-deterministic.** It's
+  LLM-generated SQL, so the `FROM` isn't guaranteed across runs. In a *small* sample identical
+  plain-English "distinct GPS devices on a day" *happened to* stay on `GpsLogs` (49×3, and `GpsLogs` again
+  cross-DB), and it switched to `Trip` (47) when SQL was attached — but we saw per-call non-determinism
+  elsewhere (#20), so **don't bank on "identical English ⇒ same table."** A differing count is usually a
+  different `FROM`: **read the returned SQL every load, verify/pin the table.** This is *why* loads are
+  append-to-bronze + dedup and repairs re-derive from bronze rather than re-ask. *(P4/P5/P6, P15.)*
+- **#20 — *Intermittently* (~1/3 of calls in testing, unpredictable, not DB-stable) the injected window's
+  *upper bound* drops the current day.** When it lands on `CURRENT_DATE()` (midnight today) instead of
+  `CURRENT_DATETIME()`, today's rows vanish and "most recent" collapses to `<yesterday> 23:59:59.xxx`
+  (looks real). Because it's per-call, *you can't rely on it being correct* — **don't use Ace as a
+  freshness/watermark oracle** (use `Get`/`DeviceStatusInfo`); on windowed exports **confirm the upper
+  bound is now/your `hi`.** A `…23:59:59.xxx` "latest" is the fingerprint. *(P15: 2/6 status runs clipped,
+  both DBs — full prompt + all 6 generated SQL/answers in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md) §3 run
+  archive 2026-06-30.)*
 
-4. **NULLs vanish from the JSON.** A per-day breakdown returned `{"DAY":"2026-06-27"}` with **no**
-   `distance_km` key (that day's value was null). Geotab's MCP also documents "missing key = null."
-   → Object-parse defensively; in CSV the column is simply empty (DuckDB → NULL).
+### 🟡 Operational — derails or misleads the run (usually visible / recoverable)
 
-5. **` UTC` suffix + variable fractional digits.** CSV values look like `2026-06-26 01:42:40.423 UTC`,
-   `…23.55 UTC`, `…25.685 UTC`. `read_csv_auto` still infers `TIMESTAMP` (it strips the suffix). If you
-   ever force VARCHAR or hand-parse, use `replace(col,' UTC','')::TIMESTAMP` — **not** a fixed
-   `strptime` (the fraction width varies).
+- **#7 — Column-name honoring is inconsistent** (`day` came back `DAY`; bulk uppercased `DATA`/`SOURCE`).
+  **Trust the `columns` array; alias on the way in.**
+- **#8 — Asking for "a URL / CSV / download" degrades the schema** to a default column set (drops
+  `DeviceName`/`Speed`/TZ, renames the timestamp) — which silently breaks an append. **Ask for *data*,
+  not an artifact.**
+- **#16 — Continuous streams are near-real-time; event tables aren't.** GPS/StatusData are tens of
+  seconds behind; `Trip`/`FaultData`/`ExceptionEvent` only get a row when an event fires, so `max(ts)`
+  looks old when nothing happened. **Gauge event tables by counting events in a recent window**, not
+  max-vs-now. *(P1/P2/P3; [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)*
+- **#17 — Pasting SQL into the prompt can trip the gateway** (`invalid_value` 400, transient). **Prefer
+  specific English; retry on 400.**
+- **#18 — Dimension/config writes lag Ace ~15–30 min; telematics doesn't.** **Read anything you just
+  created/changed** (zones, metadata, groups, rules, users) **from the Get API, not Ace.** *(P8;
+  [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)*
+- **#19 — ChatGPT: both MCP servers must be the same mode** (both official or both developer-mode), or
+  the Geotab connector can drop mid-session → empty-bronze warehouse. **Preflight Ace with a tiny call
+  before any DDL.** (Non-negotiable #13.)
 
-6. **Second-precision boundary + outright duplicate rows.** Two ways Ace hands you dupes: (a) the
-   "after HH:MM:SS.mmm" lower bound is honored only to the second, so the boundary second re-appears (we
-   saw 4 rows at/below the watermark); and (b) **Ace can return each row literally ~2×** — observed in
-   GPS backfill windows where the CSV had exact duplicate `(DeviceId, GpsDateTime)` pairs:
-   3,529,928→1,764,333, 3,449,906→1,724,851, 2,472,574→1,236,040 after dedup (and bronze 11.88M → silver
-   7.16M overall). → **Dedup on the natural key is mandatory, every load** (`DISTINCT ON` / anti-join on
-   the parsed key). Bronze keeps the dupes (append-only); silver collapses them.
+### ⚪ Informational — good to know, no data hazard
 
-7. **Inconsistent column honoring.** Honored: `DeviceId,DeviceName,…,Speed`; `vehicle_label`;
-   `distance_km`; `trip_start_utc`,`trip_end_utc`,`driving_duration_minutes`. **Not** honored:
-   `day` came back as `DAY`. → Trust the `columns` array; alias on the way in if needed.
-
-8. **Don't ask for the artifact.** Prompt "Give me a downloadable signed URL to a CSV of all GPS after
-   X" → Ace **ignored the request framing**, returned its **default** schema
-   `["DeviceId","UTC_GpsTimestamp","Latitude","Longitude"]` (timestamp column renamed, `DeviceName`/
-   `Speed`/`DeviceTimeZoneId` dropped) — which would silently break an append. Ask for **data**.
-
-9. **~33 s floor, size-independent.** Observed: 31.1 s, 32.8 s, 33.6 s, 38.6 s, ~40 s (the 157K-row
-   GPS pull). Budget 30–60 s; for a multi-table daily run, expect ~minutes. Don't run Ace calls in
-   parallel; the underlying service is rate-limited.
-
-10. **Continue-chat retains context.** `new_chat=false` + the prior `chat_id`: asked "for the number
-    one vehicle in that result, break its distance down by day" → Ace correctly filtered
-    `DeviceName = 'Demo - 22'` (the #1 from the previous turn). Use this to refine a pull without
-    re-stating context. A new `new_chat=true` starts fresh.
-
-11. **Pre-aggregated, active-filtered engine.** Ace **shows the SQL it ran** (see "Ace's SQL is a
-    feature" below) — for the distance query it was:
-    ```sql
-    FROM `VehicleKPI_Daily` t_vehicle
-    JOIN `LatestVehicleMetadata` t_meta ON t_vehicle.DeviceId = t_meta.DeviceId
-    WHERE t_vehicle.Local_Date BETWEEN '2026-06-26' AND '2026-06-29'   -- inclusive, device-local
-      AND t_meta.IsTracked = TRUE                                       -- active devices only
-    ```
-    So: distances come from a daily rollup (≠ haversine on raw GPS); date ranges are **inclusive** and
-    **device-local**; inactive/untracked devices are excluded. For exact GPS replication, ask for raw
-    position rows with explicit **UTC** and a precise lower bound (Ace then uses a positions source,
-    not the rollup).
-
-12. **It injects unrequested partition-prune predicates.** Even in plain-English mode and even when
-    handed exact SQL, Ace tends to add a `DATE(<ts>) >= DATE('…')` / `DATE(<ts>) BETWEEN …` guard it
-    wasn't asked for (BigQuery partition pruning). **Benign when it *widens/supersets* your range**
-    (seen: `DATE(GpsDateTime) >= DATE('2026-06-27')` on a `>= 2026-06-28` ask; and
-    `DATE(GpsDateTime) BETWEEN '2026-06-26' AND '2026-06-30'` around a `[06-27, 06-29)` UTC window) —
-    **only a problem if it *narrows* your UTC bounds** or adds active/speed/ignition predicates. Either
-    way "Ace ran my query verbatim" is rare → **always read the returned SQL and confirm the guard
-    doesn't clip your window.** (Also: asking for `DeviceName` makes Ace join `LatestVehicleMetadata` —
-    and it **varies the join type across runs** (seen: `LEFT JOIN` one day, inner `JOIN` the next). An
-    **inner** join silently **drops fact rows for devices missing from metadata**; it happened to
-    reconcile to all 50 devices here, but **always run the row-count + device-population check after the
-    load**, and if rows are short, re-ask with "left join metadata; include all devices even if metadata
-    is missing.")
-
-13. **It converts units unless you pin them.** Distances/speeds silently flip km↔miles
-    (`ROUND(TripDistance_Km * 0.621, 2) AS Distance_Miles`). Say "in kilometers, do not convert units"
-    and it keeps `TripDistance_Km`.
-
-14. **It injects activity filters (`Speed != 0`, `Ignition = 1`) on motion-flavored asks.** A naive
-    "GPS / trips / activity" request can silently drop stationary points. Say "include stationary points
-    (speed 0, ignition off); do not filter on speed, ignition, or motion" to get raw completeness.
-
-15. **Source-table selection varies for the same question — and an explicit SQL doesn't pin it.** This
-    is *not* numeric noise on a fixed query. The question "distinct devices with a raw GPS log on
-    2026-06-28" returned **49** (from `GpsLogs`) on **three identical plain-English runs** — stable. The
-    *same* question with `Run exactly: …FROM GpsLogs` appended returned **47**, answered from the `Trip`
-    table (a clean Trip query confirms 47 devices took a trip vs 49 that logged GPS — both correct for
-    their table). So a count that differs across runs is almost always a **different `FROM`**, not
-    randomness — **read the returned SQL**, pin the table, and don't trust an attached SQL to force the
-    source. This source-selection variability is why every fact load is append-to-bronze + dedup and
-    every repair prefers re-deriving from bronze over re-asking. *(Re-confirmed 2026-06-29; n=4 — probes
-    P4/P5/P6 with exact prompts/SQL/chat_ids in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md).)*
-
-16. **It is near-real-time for continuous streams (tens of s – ~2 min), not batch.** Measured across
-    four tables: `GpsLogs` max `21:37:15` vs now `21:37:34` → **~19 s** (a separate run: ~98 s);
-    `StatusData` max `21:34:48.455` — **identical** to the live `DeviceStatusInfo` API's freshest reading.
-    Don't treat Ace as "yesterday's data." **But event-driven tables (`Trip`, `FaultData`,
-    `ExceptionEvent`) are different:** they only get a row when the event fires, so `max(timestamp)`
-    looks old when nothing happened recently (FaultData's newest was 9 h old; trips' newest end was 6 min
-    old *but 20 trips ended in the last 15 min*). Gauge those by **counting events in a recent window**,
-    not max-vs-now. Top up the last sliver with a small `Get LogRecord` read if you need true real-time —
-    [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
-
-17. **Pasting SQL into the prompt can trip the gateway.** The only `invalid_value` HTTP 400 rejections
-    we saw (`domain: MyGeotab-MCP`) were on SQL-augmented prompts; they were transient (retry succeeded).
-    Plain English never failed. Another reason specificity-in-English beats feeding SQL.
-
-18. **Dimension/config writes lag Ace by many minutes; telematics doesn't.** A new `Zone` created via
-    the **Get API** (`Add`) was visible instantly through the **Get API** (`Get`) but **took ~15–30 min to
-    appear in Ace (`GetAceResults`)** — absent at T0+14 min, present by T0+29 min (Ace's reference/config
-    tables sync on a slow periodic cadence).
-    Telematics (`GpsLogs`, `StatusData`) lands in seconds. → **For anything you just created/changed
-    (zones, device metadata, groups, rules, users) read it from the Get API, not Ace.** See
-    [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
-
-19. **ChatGPT setup gotcha: use both MCP servers in the *same* mode.** Confirmed cause of a Geotab
-    connector dropping mid-session on ChatGPT (2026-06-29): the two servers were in **mixed modes**. In
-    ChatGPT, Geotab and MotherDuck must **both** be official connectors **or both** developer-mode —
-    mixing them made the Geotab connector go undiscoverable, so a GPS pull never ran and a warehouse was
-    left with empty bronze. **Fix: configure both the same way.** Belt-and-suspenders: **before any
-    DDL/write, preflight that Ace is actually callable** (a tiny `GetAceResults`, not just `Get`); if it
-    isn't, stop before creating tables (bootstrap is resumable). Not a Geotab/Ace behavior — a host
-    config issue. (Non-negotiable #13.)
-
-20. **The injected window's *upper bound* can silently drop the current day — a freshness/export trap.**
-    (Measured 2026-06-30 on **both** `demo_fh4` and `Demo_fh_vegas4`; this is the sharp edge of #12.)
-    The *same* prompt — "single most recent raw status data timestamp, raw not a rollup" — returned the
-    true live max on some calls but **`2026-06-29 23:59:59.xxx UTC`** (yesterday, end-of-day) on others,
-    **non-deterministically, per call**. All calls used `FROM StatusData` (same table — *not* a #15
-    source swap); the difference was the injected `BETWEEN … AND <upper>` bound:
-    - `… AND CURRENT_DATETIME()` → upper bound = *now* → live max `2026-06-30 14:39–14:40 UTC` ✓
-    - `… AND CURRENT_DATE()` → upper bound = **midnight today** → everything after 00:00 today is
-      excluded → max collapses to `2026-06-29 23:59:59.xxx` ✗ (looks like real data; it's an artifact)
-
-    Two tells: (a) a "most recent" answer landing exactly on `YYYY-MM-DD 23:59:59.xxx` is almost always a
-    `CURRENT_DATE()` upper-bound clip, not a real reading; (b) the window **size and bound type also vary
-    per call** — seen `7 DAY`/`30 DAY`, `DATE_SUB(CURRENT_DATE(),…)`+`DATE()` cast vs
-    `DATETIME_SUB(CURRENT_DATETIME(),…)`, lower-bound-only vs `BETWEEN`; **not DB-stable** (`demo_fh4`
-    gave both 7-day and 30-day across calls). Lower-bound-only guards (the GPS-freshness form,
-    `WHERE DATE(GpsDateTime) >= …`) stayed live; the **upper bound is the dangerous half**.
-    → **Consequences:** (1) Don't use Ace as a freshness/watermark oracle — it can under-report by a full
-    day; read true latest from the **Get API / `DeviceStatusInfo`** (the skill already takes the watermark
-    from the warehouse, not Ace). (2) On any **windowed export**, read the returned SQL and confirm the
-    upper bound is `CURRENT_DATETIME()`/your explicit `hi`, **not** `CURRENT_DATE()` — otherwise today's
-    rows silently miss the CSV. The bronze-append + dedup + forward-catch-up design tolerates a clipped
-    pull (next run re-pulls), but a *persistently* clipped upper bound means today never lands until
-    tomorrow. Pin it: *"upper bound = now (current timestamp), include rows through the present moment."*
+- **#1 — The MCP response is always huge** (100–190 KB) — the payload is the whole chat object
+  (reasoning + SQL + history), not the data. **Grep the spilled file for the URL; never inline.**
+- **#3 — `preview_array` holds rows inline for ≤10**; beyond that use the URL.
+- **#4 — NULLs are omitted from the JSON** (the key disappears; "missing key = null"). In CSV the column
+  is just empty (DuckDB → NULL). **Parse defensively.**
+- **#5 — Timestamps carry a literal ` UTC` suffix with variable fractional digits.** `read_csv_auto`
+  strips it automatically; if you ever hand-parse use `replace(col,' UTC','')::TIMESTAMP`, not a fixed
+  `strptime`.
+- **#9 — ~33 s floor per call, size-independent** (31–40 s). Budget 30–60 s; **don't run Ace calls in
+  parallel** (rate-limited).
+- **#10 — Continue-chat retains context** (`new_chat=false` + prior `chat_id`) — a feature: refine a pull
+  without restating context.
 
 ### Ace's SQL is a feature, not a leak — use it as an approval gate
 
