@@ -272,10 +272,43 @@ orphans, step 4 inserted **51** current splits, and step 5 went from `2138 sourc
 50 orphans / 51 missing` to **`2138 == 2138, 0 orphans, 0 missing`**.
 
 > **This is the one place the warehouse `DELETE`s silver fact rows** — justified because the *source*
-> retired those ids, and bronze still keeps every raw version (the deleted rows remain replayable). Keep
-> everything else append + anti-join. The same pattern applies to any *derived/recomputed* fact; `Trip` is
-> the one we hit. **Pure event tables (`ExceptionEvent`, `FaultData`) are append-only once fired**, so
-> A/B/C suffice for them — don't delete-reconcile those.
+> retired those ids. Keep everything else append + anti-join. The same pattern applies to any
+> *derived/recomputed* fact; `Trip` is the one we hit. **Pure event tables (`ExceptionEvent`, `FaultData`)
+> are append-only once fired**, so A/B/C suffice for them — don't delete-reconcile those. (`silver.trips`
+> must carry `TripId` for any of this to work — the
+> [`ACE_TO_CSV.md`](ACE_TO_CSV.md) trips prompt now requests it; see [`ENTITY_CATALOG.md`](ENTITY_CATALOG.md) †.)
+
+### Replaying trips from bronze — *not* a plain `DISTINCT ON (TripId)`
+
+Bronze keeps every raw version, so the deleted orphans are still on disk — but that's a **trap for the
+rebuild**. A full bronze→silver replay that dedups on `TripId` (the GPS-style projection) **resurrects the
+retired ids** and brings the drift straight back: bronze holds *both* `b10FEE52` (old) and `b11011A1`
+(new), and they have *different* `TripId`s, so a `DISTINCT ON (TripId)` keeps both. So **`Trip` does not
+replay like an immutable fact.** Rebuild it by deduping on the **stable drive key**, keeping the
+**latest-loaded** version, which collapses a retired id into its replacement:
+
+```sql
+-- Full rebuild for the MUTABLE trips fact (NOT DISTINCT ON (TripId)):
+TRUNCATE silver.trips;
+INSERT INTO silver.trips (… , DeviceId, TripId, UTC_TripStartTimestamp, UTC_TripEndTimestamp, DriverId, …)
+SELECT DISTINCT ON (DeviceId, replace(UTC_TripStartTimestamp,' UTC','')::TIMESTAMP)   -- stable drive key
+       … , DeviceId, TripId, replace(UTC_TripStartTimestamp,' UTC','')::TIMESTAMP, … , DriverId, …
+FROM bronze.trips_raw
+ORDER BY DeviceId, replace(UTC_TripStartTimestamp,' UTC','')::TIMESTAMP, _loaded_at DESC;  -- latest wins
+```
+
+> **Validated 2026-06-30 (`geotab_Demo_fh_vegas4`).** Bronze held all three batches (bootstrap 60,334 +
+> forward 1,426 + reconcile 1,647). This drive-key/latest-wins rebuild reproduced the reconciled silver
+> **exactly — 61,760 rows, 06-29 set `2138 == 2138`, 0 diff both ways, and the retired `b10FEE52` was
+> *not* resurrected** (it collapsed under `b11011A1`'s drive key). A `DISTINCT ON (TripId)` rebuild would
+> have kept both and re-introduced the 50 orphans.
+
+**Residual edge:** drive-key/latest-wins assumes a re-split preserves `trip_start_utc` (the common
+DriverChange / late-GPS case — verified above). If a recompute *changes the start* (one drive split into
+two with different starts), the retired start has no same-key replacement and latest-wins can't prune it.
+For that, the **authority is a fresh source pull**: re-run operation D (delete `TripId`s absent from the
+current source) — or keep a small `trips_retired(TripId)` tombstone set and anti-join it on rebuild.
+Operation D against live source is always the source of truth; the bronze rebuild is the fast path.
 
 ## Health check (run after any of these)
 

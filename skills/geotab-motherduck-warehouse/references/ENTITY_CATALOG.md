@@ -31,10 +31,20 @@ evidence arrives (a `DriverChange` from the
 [driver-assignment workflow](../../geotab/references/DRIVER_TRIP_ASSIGNMENT.md), or late GPS), so an
 already-loaded trip can get a **new `TripId` and a changed stop time**, retiring the old id. Plain forward
 catch-up can't see this (the changed trip starts *before* your watermark). After each forward trips load,
-run the **trip re-split reconcile** — [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D. `Trip.driver`
-(the `DriverId` column) is itself derived from `DriverChange`; it resolves to `dim_user.id` for rows where
-a driver was assigned and is the sentinel `'UnknownDriverId'` otherwise — so a trips→`dim_user` join must
-tolerate that sentinel. (Pure event facts — `ExceptionEvent`, `FaultData` — don't mutate once fired.)
+run the **trip re-split reconcile** — [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D.
+
+**Two keys, used for different jobs — and you must store *both*.** **Store `TripId`** in silver: the
+re-split reconcile (§D) `DELETE`s/anti-joins on it, so a warehouse that didn't capture `TripId` can't run
+operation D. But **`TripId` is not the dedup/identity key** (it changes on re-split); the *drive's* stable
+identity is **`(DeviceId, trip_start_utc)`**. So: **incremental forward derive dedups on `TripId`** (new
+splits land as new rows, then §D removes the retired ones); a **full bronze→silver rebuild dedups on
+`(DeviceId, trip_start_utc)` keeping the latest-loaded row** (collapses a retired id into its replacement
+— see [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D "Replaying trips from bronze").
+
+`Trip.driver` (the `DriverId` column) is itself derived from `DriverChange`; it resolves to `dim_user.id`
+for rows where a driver was assigned and is the sentinel `'UnknownDriverId'` otherwise — so a
+trips→`dim_user` join must tolerate that sentinel. (Pure event facts — `ExceptionEvent`, `FaultData` —
+don't mutate once fired.)
 
 **Heuristic:** if it has a timestamp and grows forever → **fact via Ace**. If it's a list you join
 *to* (vehicles, drivers, zones, diagnostics, rules) → **dimension via `Get`**, because `Get` is exact,

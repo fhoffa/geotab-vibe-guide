@@ -88,8 +88,12 @@ GPS (LogRecord):
   timezone. Do not aggregate.
 
 Trips:
-  List individual trips that ended after <WATERMARK> UTC. Return these exact columns: DeviceId,
-  device_name, trip_start_utc, trip_end_utc, distance_km, driving_duration_minutes. Use UTC. Raw rows.
+  List individual trips that started after <WATERMARK> UTC. Return these exact columns: DeviceId,
+  TripId, device_name, trip_start_utc, trip_end_utc, DriverId, distance_km, driving_duration_minutes.
+  Use UTC. Raw rows.
+  # TripId and DriverId are NOT optional: TripId is the key the re-split reconcile (INCREMENTAL_BACKFILL
+  # §D) deletes/anti-joins on, and DriverId carries the driver assignment (UnknownDriverId when none).
+  # Watermark on trip_start_utc, not trip_end_utc — re-splits change the end (ENTITY_CATALOG †).
 
 Engine/sensor (StatusData):
   List status data readings recorded after <WATERMARK> UTC. Return these exact columns: DeviceId,

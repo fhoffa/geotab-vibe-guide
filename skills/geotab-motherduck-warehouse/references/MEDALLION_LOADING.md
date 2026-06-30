@@ -257,6 +257,14 @@ SELECT DISTINCT ON (DeviceId, replace(GpsDateTime,' UTC','')::TIMESTAMP)
 FROM my_db.bronze_gps_raw;
 ```
 
+> **Exception — `Trip` is a *mutable* fact and does NOT replay like this.** The GPS rebuild above is a
+> pure `DISTINCT ON (natural key)` projection because GPS rows are immutable. Trips get **re-split** (a
+> `DriverChange` / late GPS gives the same drive a new `TripId`), so bronze holds *both* the retired and
+> the current id — a `DISTINCT ON (TripId)` replay would resurrect the retired ones. Rebuild trips by
+> deduping on the **stable drive key `(DeviceId, trip_start_utc)`, latest-loaded wins** — see
+> [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D "Replaying trips from bronze". (Immutable facts —
+> GPS, status, exceptions — use the plain projection here.)
+
 ### Anti-join derive — for backfill / non-monotonic batches
 
 For backfills or overlapping windows where a single timestamp watermark isn't safe, dedup silver
