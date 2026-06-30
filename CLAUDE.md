@@ -24,6 +24,7 @@ This is an educational curriculum and starter kit for teaching developers to bui
 | AI assistants needing repo orientation | `AGENT_SUMMARY.md` |
 | AI assistants choosing implementation skill | `skills/README.md` |
 | AI assistants needing API context | `VIBE_CODING_CONTEXT.md` |
+| **Editing the MotherDuck warehouse skill** | `skills/geotab-motherduck-warehouse/MAINTAINING.md` (authoring conventions — read first) |
 | Building dashboard workflows | `guides/ANTIGRAVITY_QUICKSTART.md` |
 | Understanding Add-Ins | `guides/GEOTAB_ADDINS.md` |
 | Human learners | `README.md` → choose a path |
