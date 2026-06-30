@@ -21,6 +21,7 @@ warehouse are shown so you know what "good" looks like (and what slips through).
 | **Freshness** `now() - max(event_time)` | stale pipeline (≠ Ace lag) | measures time since last load; Ace's *own* lag is only ~1–2 min (see [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md)) |
 | **Referential integrity** fact.DeviceId ∈ `dim_device.id` | facts for unknown devices | 0 orphans (gps/trips/exc) |
 | **Range sanity** trip end ≥ start, duration ≥ 0 | logic/parse errors | 0 bad |
+| **Trip re-split orphans** silver `TripId`s (recent window) absent from a fresh source pull | trips re-split after load (new id retires old) | found **50 orphans + 51 missing** on one day (`Demo_fh_vegas4`, 2026-06-30) → reconciled to 0/0; see §4 |
 | **Row-count plausibility** vs historical daily mean | silent under/over-pull | compare to prior runs in `warehouse_ingest_log` |
 
 Copy-paste battery (returns one row per check; non-zero = investigate):
@@ -109,6 +110,7 @@ also showed it re-resolving context each turn). That reality drives the strategy
 | Suspect a whole window is bad | **Re-pull that window into staging, validate, then swap** | a bad re-pull can't corrupt the live table |
 | Wrong typing/dedup logic, or accumulated dupes in silver | **Re-derive silver from bronze** (the raw is still there) | bronze is the system of record; rebuild the projection, no re-ask needed |
 | Type errors you can't fix from bronze | **Repair in SQL** (cast), don't touch Ace | it's a result problem; re-asking changes nothing |
+| **Trip re-split** — orphaned/missing trips after a `DriverChange` or late GPS (the row *changed*, not just missing) | **Trip boundary reconcile**: re-pull the window before the prior watermark → bronze; `DELETE` silver trips whose `TripId` isn't in a fresh source pull; anti-join the new ids in | append+dedup can't update a mutated fact; the old id was *retired* at the source, so it must be deleted, not merely supplemented — runbook in [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D |
 
 **Prefer "ask for the missing data and patch" over "re-ask the whole thing."** Because Ace varies
 between runs, a full re-ask risks *replacing good data with a differently-shaped answer*. A bounded

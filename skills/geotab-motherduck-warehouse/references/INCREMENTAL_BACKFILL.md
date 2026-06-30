@@ -1,18 +1,21 @@
-# Incremental loads & the three kinds of backfill
+# Incremental loads & the kinds of backfill
 
 How the warehouse grows over time without gaps or duplicates — the operational core of the skill.
-"Backfill" is overloaded; people mean three *different* operations by it. **Name which one you're doing
-before you start**, because the detection, the load, and the "done" condition differ:
+"Backfill" is overloaded; people mean three *different* append-only operations by it (A/B/C) — **plus a
+fourth that is different in kind**: reconciling a fact that **mutated** after you loaded it (D). **Name
+which one you're doing before you start**, because the detection, the load, and the "done" condition differ:
 
 | # | The ask, in plain words | Direction | Detect the scope with | Load with | Done when |
 |---|--------------------------|-----------|------------------------|-----------|-----------|
 | **A. Forward catch-up** | "get me all the data missing **forward**" (steady daily run, or catch up after downtime) | watermark → now | `now() − max(event_time)` per table | watermark derive (the daily loop) | freshness < your cadence |
 | **B. Historical recovery** | "I know we have lots of data, but there's **more past data to recover**" | oldest row → an earlier target | `min(event_time)` vs `target_start` | windowed walk backward + anti-join | `min(event_time)` reaches `target_start` |
 | **C. Cross-channel reconciliation** | "re-check our mix of **`Get` + Ace** pulls isn't **missing rows**" | interior holes & channel disagreements | gap detection **+** cross-channel counts | targeted window/device re-pull + anti-join | gap scan clean **and** channels agree |
+| **D. Re-split reconcile** | "trips I **already have changed** — a DriverChange / late GPS re-split them" | mutation *in place* (id+boundaries change) | source `TripId` set vs silver, recent window | delete retired orphans **+** anti-join the new ids | day's `TripId` sets match |
 
 A and B move the *frontiers* (newest / oldest). C fills holes *between* them and reconciles the
-**populations** the different channels return. You usually run them in that order: catch up forward,
-extend the past you need, then reconcile what's actually inside.
+**populations** the different channels return. A/B/C all assume facts are **append-only** (a row, once
+loaded, never changes). **D handles the one fact that breaks that assumption — `Trip` — which Geotab
+*recomputes*.** You usually run A→B→C in order; run D right after each forward **trips** load (§D).
 
 ## The state table (shared by all three)
 
@@ -217,7 +220,107 @@ already there. Suspect a whole window is corrupt? Stage-and-swap it atomically �
 
 ---
 
-## Health check (run after any of the three)
+## D. Trip re-splits — reconciling a fact that *mutates* after you loaded it
+
+A/B/C all assume facts are **append-only**: a row's natural key and values never change, so "keeping up"
+is purely about *adding* missing rows. **`Trip` breaks that assumption.** A Geotab trip is *derived*, not
+recorded: the engine recomputes trip boundaries when new evidence arrives — a `DriverChange` (the
+[driver-assignment workflow](../../geotab/references/DRIVER_TRIP_ASSIGNMENT.md)) or late / out-of-order
+GPS. A recompute can **change a trip's stop time and give it a new `TripId`, retiring the old one.** So a
+trip you already replicated can later cease to exist under its old id and reappear under a new one — an
+*update*, which append+dedup never sees.
+
+> **Observed live (2026-06-30, `Demo_fh_vegas4`).** A 06-29 23:18 trip was `b10FEE52` (23:18→23:28) when
+> the bootstrap pulled it that morning; hours later the source had `b11011A1` (23:18→**23:42**) for the
+> same drive, and `b10FEE52` no longer existed (`Get Trip {id:'b10FEE52'}` → empty). Reconciling the full
+> 06-29 day found **50 orphaned silver trips** (retired ids no longer in source) **+ 51 missing** current
+> trips — **all in the last ~2 h before the bootstrap's watermark.** (The five 06-30 `DriverChange`
+> assignments themselves replicated fine via plain forward catch-up — they landed on current-day trips
+> *after* the watermark. It's the re-split of *already-loaded* trips that forward catch-up can't reach.)
+
+**Why a forward catch-up misses it.** The re-split trip's *start* is unchanged (`23:18:24`) and sits
+*before* your watermark, so the forward derive (`WHERE start > watermark`) never pulls the new id. Silver
+keeps a **stale orphan** (old id, wrong stop) and is **missing the current split** (new id, start behind
+the watermark). Dedup on `TripId` can't help — the id changed — and dedup on `(DeviceId, trip_start_utc)`
+would keep the *stale* row over the fresh one.
+
+**Why it's boundary-clustered, not everywhere.** Only trips that were *recent / still settling* when you
+pulled get recomputed; older history is stable. The drift lives in a **few hours around your previous
+watermark** — which is what makes the fix cheap and bounded.
+
+**Pick the lookback `L` first — it does double duty.** Watermarking trips on `trip_start_utc` (stable
+under re-split — the *end* is what changes) has a second hazard: a trip isn't materialized until it
+**ends**, so a long/overnight trip that *started* before the watermark but *completed* after a later,
+shorter trip already advanced the start-watermark would be skipped by a plain `start > watermark` pull —
+**permanently**. The fix for *both* the re-split and the late-completion case is the same: re-pull from
+`watermark − L`, where **`L` ≥ the longest trip you expect to complete between runs** (a few hours for
+urban fleets; **≥ 24–36 h for long-haul / overnight**). The anti-join dedups the overlap, so a generous
+`L` is free. Size `L` to your fleet, not to the 2 h of drift we happened to see on a demo fleet.
+
+**The fix — a trip boundary reconcile, run right after the forward trips load:**
+
+```
+prev_wm = the watermark you just caught up from           # e.g. 2026-06-29 23:28:52
+L       = ≥ your longest expected trip                     # urban: a few h · long-haul/overnight: ≥24–36 h
+lo      = prev_wm − L                                      # covers re-splits AND late-completing long trips
+1. Ace:  re-pull trips that started after <lo> UTC, FULL columns         # open-ended "started after X" is fine
+         → land append-only in bronze (_batch_id='reconcile:<lo>')       #   (a bounded "…and before Y" prompt
+                                                                          #    flaked with invalid_value 400s — quirk #17)
+2. Truth set: a fresh source pull of the affected day(s), keyed by TripId (Ace, or Get Trip per device)
+3. DELETE FROM silver.trips                                              # drop the retired orphans
+     WHERE trip_start_utc >= <lo> AND trip_start_utc < <day_end>
+       AND TripId NOT IN (truth set)
+4. INSERT … SELECT DISTINCT ON (TripId) …                               # add the current splits + late completions
+     FROM bronze <reconcile batch>
+     WHERE NOT EXISTS (… silver.TripId = bronze.TripId)
+5. Verify: for the day, source TripId set  ==  silver TripId set   →  0 orphans, 0 missing
+6. log (backfill_kind='reconcile', watermark_from=lo, …)
+```
+
+Worked example (validated 2026-06-30 on `geotab_Demo_fh_vegas4`): step 3 deleted exactly **50** retired
+orphans, step 4 inserted **51** current splits, and step 5 went from `2138 source / 2137 silver /
+50 orphans / 51 missing` to **`2138 == 2138, 0 orphans, 0 missing`**.
+
+> **This is the one place the warehouse `DELETE`s silver fact rows** — justified because the *source*
+> retired those ids. Keep everything else append + anti-join. The same pattern applies to any
+> *derived/recomputed* fact; `Trip` is the one we hit. **Pure event tables (`ExceptionEvent`, `FaultData`)
+> are append-only once fired**, so A/B/C suffice for them — don't delete-reconcile those. (`silver.trips`
+> must carry `TripId` for any of this to work — the
+> [`ACE_TO_CSV.md`](ACE_TO_CSV.md) trips prompt now requests it; see [`ENTITY_CATALOG.md`](ENTITY_CATALOG.md) †.)
+
+### Replaying trips from bronze — *not* a plain `DISTINCT ON (TripId)`
+
+Bronze keeps every raw version, so the deleted orphans are still on disk — but that's a **trap for the
+rebuild**. A full bronze→silver replay that dedups on `TripId` (the GPS-style projection) **resurrects the
+retired ids** and brings the drift straight back: bronze holds *both* `b10FEE52` (old) and `b11011A1`
+(new), and they have *different* `TripId`s, so a `DISTINCT ON (TripId)` keeps both. So **`Trip` does not
+replay like an immutable fact.** Rebuild it by deduping on the **stable drive key**, keeping the
+**latest-loaded** version, which collapses a retired id into its replacement:
+
+```sql
+-- Full rebuild for the MUTABLE trips fact (NOT DISTINCT ON (TripId)):
+TRUNCATE silver.trips;
+INSERT INTO silver.trips (… , DeviceId, TripId, UTC_TripStartTimestamp, UTC_TripEndTimestamp, DriverId, …)
+SELECT DISTINCT ON (DeviceId, replace(UTC_TripStartTimestamp,' UTC','')::TIMESTAMP)   -- stable drive key
+       … , DeviceId, TripId, replace(UTC_TripStartTimestamp,' UTC','')::TIMESTAMP, … , DriverId, …
+FROM bronze.trips_raw
+ORDER BY DeviceId, replace(UTC_TripStartTimestamp,' UTC','')::TIMESTAMP, _loaded_at DESC;  -- latest wins
+```
+
+> **Validated 2026-06-30 (`geotab_Demo_fh_vegas4`).** Bronze held all three batches (bootstrap 60,334 +
+> forward 1,426 + reconcile 1,647). This drive-key/latest-wins rebuild reproduced the reconciled silver
+> **exactly — 61,760 rows, 06-29 set `2138 == 2138`, 0 diff both ways, and the retired `b10FEE52` was
+> *not* resurrected** (it collapsed under `b11011A1`'s drive key). A `DISTINCT ON (TripId)` rebuild would
+> have kept both and re-introduced the 50 orphans.
+
+**Residual edge:** drive-key/latest-wins assumes a re-split preserves `trip_start_utc` (the common
+DriverChange / late-GPS case — verified above). If a recompute *changes the start* (one drive split into
+two with different starts), the retired start has no same-key replacement and latest-wins can't prune it.
+For that, the **authority is a fresh source pull**: re-run operation D (delete `TripId`s absent from the
+current source) — or keep a small `trips_retired(TripId)` tombstone set and anti-join it on rebuild.
+Operation D against live source is always the source of truth; the bronze rebuild is the fast path.
+
+## Health check (run after any of these)
 
 ```sql
 SELECT 'planet_gps_pings' AS tbl, count(*) n, count(DISTINCT DeviceId) devices,

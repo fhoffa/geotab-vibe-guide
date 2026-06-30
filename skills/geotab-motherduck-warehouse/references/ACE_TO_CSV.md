@@ -88,8 +88,15 @@ GPS (LogRecord):
   timezone. Do not aggregate.
 
 Trips:
-  List individual trips that ended after <WATERMARK> UTC. Return these exact columns: DeviceId,
-  device_name, trip_start_utc, trip_end_utc, distance_km, driving_duration_minutes. Use UTC. Raw rows.
+  List individual trips that started after <WATERMARK> UTC. Return these exact columns: DeviceId,
+  TripId, device_name, trip_start_utc, trip_end_utc, DriverId, distance_km, driving_duration_minutes.
+  Use UTC. Raw rows.
+  # TripId and DriverId are NOT optional: TripId is the key the re-split reconcile (INCREMENTAL_BACKFILL
+  # §D) deletes/anti-joins on, and DriverId carries the driver assignment (UnknownDriverId when none).
+  # Watermark on trip_start_utc (re-splits change the end), but set <WATERMARK> = max(start) − L with
+  # L ≥ your longest expected trip: a long trip can complete (materialize) after a later trip already
+  # advanced the start-watermark, so a bare "started after max(start)" would miss it. Anti-join dedups
+  # the overlap. Same L as the §D reconcile window (ENTITY_CATALOG †, INCREMENTAL_BACKFILL §D).
 
 Engine/sensor (StatusData):
   List status data readings recorded after <WATERMARK> UTC. Return these exact columns: DeviceId,
@@ -213,9 +220,10 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   "after `HH:MM:SS.mmm`" lower bound is honored only to the **second**, so the boundary second re-appears
   (a handful of rows — P11: 679,581→679,577 = 4). (b) *Full ~2× duplication — intermittent:* **some**
   exports return every row ~2× (GPS backfill windows: 3.53M→1.76M, etc.) but **not** others (the 23M
-  StatusData export had 605 dupes; the GPS bootstrap had 4) — you **can't predict which**. So **dedup on
-  the parsed natural key every load** (`DISTINCT ON` / anti-join on `replace(ts,' UTC','')::TIMESTAMP`);
-  bronze keeps dupes (append-only), silver collapses them. *(P11; ev #6.)*
+  StatusData export had 605 dupes; the GPS bootstrap had 4) — you **can't predict which**. The usual cause
+  is the **`LatestVehicleMetadata` fan-out in #12** (a `DeviceName` join on `DeviceId` alone × a device
+  with multiple metadata rows). So **dedup on the parsed natural key every load** (`DISTINCT ON` / anti-join
+  on `replace(ts,' UTC','')::TIMESTAMP`); bronze keeps dupes (append-only), silver collapses them. *(P11; ev #6.)*
 - **#11 — *By default, on metric/KPI-flavored asks*, the engine is pre-aggregated and active-filtered, so
   counts/distances ≠ raw.** Triggered by aggregate questions ("distance", "counts"): it favors daily
   rollups (`VehicleKPI_Daily`), inclusive **device-local** dates, and `IsTracked = TRUE`. **Avoid it by
@@ -223,9 +231,12 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
 - **#12 — It injects predicates (*common*) and flips a metadata join (*intermittent*).** A partition
   `DATE() >=/BETWEEN` guard is added on most date-scoped pulls — benign if it *widens*, dangerous only
   when it *narrows* your UTC window (occasional; #20 is the specific upper-bound case). Separately, a
-  `DeviceName` ask joins `LatestVehicleMetadata` as **LEFT one run, inner the next** (inner silently drops
-  devices missing metadata) — only on metadata asks, varies per run. **Read the returned SQL every load;
-  run the row-count + device-population check.**
+  `DeviceName`/`DeviceTimeZoneId` ask joins `LatestVehicleMetadata`, which misbehaves two ways: **(i)
+  LEFT one run, inner the next** (inner silently drops devices missing metadata); **(ii) row fan-out** —
+  joined `ON DeviceId` *alone* (no active-window predicate), a device with >1 metadata row **multiplies**
+  every fact row (an active-window `BETWEEN` join doesn't). Silver natural-key dedup absorbs it, so in the
+  shape check **expect `csv_rows ≥ distinct keys`** (the multiplier can differ per device — don't require an
+  exact ratio); **rely on the dedup + device-population check**. **Read the returned SQL every load.** *(ev #12.)*
 - **#13 — *On distance/speed asks*, it converts km↔miles unless pinned** (silent). Only metric-bearing
   asks; pin with *"in kilometers, do not convert units."*
 - **#14 — *On motion-flavored asks*, it injects activity filters (`Speed != 0`, `Ignition = 1`)**,
@@ -258,8 +269,10 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   seconds behind; `Trip`/`FaultData`/`ExceptionEvent` only get a row when an event fires, so `max(ts)`
   looks old when nothing happened. **Gauge event tables by counting events in a recent window**, not
   max-vs-now. *(P1/P2/P3; [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)*
-- **#17 — Pasting SQL into the prompt can trip the gateway** (`invalid_value` 400, transient). **Prefer
-  specific English; retry on 400.**
+- **#17 — `invalid_value` 400s happen — transient; re-wording often clears them.** Correlated with
+  attached SQL, but **plain English is not immune** — a *bounded* "…after X **and before Y**" prompt can
+  400 where the **open-ended** "…after X" form succeeds. **Retry on 400; if a bounded prompt keeps failing,
+  re-issue it open-ended** and clip the tail in the derive. *(ev #17.)*
 - **#18 — Dimension/config writes lag Ace ~15–30 min; telematics doesn't.** **Read anything you just
   created/changed** (zones, metadata, groups, rules, users) **from the Get API, not Ace.** *(P8;
   [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)*
@@ -323,6 +336,7 @@ size, so your loader has one code path.
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | No URL / no `chat_id` | Ace not enabled, or transient | Retry once; verify Ace is on (Admin → Beta Features) |
+| `invalid_value` HTTP 400 (`domain: MyGeotab-MCP`) | transient gateway reject; correlated with attached SQL, **also seen on plain bounded prompts** (quirk #17) | Retry; if a **bounded** "after X and before Y" prompt keeps failing, **re-issue open-ended** ("started after X") and clip the tail in the derive |
 | Degraded/wrong columns | You mentioned url/csv/download, or were vague | Re-ask for **data** with explicit columns |
 | `read_csv_auto` 403/expired | URL older than ~24h | Re-run the Ace call to mint a fresh URL |
 | Counts disagree with API | Pre-agg + `IsTracked` + local dates (quirk #11) | Expected; for exact replication pull raw rows in UTC |
