@@ -101,7 +101,7 @@ blind. See [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 ## Critical quirks (all observed in testing)
 
 The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md), which holds
-the **full 19-quirk catalog with evidence** — that catalog's numbering is canonical (bare `quirk #N`
+the **full 20-quirk catalog with evidence** — that catalog's numbering is canonical (bare `quirk #N`
 references point to it). The decision-critical ones below (rows 1–11 share its numbers; 12+ are a
 curated subset):
 
@@ -122,6 +122,7 @@ curated subset):
 | 13 | **Source-table selection varies for the same question** (not numeric noise) — "distinct GPS devices on a day" gave **49** from `GpsLogs` on 3 identical runs, but **47** from `Trip` when an explicit `…FROM GpsLogs` SQL was attached (Ace ignored it) | A differing count across runs is usually a different `FROM`, not randomness — **read the returned SQL**, pin the table, don't trust an attached SQL to force the source. This is *why* loads are append-to-bronze + dedup and repairs re-derive from bronze. |
 | 14 | **Near-real-time for continuous streams** (GPS ~19–98 s; StatusData = live API's exact freshest), not batch. **Event tables** (`Trip`/`FaultData`/`ExceptionEvent`) only update when an event fires | Ace is fine for fresh loads. Gauge event tables by **counting events in a recent window**, not `max(ts)` vs now (a 9 h-old fault ≠ lag). ([`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md)) |
 | 15 | **Ace returns the SQL it ran, by design** — a transparency/approval surface, not a leak | **Lint it before loading** — it catches every Class-A semantic problem while it's free to fix ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). |
+| 16 | **Injected window's *upper bound* can drop the current day** (catalog #20) — same "most recent raw status" prompt returned the live max on some calls but `2026-06-29 23:59:59.xxx` on others, because the guard sometimes upper-bounds on `CURRENT_DATE()` (midnight today) instead of `CURRENT_DATETIME()`. Per-call, non-DB-stable; seen on both DBs 2026-06-30 | **Don't use Ace for freshness/watermark** (it can under-report by a day — use `Get`/`DeviceStatusInfo`). On windowed exports, confirm the SQL's upper bound is `CURRENT_DATETIME()`/your `hi`, not `CURRENT_DATE()`. A `…23:59:59.xxx` "latest" is the fingerprint. |
 
 ## Three source channels — pick per entity *and* per freshness need
 
@@ -159,7 +160,7 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 
 | Reference | When to read |
 |-----------|--------------|
-| [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 19 quirks in depth, timing/volume benchmarks, continue-chat |
+| [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 20 quirks in depth, timing/volume benchmarks, continue-chat |
 | [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | The bronze-vs-`Get` decision rule, bronze/silver/gold DDL, append-only bronze + deriving silver from it, the brownfield bootstrap, shape checks, normalized-key dedup, full replay |
 | [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The three backfills (forward catch-up, historical recovery, cross-channel reconciliation), the `warehouse_ingest_log` state table, watermarks, gap detection, the active-only population check, and the settle loop |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |

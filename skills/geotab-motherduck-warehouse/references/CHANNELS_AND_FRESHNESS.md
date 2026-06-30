@@ -28,6 +28,16 @@ load, not because Ace is slow. Measure the two separately.)
 > **events in a recent window** (e.g. "20 trips ended in the last 15 min" → the pipeline is current);
 > reserve max-vs-now for the continuous streams.
 
+> **⚠ Don't use Ace as a freshness/watermark oracle — even for continuous streams.** Ace injects a time
+> window whose **upper bound is non-deterministic per call**, and when it lands on `CURRENT_DATE()`
+> (midnight today) instead of `CURRENT_DATETIME()` (now), it silently excludes the entire current day —
+> so `max(StatusDateTime)` comes back as **`<yesterday> 23:59:59.xxx`**, an artifact that looks like real
+> data. Measured 2026-06-30 on **both** `demo_fh4` and `Demo_fh_vegas4`: the identical "most recent raw
+> status" prompt returned the true live max (~`14:39–14:40`) on 4/6 calls and `2026-06-29 23:59:59.xxx`
+> on 2/6 — same `FROM StatusData`, only the upper bound differed (ACE_TO_CSV quirk #20). **A `…23:59:59.xxx`
+> "latest" is the fingerprint of the clip.** For a true latest reading use **`Get DeviceStatusInfo`** (or a
+> bounded `Get LogRecord`); the warehouse takes its watermark from `max(silver)`, never from Ace.
+
 | Channel | Tool | Freshness (observed) | Shape | Best for |
 |---------|------|----------------------|-------|----------|
 | **Live snapshot** | `Get DeviceStatusInfo` | **~sub-second** (current position/speed/ignition per device) | JSON, one row per device | live map, "where is everything right now" |

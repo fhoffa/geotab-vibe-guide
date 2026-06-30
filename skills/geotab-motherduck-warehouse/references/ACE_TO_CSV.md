@@ -320,6 +320,30 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     isn't, stop before creating tables (bootstrap is resumable). Not a Geotab/Ace behavior — a host
     config issue. (Non-negotiable #13.)
 
+20. **The injected window's *upper bound* can silently drop the current day — a freshness/export trap.**
+    (Measured 2026-06-30 on **both** `demo_fh4` and `Demo_fh_vegas4`; this is the sharp edge of #12.)
+    The *same* prompt — "single most recent raw status data timestamp, raw not a rollup" — returned the
+    true live max on some calls but **`2026-06-29 23:59:59.xxx UTC`** (yesterday, end-of-day) on others,
+    **non-deterministically, per call**. All calls used `FROM StatusData` (same table — *not* a #15
+    source swap); the difference was the injected `BETWEEN … AND <upper>` bound:
+    - `… AND CURRENT_DATETIME()` → upper bound = *now* → live max `2026-06-30 14:39–14:40 UTC` ✓
+    - `… AND CURRENT_DATE()` → upper bound = **midnight today** → everything after 00:00 today is
+      excluded → max collapses to `2026-06-29 23:59:59.xxx` ✗ (looks like real data; it's an artifact)
+
+    Two tells: (a) a "most recent" answer landing exactly on `YYYY-MM-DD 23:59:59.xxx` is almost always a
+    `CURRENT_DATE()` upper-bound clip, not a real reading; (b) the window **size and bound type also vary
+    per call** — seen `7 DAY`/`30 DAY`, `DATE_SUB(CURRENT_DATE(),…)`+`DATE()` cast vs
+    `DATETIME_SUB(CURRENT_DATETIME(),…)`, lower-bound-only vs `BETWEEN`; **not DB-stable** (`demo_fh4`
+    gave both 7-day and 30-day across calls). Lower-bound-only guards (the GPS-freshness form,
+    `WHERE DATE(GpsDateTime) >= …`) stayed live; the **upper bound is the dangerous half**.
+    → **Consequences:** (1) Don't use Ace as a freshness/watermark oracle — it can under-report by a full
+    day; read true latest from the **Get API / `DeviceStatusInfo`** (the skill already takes the watermark
+    from the warehouse, not Ace). (2) On any **windowed export**, read the returned SQL and confirm the
+    upper bound is `CURRENT_DATETIME()`/your explicit `hi`, **not** `CURRENT_DATE()` — otherwise today's
+    rows silently miss the CSV. The bronze-append + dedup + forward-catch-up design tolerates a clipped
+    pull (next run re-pulls), but a *persistently* clipped upper bound means today never lands until
+    tomorrow. Pin it: *"upper bound = now (current timestamp), include rows through the present moment."*
+
 ### Ace's SQL is a feature, not a leak — use it as an approval gate
 
 Ace **deliberately returns the SQL it generated and ran**, so you can examine, approve, and learn from
