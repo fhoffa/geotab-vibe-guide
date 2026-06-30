@@ -43,6 +43,37 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 
 ---
 
+## 1b. Quirk → evidence map
+
+The Ace quirk catalog in [`ACE_TO_CSV.md`](ACE_TO_CSV.md) is **lean by design** — it lists *what to be
+aware of and why*. The measurements behind each quirk live here (point-in-time; re-measure and append to
+§2). Quirk numbers are **stable IDs** — the catalog groups them by severity but never renumbers them.
+
+| # | Sev | Quirk (one-line) | Key measured evidence | Source |
+|---|-----|------------------|-----------------------|--------|
+| 20 | 🔴 | Injected window **upper bound** can drop the current day | Same "most recent raw status" prompt: live max `2026-06-30 14:39–14:40` on 4/6 calls vs `2026-06-29 23:59:59.xxx` on 2/6; clip = `… AND CURRENT_DATE()` vs live `… AND CURRENT_DATETIME()`; window 7d/30d varied per call, not DB-stable; both DBs | P15; ledger 2026-06-30 (10 chat_ids) |
+| 12 | 🔴 | Injects unrequested predicates (partition guards; metadata join type) | Widened guards seen: `DATE(GpsDateTime) >= DATE('2026-06-27')` on a `>= 06-28` ask; `BETWEEN '06-26' AND '06-30'` around `[06-27,06-29)`. Metadata join `LEFT` one day, inner `JOIN` the next (inner drops devices w/o metadata) | ledger 2026-06-29 (forward incremental); run archive |
+| 15 | 🔴 | Source-table selection varies for the same question | "distinct GPS devices on 2026-06-28" = **49** from `GpsLogs` (3 identical runs, stable); **47** from `Trip` when `…FROM GpsLogs` SQL attached (Ace ignored it). Re-confirmed cross-DB 2026-06-30: 49 demo / 50 vegas, both `GpsLogs` | P4/P5/P6; P15; run archive 2026-06-29 |
+| 6 | 🔴 | Duplicate rows (~2×) + second-precision boundary | GPS backfill CSVs had exact dup `(DeviceId,GpsDateTime)`: 3,529,928→1,764,333; 3,449,906→1,724,851; 2,472,574→1,236,040; bronze 11.88M→silver 7.16M. Boundary: 4 rows re-appeared at/below the watermark second. StatusData: 23,153,282→23,152,677 (605 dup `StatusId`) | P11; ledger 2026-06-30 (op-mirror, dedup-twin) |
+| 14 | 🔴 | Injects activity filters (`Speed != 0`, `Ignition = 1`) | Motion-flavored asks silently drop stationary points unless forbidden | run archive 2026-06-29 (SQL inspection) |
+| 13 | 🔴 | Converts units unless pinned | Seen `ROUND(TripDistance_Km * 0.621, 2) AS Distance_Miles` on a km ask | run archive 2026-06-29 |
+| 11 | 🔴 | Pre-aggregated, active-filtered engine (counts ≠ raw) | `FROM VehicleKPI_Daily JOIN LatestVehicleMetadata … WHERE Local_Date BETWEEN … AND IsTracked = TRUE` — daily rollup, device-local inclusive dates, active-only | run archive 2026-06-29 |
+| 2 | 🔴 | Signed URL always returned **and shards** for large exports | 23.15M-row StatusData → **10** shard URLs `…-000000000000.csv` … `…009.csv`; load every shard or counts are short | ledger 2026-06-29 (op-mirror status_data) |
+| 8 | 🟡 | Asking for the artifact degrades the schema | "give me a downloadable URL…" → default `["DeviceId","UTC_GpsTimestamp","Latitude","Longitude"]` (renamed ts, dropped DeviceName/Speed/TZ) | run archive 2026-06-29 |
+| 16 | 🟡 | Near-real-time streams vs event-table `max(ts)` | `GpsLogs` ~19 s (sep. run ~98 s); `StatusData` = live `DeviceStatusInfo`; `FaultData` newest 9 h old; trips newest end 6 min but 20 ended in last 15 min | P1/P2/P3 |
+| 18 | 🟡 | Config/dimension writes lag Ace ~15–30 min | New `Zone` via `Add`: instant in `Get`, absent in Ace at T+14 min, present by T+29 min; telematics lands in seconds | P8 |
+| 17 | 🟡 | SQL pasted into the prompt can trip the gateway | Only `invalid_value` HTTP 400s (`domain: MyGeotab-MCP`) were on SQL-augmented prompts; transient (retry OK); plain English never failed | run archive 2026-06-29 (5 paired tests) |
+| 19 | 🟡 | ChatGPT: both MCP servers must be the same mode | Mixed official/dev-mode dropped the Geotab connector mid-session → empty-bronze warehouse | ledger 2026-06-29 (ChatGPT isolation run) |
+| 7 | 🟡 | Inconsistent column-name honoring | Honored `vehicle_label`, `distance_km`, `trip_start_utc`; **not** `day` → came back `DAY` (also `DATA`, `SOURCE` uppercased on bulk) | run archive 2026-06-29; ledger (Diagnostic bulk CSV) |
+| 1 | ⚪ | Always-huge response (payload = chat object, not data) | 166 KB (157K-row GPS), 192 KB (trips), 110 KB (top-3 aggregation) | run archive 2026-06-29 |
+| 3 | ⚪ | `preview_array` = inline rows for ≤10 | top-3 distance: `[{"distance_km":2624.65,"vehicle_label":"Demo - 22"}, …]` | run archive 2026-06-29 |
+| 4 | ⚪ | NULLs omitted from JSON (key disappears) | per-day breakdown returned `{"DAY":"2026-06-27"}` with no `distance_km` key | run archive 2026-06-29 |
+| 5 | ⚪ | ` UTC` suffix + variable fractional digits | `2026-06-26 01:42:40.423 UTC`, `…23.55 UTC`, `…25.685 UTC`; `read_csv_auto` infers TIMESTAMP | P11; MEDALLION verified-note |
+| 9 | ⚪ | ~33 s floor, size-independent | 31.1 / 32.8 / 33.6 / 38.6 / ~40 s (the 157K-row pull) | P9; run archive 2026-06-29 |
+| 10 | ⚪ | Continue-chat retains context | `new_chat=false` + prior `chat_id` correctly filtered `DeviceName='Demo - 22'` (the #1 from prior turn) | run archive 2026-06-29 |
+
+---
+
 ## 2. Results ledger (append-only — newest at the bottom)
 
 | Date | DB | Probe | Result | chat_id / artifact | Notes |
@@ -92,7 +123,7 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 
 | 2026-06-30 | demo_fh4 + Demo_fh_vegas4 | P15 (GPS freshness) | Both: `SELECT MAX(UTC_GpsTimestamp), CURRENT_TIMESTAMP() FROM GpsLogs WHERE DATE(GpsDateTime) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)` (lower-bound only). demo max `14:34:32.898` vs now `14:34:52.269` → **~19 s**; vegas max `14:35:10.14` vs `14:35:28.542` → **~18 s** | chats `6IHIVVDHsDJhvuQShGLB` / `oHYbjyxLWsE199zv7WYO` | identical SQL across DBs; live (lower-bound-only guard doesn't clip) |
 | 2026-06-30 | demo_fh4 + Demo_fh_vegas4 | P15 (distinct devices 06-28) | Both: `SELECT COUNT(DISTINCT DeviceId) FROM GpsLogs WHERE DATE(UTC_GpsTimestamp) = '2026-06-28'` → **demo 49 / vegas 50** | chats `89zah3zXjSzZoub0iAYD` / `HorGn9NEiJmO2wKm6bdn` | same `FROM GpsLogs` both DBs (demo 49 reconfirms the P4 GpsLogs figure); count gap = fleet size, not a quirk |
-| 2026-06-30 | demo_fh4 (×3) + Demo_fh_vegas4 (×3) | P15 (status freshness — **upper-bound clip, quirk #20**) | 6 runs of the *same* "most recent raw status" prompt, all `FROM StatusData`. **Live (4/6)** when `… AND CURRENT_DATETIME()`: demo `14:36:53.315`, `14:39:23.504`; vegas `14:37:15.52`, `14:40:45.54`. **Clipped (2/6)** when `… AND CURRENT_DATE()` (midnight today): demo `2026-06-29 23:59:59.846`, vegas `2026-06-29 23:59:59.94`. Window size/bound-type also varied per call (7-day & 30-day; `DATE_SUB(CURRENT_DATE())`+`DATE()` vs `DATETIME_SUB(CURRENT_DATETIME())`) — **not DB-stable** (demo gave both) | chats demo `tUoHLa6TaTaUG5mTQcQX` / `4ko9uoBbAM3VFQL5nTR7` / `Flyh8IcCA4bNzzD3qeso`; vegas `ujCORad8QgHLx4JlpI6q` / `GrWD6cyc6rhf41J9Knv7` / `ugnG1w9moir9nXJaBYkD` | **NEW quirk #20**: injected upper bound on `CURRENT_DATE()` silently drops the current day → `…23:59:59.xxx` artifact. Don't use Ace for freshness/watermark; verify export upper bound. ACE_TO_CSV #20, SKILL quirk #16, CHANNELS caveat |
+| 2026-06-30 | demo_fh4 (×3) + Demo_fh_vegas4 (×3) | P15 (status freshness — **upper-bound clip, quirk #20**) | 6 runs of the *same* "most recent raw status" prompt, all `FROM StatusData`. **Live (4/6)** when `… AND CURRENT_DATETIME()`: demo `14:36:53.315`, `14:39:23.504`; vegas `14:37:15.52`, `14:40:45.54`. **Clipped (2/6)** when `… AND CURRENT_DATE()` (midnight today): demo `2026-06-29 23:59:59.846`, vegas `2026-06-29 23:59:59.94`. Window size/bound-type also varied per call (7-day & 30-day; `DATE_SUB(CURRENT_DATE())`+`DATE()` vs `DATETIME_SUB(CURRENT_DATETIME())`) — **not DB-stable** (demo gave both) | chats demo `tUoHLa6TaTaUG5mTQcQX` / `4ko9uoBbAM3VFQL5nTR7` / `Flyh8IcCA4bNzzD3qeso`; vegas `ujCORad8QgHLx4JlpI6q` / `GrWD6cyc6rhf41J9Knv7` / `ugnG1w9moir9nXJaBYkD` | **NEW quirk #20**: injected upper bound on `CURRENT_DATE()` silently drops the current day → `…23:59:59.xxx` artifact. Don't use Ace for freshness/watermark; verify export upper bound. ACE_TO_CSV #20, SKILL §Ace quirks #20, CHANNELS caveat |
 
 _(append the next run's rows here)_
 
