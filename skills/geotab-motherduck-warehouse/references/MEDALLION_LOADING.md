@@ -181,9 +181,18 @@ retry. This is the one path for facts; there is no "load silver straight from th
 > silver one shard (or one day) per statement** — same projection, bounded per call. The anti-join /
 > `DISTINCT ON` still dedups across shards.
 >
-> **Housekeeping:** derive into **one canonical deduped silver table** — don't leave a `status_data` +
-> `status_data_dedup` twin (observed on Vegas; it ~doubles the heaviest table). Drop staging/probe scratch
-> (`*_stage_tmp`, `*_probe*`) once the load lands; they're not part of the mirror.
+> **Housekeeping:** make the **silver fact itself deduped** — don't ship an un-deduped `status_data`
+> plus a separate `status_data_dedup` (observed on Vegas: `status_data` had 605 duplicate `StatusId`s
+> and a `status_data_dedup` *view* sat on top to fix it). Fold the dedup into the base table (the
+> `QUALIFY row_number() OVER (PARTITION BY <natural key> …) = 1` projection) and drop the helper. Drop
+> staging/probe scratch (`*_stage_tmp`, `*_probe*`) once the load lands.
+>
+> **Before `DROP`/`RENAME`, check table vs view** (`information_schema.tables.table_type` /
+> `duckdb_views()`). A `_dedup`/`_clean` sibling is often a **view** over the base table — dropping the
+> base breaks it, and `ALTER TABLE … RENAME` errors on a view. (And MotherDuck doesn't implement
+> `ALTER TABLE … SET SCHEMA`.) If you do drop the wrong silver table, it's fine: **re-derive it from
+> bronze** — that's the replay guarantee. (Verified live: dropped `silver.status_data`, rebuilt it
+> deduped from `bronze.status_data_raw` with zero data loss.)
 
 ```sql
 INSERT INTO my_db.planet_gps_pings
