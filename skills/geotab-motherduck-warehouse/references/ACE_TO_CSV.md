@@ -219,11 +219,13 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
 
 6. **Second-precision boundary + outright duplicate rows.** Two ways Ace hands you dupes: (a) the
    "after HH:MM:SS.mmm" lower bound is honored only to the second, so the boundary second re-appears (we
-   saw 4 rows at/below the watermark); and (b) **Ace can return each row literally ~2×** — observed in
+   saw 4 rows at/below the watermark); and (b) **Ace can return each row literally ~2× (or N×)** — observed in
    GPS backfill windows where the CSV had exact duplicate `(DeviceId, GpsDateTime)` pairs:
    3,529,928→1,764,333, 3,449,906→1,724,851, 2,472,574→1,236,040 after dedup (and bronze 11.88M → silver
-   7.16M overall). → **Dedup on the natural key is mandatory, every load** (`DISTINCT ON` / anti-join on
-   the parsed key). Bronze keeps the dupes (append-only); silver collapses them.
+   7.16M overall). **The usual culprit is the `LatestVehicleMetadata` fan-out in quirk #12** (a
+   `DeviceName` join on `DeviceId` alone, with a device that has multiple metadata rows), reconfirmed as a
+   clean 2× on GPS and exceptions 2026-06-30. → **Dedup on the natural key is mandatory, every load**
+   (`DISTINCT ON` / anti-join on the parsed key). Bronze keeps the dupes (append-only); silver collapses them.
 
 7. **Inconsistent column honoring.** Honored: `DeviceId,DeviceName,…,Speed`; `vehicle_label`;
    `distance_km`; `trip_start_utc`,`trip_end_utc`,`driving_duration_minutes`. **Not** honored:
@@ -263,12 +265,21 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     `DATE(GpsDateTime) BETWEEN '2026-06-26' AND '2026-06-30'` around a `[06-27, 06-29)` UTC window) —
     **only a problem if it *narrows* your UTC bounds** or adds active/speed/ignition predicates. Either
     way "Ace ran my query verbatim" is rare → **always read the returned SQL and confirm the guard
-    doesn't clip your window.** (Also: asking for `DeviceName` makes Ace join `LatestVehicleMetadata` —
-    and it **varies the join type across runs** (seen: `LEFT JOIN` one day, inner `JOIN` the next). An
-    **inner** join silently **drops fact rows for devices missing from metadata**; it happened to
-    reconcile to all 50 devices here, but **always run the row-count + device-population check after the
-    load**, and if rows are short, re-ask with "left join metadata; include all devices even if metadata
-    is missing.")
+    doesn't clip your window.** (Also: asking for `DeviceName`/`DeviceTimeZoneId` makes Ace join
+    `LatestVehicleMetadata` — a join that misbehaves two ways. **(i) Join type varies across runs** (seen:
+    `LEFT JOIN` one day, inner `JOIN` the next); an **inner** join silently **drops fact rows for devices
+    missing from metadata**. **(ii) Row fan-out** — when the join key is `ON DeviceId` *only* (no
+    active-window predicate) and a device has **more than one** metadata row, every fact row is
+    **multiplied**. Measured 2026-06-30 on `Demo_fh_vegas4`: the GPS and exception pulls (joined on
+    `DeviceId` alone) came back **exactly 2×** — GPS `350,760` raw → `175,378` distinct `(DeviceId,
+    GpsDateTime)`; exceptions `2,356` raw → `1,178` distinct `EventId` — because each device had two
+    metadata rows. The **StatusData** pull, whose join carried `… AND t_status.StatusDateTime BETWEEN
+    t_meta.Device_ActiveFrom AND t_meta.Device_ActiveTo`, did **not** fan out (`550,909` raw = `550,909`
+    distinct). This fan-out is harmless to silver — natural-key dedup (`DISTINCT ON`, quirk #6b) collapses
+    it — but it inflates the CSV, so **in the shape check expect `csv_rows` to be an integer multiple of
+    `count(DISTINCT <natural key>)`, and dedup on load regardless.** Always run the row-count +
+    device-population check after the load; if rows are *short*, re-ask with "left join metadata; include
+    all devices even if metadata is missing.")
 
 13. **It converts units unless you pin them.** Distances/speeds silently flip km↔miles
     (`ROUND(TripDistance_Km * 0.621, 2) AS Distance_Miles`). Say "in kilometers, do not convert units"
@@ -299,9 +310,16 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     not max-vs-now. Top up the last sliver with a small `Get LogRecord` read if you need true real-time —
     [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
 
-17. **Pasting SQL into the prompt can trip the gateway.** The only `invalid_value` HTTP 400 rejections
-    we saw (`domain: MyGeotab-MCP`) were on SQL-augmented prompts; they were transient (retry succeeded).
-    Plain English never failed. Another reason specificity-in-English beats feeding SQL.
+17. **`invalid_value` HTTP 400s happen — transient, and a re-worded prompt often clears them.** Attaching
+    SQL correlated with them on 2026-06-29 (every 400 that day was a SQL-augmented call; plain English
+    didn't fail *that day*). **But plain English is not immune** — on 2026-06-30 (`Demo_fh_vegas4`) a plain
+    explicit-English **bounded** trips prompt ("…started at or after X **and before Y**", 17 columns)
+    returned `invalid_value` (`domain: MyGeotab-MCP`) **4× in a row**, while the **open-ended** form of the
+    same request ("…started after X", same 17 columns) **succeeded immediately**. So: retry on a 400, and
+    if a bounded/range prompt keeps failing, **re-issue it open-ended** ("started after `<lo>`") and clip
+    the extra tail in the derive (the watermark/anti-join already does). Attaching SQL still adds risk
+    without fixing non-determinism — specificity-in-English remains the better lever — but don't read "plain
+    English never fails" into it.
 
 18. **Dimension/config writes lag Ace by many minutes; telematics doesn't.** A new `Zone` created via
     the **Get API** (`Add`) was visible instantly through the **Get API** (`Get`) but **took ~15–30 min to
@@ -385,6 +403,7 @@ size, so your loader has one code path.
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | No URL / no `chat_id` | Ace not enabled, or transient | Retry once; verify Ace is on (Admin → Beta Features) |
+| `invalid_value` HTTP 400 (`domain: MyGeotab-MCP`) | transient gateway reject; correlated with attached SQL, **also seen on plain bounded prompts** (quirk #17) | Retry; if a **bounded** "after X and before Y" prompt keeps failing, **re-issue open-ended** ("started after X") and clip the tail in the derive |
 | Degraded/wrong columns | You mentioned url/csv/download, or were vague | Re-ask for **data** with explicit columns |
 | `read_csv_auto` 403/expired | URL older than ~24h | Re-run the Ace call to mint a fresh URL |
 | Counts disagree with API | Pre-agg + `IsTracked` + local dates (quirk #11) | Expected; for exact replication pull raw rows in UTC |

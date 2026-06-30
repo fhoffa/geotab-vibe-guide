@@ -9,7 +9,7 @@ reference data). Pick the channel per entity.
 | Entity | Role | Channel | Natural key | Cadence |
 |--------|------|---------|-------------|---------|
 | `LogRecord` (GPS) | fact | **Ace** (bulk CSV) | `(DeviceId, GpsDateTime)` | daily |
-| `Trip` | fact | **Ace** | `(DeviceId, trip_start_utc)` | daily |
+| `Trip` † | **mutable** fact | **Ace** | `(DeviceId, trip_start_utc)` | daily **+ re-split reconcile** |
 | `StatusData` (engine/sensor) | fact | **Ace** | `(DeviceId, DiagnosticId, status_datetime_utc)` | daily |
 | `ExceptionEvent` (safety) | fact | **Ace** | `(DeviceId, RuleId, active_from_utc)` | daily |
 | `FaultData` (DTCs) | fact | **Ace** or `Get` | `(DeviceId, DiagnosticId, dateTime)` | daily |
@@ -26,6 +26,16 @@ reference data). Pick the channel per entity.
 
 \* There is no `Driver` typeName — drivers are `User`s. (Same gotcha as the rest of the Geotab API.)
 
+† **`Trip` is a *derived, mutable* fact — its `TripId` is not stable.** Geotab recomputes trips when new
+evidence arrives (a `DriverChange` from the
+[driver-assignment workflow](../../geotab/references/DRIVER_TRIP_ASSIGNMENT.md), or late GPS), so an
+already-loaded trip can get a **new `TripId` and a changed stop time**, retiring the old id. Plain forward
+catch-up can't see this (the changed trip starts *before* your watermark). After each forward trips load,
+run the **trip re-split reconcile** — [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D. `Trip.driver`
+(the `DriverId` column) is itself derived from `DriverChange`; it resolves to `dim_user.id` for rows where
+a driver was assigned and is the sentinel `'UnknownDriverId'` otherwise — so a trips→`dim_user` join must
+tolerate that sentinel. (Pure event facts — `ExceptionEvent`, `FaultData` — don't mutate once fired.)
+
 **Heuristic:** if it has a timestamp and grows forever → **fact via Ace**. If it's a list you join
 *to* (vehicles, drivers, zones, diagnostics, rules) → **dimension via `Get`**, because `Get` is exact,
 real-time, and permission-scoped, while Ace filters to `IsTracked=TRUE` and pre-aggregates.
@@ -41,7 +51,7 @@ see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the 
 | Table | Watermark column |
 |-------|------------------|
 | `planet_gps_pings` | `GpsDateTime` |
-| `trips` | `trip_end_utc` (or `trip_start_utc`) |
+| `trips` | **`trip_start_utc`** (prefer it — re-splits change `trip_end_utc`; see † and §D reconcile) |
 | `status_data` | `status_datetime_utc` |
 | `exception_events` | `active_from_utc` |
 

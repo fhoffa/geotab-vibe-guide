@@ -233,8 +233,13 @@ Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 - **Daily update (steady state):** for each fact table run the 4-call loop above (watermark → Ace →
   append bronze → derive silver), then append a row to `warehouse_ingest_log`. Re-running is safe (the
   `> watermark` derive is idempotent). The user can ask you to "run the warehouse update" on a schedule.
+  **Trips need one extra step:** `Trip` is a *derived, mutable* fact — Geotab re-splits trips (a
+  `DriverChange`, or late GPS, changes a trip's `TripId` and stop time even for trips that start *before*
+  your watermark), so after the forward trips load run the **trip re-split reconcile** (operation D below).
+  Forward catch-up alone silently leaves stale orphan trips. Pure event facts
+  (`ExceptionEvent`/`FaultData`) don't mutate once fired.
 
-**"Backfill" means three different operations — name which one before you start** (full runbooks in
+**"Backfill" means four different operations — name which one before you start** (full runbooks in
 [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md)):
 
 | Ask | Operation | Direction |
@@ -242,6 +247,7 @@ Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 | "get me everything missing **forward**" | forward catch-up (= the daily loop / after-downtime) | watermark → now |
 | "recover **more past** data" | historical recovery (windowed walk backward + anti-join) | oldest → earlier target |
 | "re-check **`Get` + Ace** aren't missing rows" | cross-channel reconciliation (gap detection + population/count cross-checks + settle loop) | interior holes & channel disagreements |
+| "trips I **already loaded changed** (DriverChange / late GPS re-split them)" | trip re-split reconcile (delete retired orphans + anti-join new ids) | mutation *in place* — only `Trip` |
 
 ## Non-negotiable rules
 
@@ -271,3 +277,4 @@ Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 12. **One MotherDuck database per Geotab source + a schema per medallion layer** (`geotab_<source>.bronze.*` / `.silver.*` / `.gold.*`). Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so two sources in the *same* tables **collide** in silver/dims (append+dedup, not overwrite — worse). Database-level isolation is also where MotherDuck scopes Sharing, retention, access, and cost. **On a new source, `list_databases` FIRST and create a fresh `geotab_<source>`; never write into a database that already holds another source.** **Provenance: keep per-row `_batch_id`; record the source identity once at the DB level** in a `main.warehouse_meta` table (+ optional `COMMENT ON TABLE`, `warehouse_ingest_log`) — **no per-row `_source_db`** (constant in this layout). **Don't use `COMMENT ON DATABASE` — it's *not implemented* in MotherDuck** (verified 2026-06-30: "Not implemented Error: Adding comments to databases is not implemented"); `COMMENT ON TABLE`/`COLUMN` do work. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate, [`SKILL.md`](SKILL.md) §First run.)
 13. **Preflight the connectors before any DDL/write.** Confirm MotherDuck, Geotab `Get`, **and** Geotab `GetAceResults` (Ace) are callable *now* — verify Ace with a tiny call, not just `Get`. **On ChatGPT, use both servers in the same mode** (both official connectors or both developer-mode) — a mixed setup dropped the Geotab connector mid-session (2026-06-29), leaving an empty-bronze warehouse. If Ace is unavailable, fix the setup and **stop before creating tables** — bulk facts need it. Bootstrap is resumable (`IF NOT EXISTS`), so a clean stop is safe to continue later.
 14. **Mirror real source data only — never fabricate, synthesize, or infer rows/tables.** Every table must trace to a Geotab pull (Ace or `Get`). Don't invent dimensions or "demo" layers (observed: an agent created `dim_driver` / `trip_driver_assignment` / `operator_*` "synthetic assignments" that didn't exist in the source — they had to be removed). If the source has no drivers, the mirror has no drivers. Need a derived/illustrative table? Put it in **`gold`**, clearly named, built **only** from real silver — never seeded with made-up values. When asked for something the source doesn't contain, say so; don't fill the gap with synthetic data.
+15. **`Trip` is a *mutable* fact — forward catch-up alone silently rots it.** Geotab re-splits trips (a `DriverChange`, or late/out-of-order GPS), changing an already-loaded trip's `TripId` and stop time. Because the re-split trip *starts before your watermark*, the forward derive never sees it, leaving a **stale orphan** (retired id) plus a **missing** current split. After every forward trips load, run the **trip re-split reconcile** over the last few hours before the prior watermark: delete silver trips whose `TripId` is no longer in a fresh source pull, then anti-join the new ids in (the one place silver fact rows are `DELETE`d — source-justified, bronze still holds every version). Verify the day's source vs silver `TripId` sets match. This is **not** needed for append-only event facts (`ExceptionEvent`/`FaultData`). Observed 2026-06-30 on `Demo_fh_vegas4`: 50 orphans + 51 missing on a single day, all clustered at the watermark boundary. ([`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) §D.)
