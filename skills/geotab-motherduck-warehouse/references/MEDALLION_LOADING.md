@@ -178,6 +178,14 @@ SELECT *, 'ace:<chat-uuid>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
 FROM read_csv_auto('<signed url>', all_varchar=true);
 ```
 
+> The append stamps **4 provenance values** (`_batch_id`, `_loaded_at`, `_source_channel`, `_source_uri`)
+> to match the 4 provenance columns in the bronze DDL above. **Brownfield note:** an *earlier* version of
+> this guide also added a per-row `_source_db` column; that's been removed (one database per source already
+> records identity — see §isolate). If you have a pre-existing bronze table from that version, the `SELECT
+> *, …4 values` here will hit a column-count mismatch — drop the stale column once and the append matches:
+> `ALTER TABLE <bronze table> DROP COLUMN IF EXISTS _source_db;` (apply to every bronze/silver/gold table
+> that has it). Treat `_source_db` as if it never existed going forward.
+
 ## Deriving silver from bronze (the workhorse)
 
 Silver is **always** a deterministic projection of bronze — type-cast + strip ` UTC` + dedup on the
@@ -187,10 +195,14 @@ retry. This is the one path for facts; there is no "load silver straight from th
 > **Large facts: derive per shard / per day, not one-shot.** A single `INSERT … DISTINCT ON …` over a
 > very large bronze can exceed the host's tool timeout — observed on `status_data` (ChatGPT/MCP,
 > 2026-06-29): a one-shot deduped derive over **23.15M** rows timed out at 55 s, while **per-shard**
-> inserts (filter the derive with `WHERE _batch_id = '<shard>'`, one statement per shard) succeeded.
-> So for high-volume facts (StatusData especially), **load each Ace CSV shard to bronze, then derive
-> silver one shard (or one day) per statement** — same projection, bounded per call. The anti-join /
-> `DISTINCT ON` still dedups across shards.
+> inserts (one statement per shard) succeeded. **Bound each derive by `_source_uri`** (the shard's
+> `gs://…` object path — genuinely per-shard) **or by an event-time day** (`WHERE
+> replace(GpsDateTime,' UTC','')::TIMESTAMP >= '<day>' AND < '<day+1>'`). **Do *not* filter by
+> `_batch_id`**: every shard of one Ace export shares the *same* `_batch_id` (the chat id), so a
+> `WHERE _batch_id = '<shard>'` matches all shards or none. So for high-volume facts (StatusData
+> especially), **load each Ace CSV shard to bronze, then derive silver one shard (or one day) per
+> statement** — same projection, bounded per call. The anti-join / `DISTINCT ON` still dedups across
+> shards.
 >
 > **Housekeeping:** make the **silver fact itself deduped** — don't ship an un-deduped `status_data`
 > plus a separate `status_data_dedup` (observed on Vegas: `status_data` had 605 duplicate `StatusId`s

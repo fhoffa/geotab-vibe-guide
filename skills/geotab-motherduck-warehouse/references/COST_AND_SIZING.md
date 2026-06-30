@@ -194,8 +194,10 @@ at ~30% of full-raw). Shrink the bronze window to ~7 days and you're essentially
 
 - **Prune stable raw — the biggest lever** (see §With good bronze cleanup above). Keep bronze for a
   rolling 7–30 day window, drop older raw once its silver is verified: ~65–70% off, growing with
-  retention. Prune by `_batch_id`/date (`DELETE FROM bronze.* WHERE _loaded_at < now() - INTERVAL 30 DAY`).
-  See also [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md) §Storage note. Don't prune recent raw.
+  retention. Prune **per table** (`bronze.*` is not a valid delete target — there's no wildcard `DELETE`):
+  run one `DELETE FROM bronze.<table> WHERE _loaded_at < now() - INTERVAL 30 DAY` per bronze table (or
+  generate them from `information_schema.tables WHERE table_schema='bronze'`). See also
+  [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md) §Storage note. Don't prune recent raw.
 - **Don't pay to protect silver/gold — they re-derive from bronze.** Keep retention/backup effort on
   **bronze** (the irreplaceable system of record) and simply drop+rebuild silver/gold when needed rather
   than retaining their time-travel history. (Note: DuckDB/MotherDuck has **no `TRANSIENT` table** — that's
