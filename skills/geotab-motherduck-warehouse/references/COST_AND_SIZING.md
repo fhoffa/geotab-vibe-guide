@@ -55,7 +55,7 @@ breakdown is the point:
 
 | Fact | silver rows | ≈ rows / veh / day | share of the warehouse |
 |------|-------------|--------------------|------------------------|
-| **`status_data`** (engine/sensor) | **23,153,282** | **~16,000** | **~90%** |
+| **`status_data`** (engine/sensor) | **23,152,677** | **~16,000** | **~90%** |
 | GPS | 2,432,798 | ~1,700 | ~9% |
 | trips | 60,334 | ~42 | <1% |
 | exception_events | 19,295 | ~14 | <1% |
@@ -196,9 +196,11 @@ at ~30% of full-raw). Shrink the bronze window to ~7 days and you're essentially
   rolling 7–30 day window, drop older raw once its silver is verified: ~65–70% off, growing with
   retention. Prune by `_batch_id`/date (`DELETE FROM bronze.* WHERE _loaded_at < now() - INTERVAL 30 DAY`).
   See also [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md) §Storage note. Don't prune recent raw.
-- **Mark silver/gold `TRANSIENT`.** They're rebuildable from bronze, so they don't need the 7-day
-  point-in-time `historical_bytes` retention Business keeps by default (configurable 0–90 days). Keep
-  **bronze standard** (it's irreplaceable). This trims retained-byte overhead on the churny layers.
+- **Don't pay to protect silver/gold — they re-derive from bronze.** Keep retention/backup effort on
+  **bronze** (the irreplaceable system of record) and simply drop+rebuild silver/gold when needed rather
+  than retaining their time-travel history. (Note: DuckDB/MotherDuck has **no `TRANSIENT` table** — that's
+  Snowflake; `CREATE TRANSIENT TABLE` is a parser error, verified 2026-06-30. `TEMPORARY` is session-only,
+  so it's not for persistent layers either.)
 - **Right-size history.** Cap retention to what the use case needs; storage is linear in
   vehicle-*years*, so 1 yr vs 5 yr is a 5× swing.
 - **Don't historize live snapshots.** `DeviceStatusInfo` is a snapshot, not an event stream — persisting

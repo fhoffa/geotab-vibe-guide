@@ -18,8 +18,9 @@ update the date), comparing Ace's `max(event_time)` to the true current time (Ac
 | `FaultData` | event (rare) | `12:07–12:18` | ~`21:34` | **not lag** — no fault has occurred since noon |
 
 **The takeaway, refined: for *continuous* streams (GPS, StatusData) Ace is near-real-time — tens of
-seconds to ~2 minutes behind.** It is *not* batch/"yesterday's data." (The skill's earlier "1.3 h
-freshness" was **load staleness** — the warehouse hadn't been refreshed in 1.3 h — not Ace's lag.)
+seconds to ~2 minutes behind.** It is *not* batch/"yesterday's data." (Don't confuse Ace's lag with
+**load staleness**: a warehouse last refreshed 1.3 h ago is 1.3 h stale because *you* haven't re-run the
+load, not because Ace is slow. Measure the two separately.)
 
 > **Don't measure freshness of event-driven tables with `max(timestamp)` vs now.** Trips, faults, and
 > exceptions only get a row *when the event happens*, so a "stale" max just means nothing happened

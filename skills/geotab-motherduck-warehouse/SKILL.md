@@ -76,7 +76,7 @@ SELECT max(GpsDateTime) FROM my_db.planet_gps_pings;          -- 2026-06-26 01:4
 ```sql
 -- 3. Land raw in bronze, append-only, lossless (no dedup, no watermark — keep everything)
 INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'ace:<chat-uuid>', now(), 'demo_fh4', 'ace_csv', 'gs://…/<uuid>….csv'
+SELECT *, 'ace:<chat-uuid>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
 FROM read_csv_auto('https://storage.googleapis.com/planet-user-results-prod-eu/<uuid>-000000000000.csv?X-Goog-...',
                    all_varchar=true);
    → 157,419 rows appended. bronze_gps_raw: 522,162 (bootstrap) → 679,581.
@@ -101,7 +101,9 @@ blind. See [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 ## Critical quirks (all observed in testing)
 
 The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md), which holds
-the **full 19-quirk catalog with evidence**. The decision-critical ones:
+the **full 19-quirk catalog with evidence** — that catalog's numbering is canonical (bare `quirk #N`
+references point to it). The decision-critical ones below (rows 1–11 share its numbers; 12+ are a
+curated subset):
 
 | # | Quirk | Engineering consequence |
 |---|-------|------------------------|
@@ -157,7 +159,7 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 
 | Reference | When to read |
 |-----------|--------------|
-| [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 11 quirks in depth, timing/volume benchmarks, continue-chat |
+| [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 19 quirks in depth, timing/volume benchmarks, continue-chat |
 | [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | The bronze-vs-`Get` decision rule, bronze/silver/gold DDL, append-only bronze + deriving silver from it, the brownfield bootstrap, shape checks, normalized-key dedup, full replay |
 | [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The three backfills (forward catch-up, historical recovery, cross-channel reconciliation), the `warehouse_ingest_log` state table, watermarks, gap detection, the active-only population check, and the settle loop |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |
@@ -216,8 +218,8 @@ databases, so sharing tables silently collides (Non-negotiable #12). Do these st
 > from string pieces in SQL got it through. And a one-shot derive over 20M+ rows hit the tool timeout —
 > derive **per shard/day** (see [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §large facts).
 
-Two sources must never share a database+schema. Rationale + the schema-per-source alternative:
-[`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
+Two sources must never share a database (db-per-source + schema-per-layer is the only supported layout).
+Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 
 ## Bootstrap vs daily run vs the three backfills
 

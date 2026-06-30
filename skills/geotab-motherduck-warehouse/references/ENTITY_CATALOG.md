@@ -49,7 +49,8 @@ see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the 
 
 > **Pick the channel by *size*, not just fact-vs-dimension.** The `Get` → JSON → hand-built `INSERT`
 > path is great for small/medium dimensions but **doesn't scale to large ones** — observed on
-> `Demo_fh_vegas4` (2026-06-29): `User`=1, `Zone`=0, `Rule`=13, but **`Diagnostic`=65,757**. Serializing
+> `Demo_fh_vegas4` (2026-06-29): `User`=1, `Zone`=0, `Rule`=13, but **`Diagnostic`=65,757** (`GetCountOf`;
+> the Ace bulk CSV returned 65,772 — see the Get-vs-Ace gap below). Serializing
 > 65 K rows of JSON into SQL is impractical (and impossible to hand-build in clients without a scratchpad,
 > e.g. ChatGPT). For a **large reference table, use the Ace bulk-CSV path** (land it via `read_csv_auto`
 > like a fact, then treat the typed result as your `dim_*`), **or load only the subset your facts
@@ -115,7 +116,8 @@ on the 50-device `demo_fh4` fleet:
 
 **`id` is the only safe natural key.** On `demo_fh4`, the 50 devices share just **10 distinct VINs**
 (the demo reuses them) — so never key a device dimension on `vehicleIdentificationNumber`. Refresh
-slowly-changing dims with `CREATE OR REPLACE` or delete-then-insert keyed on `id`.
+slowly-changing dims with `CREATE OR REPLACE` or delete-then-insert keyed on `id` (**dims only — they're
+reproducible from `Get`; never `CREATE OR REPLACE` bronze or silver during a load**).
 
 ### Entities cover different device populations
 

@@ -64,7 +64,7 @@ Silver dedups on the natural key (`(DeviceId, GpsDateTime)`) and dimensions key 
 in the same tables would **collide** — DB-A's `b3` and DB-B's `b3` dedup into one silver row,
 `dim_device.id='b2'` from one clobbers the other — corrupting both, silently. A separate database also
 puts isolation at the level where MotherDuck scopes **Sharing** (zero-copy Shares are per-database),
-**retention/backup** (`historical_bytes`, point-in-time restore, `TRANSIENT`), **access**, and **cost** —
+**retention/backup** (`historical_bytes`, point-in-time restore), **access**, and **cost** —
 so you can share or drop one source without touching another. Layers as schemas is the conventional
 medallion shape (grant analysts `silver`/`gold`, restrict `bronze`).
 
