@@ -248,11 +248,21 @@ would keep the *stale* row over the fresh one.
 pulled get recomputed; older history is stable. The drift lives in a **few hours around your previous
 watermark** — which is what makes the fix cheap and bounded.
 
+**Pick the lookback `L` first — it does double duty.** Watermarking trips on `trip_start_utc` (stable
+under re-split — the *end* is what changes) has a second hazard: a trip isn't materialized until it
+**ends**, so a long/overnight trip that *started* before the watermark but *completed* after a later,
+shorter trip already advanced the start-watermark would be skipped by a plain `start > watermark` pull —
+**permanently**. The fix for *both* the re-split and the late-completion case is the same: re-pull from
+`watermark − L`, where **`L` ≥ the longest trip you expect to complete between runs** (a few hours for
+urban fleets; **≥ 24–36 h for long-haul / overnight**). The anti-join dedups the overlap, so a generous
+`L` is free. Size `L` to your fleet, not to the 2 h of drift we happened to see on a demo fleet.
+
 **The fix — a trip boundary reconcile, run right after the forward trips load:**
 
 ```
 prev_wm = the watermark you just caught up from           # e.g. 2026-06-29 23:28:52
-lo      = prev_wm − a few hours                            # 2–3 h covers it; widen for long-haul fleets
+L       = ≥ your longest expected trip                     # urban: a few h · long-haul/overnight: ≥24–36 h
+lo      = prev_wm − L                                      # covers re-splits AND late-completing long trips
 1. Ace:  re-pull trips that started after <lo> UTC, FULL columns         # open-ended "started after X" is fine
          → land append-only in bronze (_batch_id='reconcile:<lo>')       #   (a bounded "…and before Y" prompt
                                                                           #    flaked with invalid_value 400s — quirk #17)
@@ -260,7 +270,7 @@ lo      = prev_wm − a few hours                            # 2–3 h covers it
 3. DELETE FROM silver.trips                                              # drop the retired orphans
      WHERE trip_start_utc >= <lo> AND trip_start_utc < <day_end>
        AND TripId NOT IN (truth set)
-4. INSERT … SELECT DISTINCT ON (TripId) …                               # add the current splits, full detail
+4. INSERT … SELECT DISTINCT ON (TripId) …                               # add the current splits + late completions
      FROM bronze <reconcile batch>
      WHERE NOT EXISTS (… silver.TripId = bronze.TripId)
 5. Verify: for the day, source TripId set  ==  silver TripId set   →  0 orphans, 0 missing

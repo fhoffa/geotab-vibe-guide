@@ -61,7 +61,7 @@ see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the 
 | Table | Watermark column |
 |-------|------------------|
 | `planet_gps_pings` | `GpsDateTime` |
-| `trips` | **`trip_start_utc`** (prefer it — re-splits change `trip_end_utc`; see † and §D reconcile) |
+| `trips` | **`trip_start_utc`**, but pull with a lookback `L` ≥ longest trip (re-splits change `trip_end_utc`; a long trip can also *complete* after a later trip advanced the watermark — see † and §D) |
 | `status_data` | `status_datetime_utc` |
 | `exception_events` | `active_from_utc` |
 

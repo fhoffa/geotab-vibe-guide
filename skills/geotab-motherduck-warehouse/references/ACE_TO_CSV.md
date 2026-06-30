@@ -93,7 +93,10 @@ Trips:
   Use UTC. Raw rows.
   # TripId and DriverId are NOT optional: TripId is the key the re-split reconcile (INCREMENTAL_BACKFILL
   # §D) deletes/anti-joins on, and DriverId carries the driver assignment (UnknownDriverId when none).
-  # Watermark on trip_start_utc, not trip_end_utc — re-splits change the end (ENTITY_CATALOG †).
+  # Watermark on trip_start_utc (re-splits change the end), but set <WATERMARK> = max(start) − L with
+  # L ≥ your longest expected trip: a long trip can complete (materialize) after a later trip already
+  # advanced the start-watermark, so a bare "started after max(start)" would miss it. Anti-join dedups
+  # the overlap. Same L as the §D reconcile window (ENTITY_CATALOG †, INCREMENTAL_BACKFILL §D).
 
 Engine/sensor (StatusData):
   List status data readings recorded after <WATERMARK> UTC. Return these exact columns: DeviceId,
@@ -233,8 +236,9 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   joined `ON DeviceId` *alone* (no active-window predicate), a device with >1 metadata row **multiplies**
   every fact row (measured 2026-06-30: GPS & exceptions came back **exactly 2×**; the StatusData pull,
   whose join carried `… AND StatusDateTime BETWEEN Device_ActiveFrom AND Device_ActiveTo`, did not). Silver
-  natural-key dedup absorbs the fan-out, but **expect `csv_rows` = an integer multiple of distinct keys in
-  the shape check**. **Read the returned SQL every load; run the row-count + device-population check.** *(ev #12.)*
+  natural-key dedup absorbs the fan-out, so in the shape check **expect `csv_rows ≥ distinct keys`** (the
+  multiplier can differ per device — don't require an exact integer ratio); **rely on the dedup +
+  device-population check**, not the raw count. **Read the returned SQL every load.** *(ev #12.)*
 - **#13 — *On distance/speed asks*, it converts km↔miles unless pinned** (silent). Only metric-bearing
   asks; pin with *"in kilometers, do not convert units."*
 - **#14 — *On motion-flavored asks*, it injects activity filters (`Speed != 0`, `Ignition = 1`)**,
