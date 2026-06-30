@@ -111,7 +111,7 @@ Numbers are **stable IDs** (grouped by severity, never renumbered) so bare `quir
 - **#12** — Predicate injection *common* (partition guards — harmful only when they *narrow*); the `LatestVehicleMetadata` join flips LEFT↔inner *intermittently* (only on `DeviceName` asks) → **read the SQL; run the device-population check**.
 - **#13** — Unit conversion km↔miles, *only on distance/speed asks* → pin *"in kilometers, do not convert units"*.
 - **#14** — Activity filters (`Speed != 0`/`Ignition = 1`) *only on motion-flavored asks* → **forbid them in the prompt**.
-- **#15** — Source table can shift with phrasing/attached SQL, but **identical English repeats were stable** (`GpsLogs` 49×3; `Trip`=47 came *with* SQL attached) → **read the `FROM`**; loads are append-to-bronze + dedup, repairs re-derive from bronze (don't re-ask).
+- **#15** — Source table can change for the "same" question — **treat as non-deterministic** (LLM-generated SQL; we saw per-call variation in #20). Identical English *happened to* stay on `GpsLogs` (49×3) in a small sample and only switched to `Trip`=47 with SQL attached, but **don't bank on it** → **read the `FROM` every load**; loads are append-to-bronze + dedup, repairs re-derive from bronze.
 - **#20** — *Intermittent* (~1/3 of calls, unpredictable, not DB-stable): injected **upper bound** clips the current day (`CURRENT_DATE()` → `…23:59:59.xxx` artifact) → **don't use Ace for freshness/watermark** (use `Get`/`DeviceStatusInfo`); on exports verify the upper bound is *now*/your `hi`.
 
 **🟡 Operational — derails or misleads the run (usually visible):**

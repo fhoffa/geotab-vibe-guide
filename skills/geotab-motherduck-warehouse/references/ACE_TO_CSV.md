@@ -198,6 +198,11 @@ stable IDs** (grouped by severity, never renumbered) so `quirk #N` cross-referen
 [`EVIDENCE_LOG.md` §1b (Quirk → evidence map)](EVIDENCE_LOG.md) keyed by the same number — go there for
 proof; don't carry it while managing the warehouse. All point-in-time (2026-06-29/30); re-verify.
 
+> **Assume non-determinism.** Ace generates its SQL with an LLM, so *any* behavior here can vary run to
+> run (we directly observed it — see #20). The "frequency" notes below are **observed tendencies from a
+> small sample, not guarantees**. The safe engineering stance is the same for every quirk: **read the
+> returned SQL on every load, land raw to bronze, dedup in silver** — so a surprise costs nothing.
+
 ### 🔴 Critical — silently produces wrong/incomplete data (handle these or the mirror is quietly wrong)
 
 - **#2 — A signed CSV URL is *always* returned; it *shards* only for large exports** (size-dependent).
@@ -226,11 +231,12 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
 - **#14 — *On motion-flavored asks*, it injects activity filters (`Speed != 0`, `Ignition = 1`)**,
   dropping stationary points. Triggered by motion/activity phrasing; forbid with *"include stationary
   points; do not filter on speed/ignition/motion."*
-- **#15 — Source table can shift with phrasing or an attached SQL — *but identical English repeats were
-  stable*.** "distinct GPS devices on a day" gave **49** from `GpsLogs` on 3 identical English runs (and
-  `GpsLogs` again cross-DB); it became **47** from `Trip` only when SQL was attached / the entity was
-  ambiguous. So: **occasional, triggered by ambiguous phrasing or attached SQL — not per-call jitter.** A
-  differing count is usually a different `FROM`: **read the SQL, pin the table.** This is *why* loads are
+- **#15 — Source table can change for the "same" question — treat it as non-deterministic.** It's
+  LLM-generated SQL, so the `FROM` isn't guaranteed across runs. In a *small* sample identical
+  plain-English "distinct GPS devices on a day" *happened to* stay on `GpsLogs` (49×3, and `GpsLogs` again
+  cross-DB), and it switched to `Trip` (47) when SQL was attached — but we saw per-call non-determinism
+  elsewhere (#20), so **don't bank on "identical English ⇒ same table."** A differing count is usually a
+  different `FROM`: **read the returned SQL every load, verify/pin the table.** This is *why* loads are
   append-to-bronze + dedup and repairs re-derive from bronze rather than re-ask. *(P4/P5/P6, P15.)*
 - **#20 — *Intermittently* (~1/3 of calls in testing, unpredictable, not DB-stable) the injected window's
   *upper bound* drops the current day.** When it lands on `CURRENT_DATE()` (midnight today) instead of
