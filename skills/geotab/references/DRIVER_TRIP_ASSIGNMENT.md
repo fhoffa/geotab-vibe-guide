@@ -1,19 +1,10 @@
----
-name: geotab-driver-trip-assignment
-description: Create drivers and assign them to trips in a Geotab (MyGeotab) database, including demo databases. Use when seeding a demo/fleet with drivers, attributing trips to drivers, or when "Trip.driver" shows UnknownDriver. Covers the DriverChange model (TripDriver vs Driver), the MCP-vs-REST split, and safe cleanup.
-license: Apache-2.0
-metadata:
-  author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
-  version: "1.0"
----
-
-# Geotab Driver & Trip Assignment
+# Driver & Trip Assignment
 
 How to create drivers and make trips show the right driver — the part that
 trips up almost everyone, because the obvious approach ("set the trip's driver")
 does not exist.
 
-## When to Use This Skill
+## When to use this
 
 - Seeding a demo database with drivers and attributing trips to them
 - A trip's `driver` comes back as `UnknownDriverId` and you want to fix it
@@ -21,11 +12,15 @@ does not exist.
 - You need to assign a driver to a vehicle **going forward**
 - Cleaning up demo drivers afterward
 
+See also: [API_QUICKSTART.md](API_QUICKSTART.md) for auth/fetch basics and
+[TRIP_ANALYSIS.md](TRIP_ANALYSIS.md) for reading trip data.
+
 ## The mental model (read this first)
 
 Three facts decide everything:
 
-1. **A driver is a `User`** with `isDriver: true`. Users are creatable.
+1. **A driver is a `User`** with `isDriver: true`. Users are creatable. (Never
+   use `typeName: "Driver"` — there is no such type.)
 2. **A `Trip` is read-only and system-generated.** You cannot create, edit, or
    delete a trip, and there is **no way to set `Trip.driver` directly**.
 3. **`Trip.driver` is *derived* from `DriverChange` events.** A `DriverChange`
@@ -53,7 +48,7 @@ User (isDriver=true)  ──referenced by──►  DriverChange  ──resolves
   "securityGroups": [{ "id": "GroupNothingSecurityId" }], // driver-only, no portal access
   "companyGroups":  [{ "id": "GroupCompanyId" }],
   "driverGroups":   [{ "id": "GroupCompanyId" }],
-  "password": "ChangeMe!"               // only needed if they log into Drive app
+  "password": "ChangeMe!"               // only needed if they log into the Drive app
 }
 ```
 
@@ -116,13 +111,13 @@ The **Geotab MCP server blocks `DriverChange`** (it's not in the MCP's
 writable-types allowlist; the Add is rejected as "read-only or
 system-generated"). So:
 
-| Operation                     | MCP            | REST API (`/apiv1`) |
-|-------------------------------|----------------|---------------------|
-| Create driver (`User` Add)    | ✅              | ✅ |
-| Deactivate driver (`User` Set)| ✅ (see below) | ✅ |
-| Assign to trip (`DriverChange` Add) | ❌ blocked | ✅ **required** |
+| Operation                           | MCP            | REST API (`/apiv1`) |
+|-------------------------------------|----------------|---------------------|
+| Create driver (`User` Add)          | ✅              | ✅ |
+| Deactivate driver (`User` Set)      | ✅ (see below) | ✅ |
+| Assign to trip (`DriverChange` Add) | ❌ blocked     | ✅ **required** |
 
-**Do the `DriverChange` step over the REST API.** See the runnable example:
+**Do the `DriverChange` step over the REST API.** Runnable example in this repo:
 `examples/server-side/assign-drivers-to-trips/`.
 
 REST pattern (authenticate **once** — repeated bad auth locks the account
@@ -159,7 +154,7 @@ Deactivated users drop out of MyGeotab's active driver lists.
 ```
 
 **Gotcha:** `User.Set` records an audit "modified by" user. If the calling
-session has no associated username (common with MCP/service tokens) you get
+session has no associated username (common with MCP / service tokens) you get
 `UserModifiedInfo.ModifiedUserName cannot be null or empty`. Fix: pass
 `userModifiedInfo.modifiedUserName` explicitly, as above. (Reverting a trip's
 label is a separate step: add a `DriverChange` of `type: "ResetDriver"` at the
