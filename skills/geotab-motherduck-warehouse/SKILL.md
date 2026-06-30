@@ -126,7 +126,7 @@ Numbers are **stable IDs** (grouped by severity, never renumbered) so bare `quir
 - **#1** — Response is always huge (the chat object, not the data) and the harness spills it to a file → **parse the file** for the URL, `"columns"`, and the SQL ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Step 2); if your client returns it inline/truncated, offload to a file first.
 - **#3** `preview_array` inline for ≤10 rows · **#4** NULL keys omitted ("missing key = null") · **#5** ` UTC` suffix + variable fraction (`read_csv_auto` handles it; else `replace(…,' UTC','')::TIMESTAMP`) · **#9** ~33 s floor, **don't parallelize** Ace calls · **#10** continue-chat retains context.
 
-**Always:** Ace **returns the SQL it ran** — by design, an approval surface, not a leak. **Lint it before loading**; that's where you catch every 🔴 issue while it's still free to fix ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2).
+**Always:** Ace **returns the SQL it ran** — by design, an approval surface, not a leak. **Lint it before loading** — the SQL exposes the *semantic* 🔴 issues (#11 pre-agg, #12 predicates, #13 units, #14 filters, #15 source table, #20 window bound) while they're still free to fix ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). The *data-shape* 🔴s aren't in the SQL: **#2** needs you to harvest **every shard URL**, and **#6** needs the **silver dedup** after load — linting won't surface either.
 
 ## Three source channels — pick per entity *and* per freshness need
 
