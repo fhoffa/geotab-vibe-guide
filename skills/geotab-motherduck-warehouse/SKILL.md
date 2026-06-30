@@ -105,14 +105,14 @@ Measurements/proof: [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) �
 Numbers are **stable IDs** (grouped by severity, never renumbered) so bare `quirk #N` references resolve.
 
 **🔴 Critical — silently produces wrong/incomplete data:**
-- **#2** — Signed CSV URL **shards** for big exports → **load *every* shard** or counts are short (expires ~24 h).
+- **#2** — URL *always* returned; **shards only for large exports** (size-dependent) → when sharded, **load *every* shard** or counts are short (expires ~24 h).
 - **#6** — Boundary second re-included (~always, tiny) **and** full ~2× duplication on *some* exports (intermittent — GPS windows doubled; the 23M StatusData export didn't) → **dedup on the parsed natural key every load** (you can't predict which pull doubles).
-- **#11** — Default engine is pre-aggregated + `IsTracked`-only + device-local dates → counts/distances ≠ raw; for exact replication **ask for raw rows with explicit UTC bounds**.
-- **#12** — Injects predicates (partition guards; the `LatestVehicleMetadata` join flips LEFT↔inner) → **read the SQL; run the device-population check**.
-- **#13** — Unit conversion km↔miles → pin *"in kilometers, do not convert units"*.
-- **#14** — Activity filters (`Speed != 0`/`Ignition = 1`) drop stationary points → **forbid them in the prompt**.
-- **#15** — Source table varies per run (`GpsLogs` 49 vs `Trip` 47); an attached SQL doesn't pin it → **read the `FROM`**; this is *why* loads are append-to-bronze + dedup and repairs re-derive from bronze (don't re-ask).
-- **#20** — Injected **upper bound** can clip the current day (`CURRENT_DATE()` → `…23:59:59.xxx` artifact) → **don't use Ace for freshness/watermark** (use `Get`/`DeviceStatusInfo`); on exports verify the upper bound is *now*/your `hi`.
+- **#11** — *By default on metric/KPI asks*, engine is pre-aggregated + `IsTracked`-only + device-local dates → counts/distances ≠ raw; for exact replication **ask for raw rows with explicit UTC bounds**.
+- **#12** — Predicate injection *common* (partition guards — harmful only when they *narrow*); the `LatestVehicleMetadata` join flips LEFT↔inner *intermittently* (only on `DeviceName` asks) → **read the SQL; run the device-population check**.
+- **#13** — Unit conversion km↔miles, *only on distance/speed asks* → pin *"in kilometers, do not convert units"*.
+- **#14** — Activity filters (`Speed != 0`/`Ignition = 1`) *only on motion-flavored asks* → **forbid them in the prompt**.
+- **#15** — Source table can shift with phrasing/attached SQL, but **identical English repeats were stable** (`GpsLogs` 49×3; `Trip`=47 came *with* SQL attached) → **read the `FROM`**; loads are append-to-bronze + dedup, repairs re-derive from bronze (don't re-ask).
+- **#20** — *Intermittent* (~1/3 of calls, unpredictable, not DB-stable): injected **upper bound** clips the current day (`CURRENT_DATE()` → `…23:59:59.xxx` artifact) → **don't use Ace for freshness/watermark** (use `Get`/`DeviceStatusInfo`); on exports verify the upper bound is *now*/your `hi`.
 
 **🟡 Operational — derails or misleads the run (usually visible):**
 - **#7** — Column-case drift (`day`→`DAY`) → **key by the returned `columns` array**, not the case you asked for.

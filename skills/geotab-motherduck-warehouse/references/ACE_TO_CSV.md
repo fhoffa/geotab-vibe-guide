@@ -200,9 +200,10 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
 
 ### 🔴 Critical — silently produces wrong/incomplete data (handle these or the mirror is quietly wrong)
 
-- **#2 — A signed CSV URL is always returned, and it *shards* for large exports.** **Load every shard
-  URL**, not just the first, or your row counts are silently short. (`preview_array` carries small
-  results inline.)
+- **#2 — A signed CSV URL is *always* returned; it *shards* only for large exports** (size-dependent).
+  The URL is always there (even 3 rows); a 23.15M-row pull returned **10** shard URLs, small pulls return
+  one. **When sharded, load every shard URL** or your counts are silently short. (`preview_array` carries
+  small results inline.)
 - **#6 — Duplicate rows — two effects, so dedup every load.** (a) *Boundary second — ~always, tiny:* the
   "after `HH:MM:SS.mmm`" lower bound is honored only to the **second**, so the boundary second re-appears
   (a handful of rows — P11: 679,581→679,577 = 4). (b) *Full ~2× duplication — intermittent:* **some**
@@ -210,26 +211,34 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   StatusData export had 605 dupes; the GPS bootstrap had 4) — you **can't predict which**. So **dedup on
   the parsed natural key every load** (`DISTINCT ON` / anti-join on `replace(ts,' UTC','')::TIMESTAMP`);
   bronze keeps dupes (append-only), silver collapses them. *(P11; ev #6.)*
-- **#11 — The default engine is pre-aggregated and active-filtered, so counts/distances ≠ raw.** It
-  favors daily rollups (`VehicleKPI_Daily`), inclusive **device-local** dates, and `IsTracked = TRUE`.
-  For exact replication, **ask for raw rows with explicit UTC bounds.**
-- **#12 — It injects unrequested predicates, and varies a metadata join.** Partition `DATE() >=/BETWEEN`
-  guards (benign if they *widen*, dangerous if they *narrow* your UTC window); a `DeviceName` ask joins
-  `LatestVehicleMetadata` as **LEFT one run, inner the next** (inner silently drops devices missing
-  metadata). **Read the returned SQL every load; run the row-count + device-population check.**
-- **#13 — It converts units unless pinned** (km↔miles flip silently). Say *"in kilometers, do not convert
-  units."*
-- **#14 — It injects activity filters (`Speed != 0`, `Ignition = 1`) on motion asks**, dropping
-  stationary points. Say *"include stationary points; do not filter on speed/ignition/motion."*
-- **#15 — Source-table selection varies for the same question — an attached SQL doesn't pin it.** A count
-  that differs across runs is usually a different `FROM` (e.g. `GpsLogs` 49 vs `Trip` 47), not
-  randomness. **Read the SQL, pin the table.** This is *why* loads are append-to-bronze + dedup and
-  repairs re-derive from bronze rather than re-ask. *(P4/P5/P6, P15.)*
-- **#20 — The injected window's *upper bound* can drop the current day.** When it lands on
-  `CURRENT_DATE()` (midnight today) instead of `CURRENT_DATETIME()`, today's rows vanish and "most
-  recent" collapses to `<yesterday> 23:59:59.xxx` (looks real). **Don't use Ace as a freshness/watermark
-  oracle** (use `Get`/`DeviceStatusInfo`); on windowed exports **confirm the upper bound is now/your
-  `hi`.** A `…23:59:59.xxx` "latest" is the fingerprint. *(P15.)*
+- **#11 — *By default, on metric/KPI-flavored asks*, the engine is pre-aggregated and active-filtered, so
+  counts/distances ≠ raw.** Triggered by aggregate questions ("distance", "counts"): it favors daily
+  rollups (`VehicleKPI_Daily`), inclusive **device-local** dates, and `IsTracked = TRUE`. **Avoid it by
+  asking for raw rows with explicit UTC bounds** (then Ace uses a positions source, not the rollup).
+- **#12 — It injects predicates (*common*) and flips a metadata join (*intermittent*).** A partition
+  `DATE() >=/BETWEEN` guard is added on most date-scoped pulls — benign if it *widens*, dangerous only
+  when it *narrows* your UTC window (occasional; #20 is the specific upper-bound case). Separately, a
+  `DeviceName` ask joins `LatestVehicleMetadata` as **LEFT one run, inner the next** (inner silently drops
+  devices missing metadata) — only on metadata asks, varies per run. **Read the returned SQL every load;
+  run the row-count + device-population check.**
+- **#13 — *On distance/speed asks*, it converts km↔miles unless pinned** (silent). Only metric-bearing
+  asks; pin with *"in kilometers, do not convert units."*
+- **#14 — *On motion-flavored asks*, it injects activity filters (`Speed != 0`, `Ignition = 1`)**,
+  dropping stationary points. Triggered by motion/activity phrasing; forbid with *"include stationary
+  points; do not filter on speed/ignition/motion."*
+- **#15 — Source table can shift with phrasing or an attached SQL — *but identical English repeats were
+  stable*.** "distinct GPS devices on a day" gave **49** from `GpsLogs` on 3 identical English runs (and
+  `GpsLogs` again cross-DB); it became **47** from `Trip` only when SQL was attached / the entity was
+  ambiguous. So: **occasional, triggered by ambiguous phrasing or attached SQL — not per-call jitter.** A
+  differing count is usually a different `FROM`: **read the SQL, pin the table.** This is *why* loads are
+  append-to-bronze + dedup and repairs re-derive from bronze rather than re-ask. *(P4/P5/P6, P15.)*
+- **#20 — *Intermittently* (~1/3 of calls in testing, unpredictable, not DB-stable) the injected window's
+  *upper bound* drops the current day.** When it lands on `CURRENT_DATE()` (midnight today) instead of
+  `CURRENT_DATETIME()`, today's rows vanish and "most recent" collapses to `<yesterday> 23:59:59.xxx`
+  (looks real). Because it's per-call, *you can't rely on it being correct* — **don't use Ace as a
+  freshness/watermark oracle** (use `Get`/`DeviceStatusInfo`); on windowed exports **confirm the upper
+  bound is now/your `hi`.** A `…23:59:59.xxx` "latest" is the fingerprint. *(P15: 2/6 status runs clipped,
+  both DBs.)*
 
 ### 🟡 Operational — derails or misleads the run (usually visible / recoverable)
 
