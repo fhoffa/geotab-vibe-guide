@@ -10,6 +10,11 @@ metadata:
 
 # Geotab → MotherDuck Warehouse (data engineering)
 
+<!-- Editing/extending this skill? Read MAINTAINING.md first (authoring conventions:
+     stable severity-grouped quirk IDs, lean catalog + evidence in EVIDENCE_LOG §1b,
+     4-col bronze provenance / no _source_db, etc.). -->
+> **Editing this skill?** See [`MAINTAINING.md`](MAINTAINING.md) for the authoring conventions first.
+
 Build and maintain a MotherDuck warehouse that mirrors a Geotab database, using **only MCP
 tool calls**. This is a **data-engineering** skill: tables, layers, incremental loads, dedup,
 watermarks, gap detection, backfill. (Analytics/"cool queries" come *after* the data is solid —
