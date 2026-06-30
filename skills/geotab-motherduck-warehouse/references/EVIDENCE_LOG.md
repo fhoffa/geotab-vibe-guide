@@ -58,7 +58,7 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 | 2026-06-29 | my_db | P10 | **35.2 MiB** / 679,577 pings → ~16 B/ping silver, ~54 B bronze+silver | PRAGMA | drives COST_AND_SIZING |
 | 2026-06-29 | my_db | P11 | raw-string key → **679,581**; parsed-timestamp key → **679,577** | MotherDuck | dedup on the parsed key |
 
-| 2026-06-29 | Demo_fh_vegas4 | P2 (list_databases) | saw `geotab_Demo_fh_vegas4` (pre-existing from a prior interrupted run, operator reused it), `geotab_demo_fh4`, `sample_data`; wrote only to target | ChatGPT/MCP | **isolation validated — 2nd source beside geotab_demo_fh4, no cross-writes** |
+| 2026-06-29 | Demo_fh_vegas4 | isolation (list_databases) | saw `geotab_Demo_fh_vegas4` (pre-existing from a prior interrupted run, operator reused it), `geotab_demo_fh4`, `sample_data`; wrote only to target | ChatGPT/MCP | **isolation validated — 2nd source beside geotab_demo_fh4, no cross-writes** |
 | 2026-06-29 | Demo_fh_vegas4 | credential test | `Get(Device, limit=1)` → `b30` "Demo - 48" | ChatGPT/MCP | one-row probe is a good "test once" pattern |
 | 2026-06-29 | Demo_fh_vegas4 | dim load | `silver.dim_device` = **50** (from the prior run; resume) | ChatGPT/MCP | dim via Get worked |
 | 2026-06-29 | Demo_fh_vegas4 | **P12 (preflight)** | **FAIL** — `Get` worked, Ace undiscoverable. **Confirmed cause: ChatGPT mixed connector modes** (Geotab + MotherDuck must both be official or both dev-mode); not Geotab/Ace behavior | ChatGPT/MCP | **GPS load incomplete: bronze.gps_raw=0, silver.planet_gps_pings=0.** Fix: same mode for both; preflight Ace before DDL |
