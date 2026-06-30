@@ -203,9 +203,13 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
 - **#2 — A signed CSV URL is always returned, and it *shards* for large exports.** **Load every shard
   URL**, not just the first, or your row counts are silently short. (`preview_array` carries small
   results inline.)
-- **#6 — Ace returns duplicate rows (~2×) and re-includes the boundary second.** **Dedup on the parsed
-  natural key every load** (`DISTINCT ON` / anti-join on `replace(ts,' UTC','')::TIMESTAMP`). Bronze
-  keeps dupes (append-only); silver collapses them. *(P11.)*
+- **#6 — Duplicate rows — two effects, so dedup every load.** (a) *Boundary second — ~always, tiny:* the
+  "after `HH:MM:SS.mmm`" lower bound is honored only to the **second**, so the boundary second re-appears
+  (a handful of rows — P11: 679,581→679,577 = 4). (b) *Full ~2× duplication — intermittent:* **some**
+  exports return every row ~2× (GPS backfill windows: 3.53M→1.76M, etc.) but **not** others (the 23M
+  StatusData export had 605 dupes; the GPS bootstrap had 4) — you **can't predict which**. So **dedup on
+  the parsed natural key every load** (`DISTINCT ON` / anti-join on `replace(ts,' UTC','')::TIMESTAMP`);
+  bronze keeps dupes (append-only), silver collapses them. *(P11; ev #6.)*
 - **#11 — The default engine is pre-aggregated and active-filtered, so counts/distances ≠ raw.** It
   favors daily rollups (`VehicleKPI_Daily`), inclusive **device-local** dates, and `IsTracked = TRUE`.
   For exact replication, **ask for raw rows with explicit UTC bounds.**

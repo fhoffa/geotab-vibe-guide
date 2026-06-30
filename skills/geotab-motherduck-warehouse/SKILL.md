@@ -106,7 +106,7 @@ Numbers are **stable IDs** (grouped by severity, never renumbered) so bare `quir
 
 **🔴 Critical — silently produces wrong/incomplete data:**
 - **#2** — Signed CSV URL **shards** for big exports → **load *every* shard** or counts are short (expires ~24 h).
-- **#6** — ~2× duplicate rows + boundary second → **dedup on the parsed natural key every load**.
+- **#6** — Boundary second re-included (~always, tiny) **and** full ~2× duplication on *some* exports (intermittent — GPS windows doubled; the 23M StatusData export didn't) → **dedup on the parsed natural key every load** (you can't predict which pull doubles).
 - **#11** — Default engine is pre-aggregated + `IsTracked`-only + device-local dates → counts/distances ≠ raw; for exact replication **ask for raw rows with explicit UTC bounds**.
 - **#12** — Injects predicates (partition guards; the `LatestVehicleMetadata` join flips LEFT↔inner) → **read the SQL; run the device-population check**.
 - **#13** — Unit conversion km↔miles → pin *"in kilometers, do not convert units"*.
