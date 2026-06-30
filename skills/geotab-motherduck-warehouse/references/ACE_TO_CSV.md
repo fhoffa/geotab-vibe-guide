@@ -234,11 +234,9 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   `DeviceName`/`DeviceTimeZoneId` ask joins `LatestVehicleMetadata`, which misbehaves two ways: **(i)
   LEFT one run, inner the next** (inner silently drops devices missing metadata); **(ii) row fan-out** —
   joined `ON DeviceId` *alone* (no active-window predicate), a device with >1 metadata row **multiplies**
-  every fact row (measured 2026-06-30: GPS & exceptions came back **exactly 2×**; the StatusData pull,
-  whose join carried `… AND StatusDateTime BETWEEN Device_ActiveFrom AND Device_ActiveTo`, did not). Silver
-  natural-key dedup absorbs the fan-out, so in the shape check **expect `csv_rows ≥ distinct keys`** (the
-  multiplier can differ per device — don't require an exact integer ratio); **rely on the dedup +
-  device-population check**, not the raw count. **Read the returned SQL every load.** *(ev #12.)*
+  every fact row (an active-window `BETWEEN` join doesn't). Silver natural-key dedup absorbs it, so in the
+  shape check **expect `csv_rows ≥ distinct keys`** (the multiplier can differ per device — don't require an
+  exact ratio); **rely on the dedup + device-population check**. **Read the returned SQL every load.** *(ev #12.)*
 - **#13 — *On distance/speed asks*, it converts km↔miles unless pinned** (silent). Only metric-bearing
   asks; pin with *"in kilometers, do not convert units."*
 - **#14 — *On motion-flavored asks*, it injects activity filters (`Speed != 0`, `Ignition = 1`)**,
@@ -272,10 +270,9 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   looks old when nothing happened. **Gauge event tables by counting events in a recent window**, not
   max-vs-now. *(P1/P2/P3; [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)*
 - **#17 — `invalid_value` 400s happen — transient; re-wording often clears them.** Correlated with
-  attached SQL (2026-06-29), but **plain English is not immune**: a *bounded* plain-English trips prompt
-  ("…after X **and before Y**") 400'd 4× while the **open-ended** form ("…after X") succeeded at once
-  (2026-06-30). **Retry on 400; if a bounded prompt keeps failing, re-issue it open-ended** and clip the
-  tail in the derive. *(ev #17.)*
+  attached SQL, but **plain English is not immune** — a *bounded* "…after X **and before Y**" prompt can
+  400 where the **open-ended** "…after X" form succeeds. **Retry on 400; if a bounded prompt keeps failing,
+  re-issue it open-ended** and clip the tail in the derive. *(ev #17.)*
 - **#18 — Dimension/config writes lag Ace ~15–30 min; telematics doesn't.** **Read anything you just
   created/changed** (zones, metadata, groups, rules, users) **from the Get API, not Ace.** *(P8;
   [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).)*

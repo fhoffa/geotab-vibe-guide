@@ -108,7 +108,7 @@ Numbers are **stable IDs** (grouped by severity, never renumbered) so bare `quir
 - **#2** — URL *always* returned; **shards only for large exports** (size-dependent) → when sharded, **load *every* shard** or counts are short (expires ~24 h).
 - **#6** — Boundary second re-included (~always, tiny) **and** full ~2× duplication on *some* exports (intermittent — GPS windows doubled; the 23M StatusData export didn't) → **dedup on the parsed natural key every load** (you can't predict which pull doubles).
 - **#11** — *By default on metric/KPI asks*, engine is pre-aggregated + `IsTracked`-only + device-local dates → counts/distances ≠ raw; for exact replication **ask for raw rows with explicit UTC bounds**.
-- **#12** — Predicate injection *common* (partition guards — harmful only when they *narrow*); the `LatestVehicleMetadata` join flips LEFT↔inner *intermittently* (only on `DeviceName` asks) → **read the SQL; run the device-population check**.
+- **#12** — Predicate injection *common* (partition guards — harmful only when they *narrow*); the `LatestVehicleMetadata` join (only on `DeviceName` asks) flips LEFT↔inner *intermittently* **and can fan rows out N×** when keyed on `DeviceId` alone → **read the SQL; dedup on the natural key; run the device-population check**.
 - **#13** — Unit conversion km↔miles, *only on distance/speed asks* → pin *"in kilometers, do not convert units"*.
 - **#14** — Activity filters (`Speed != 0`/`Ignition = 1`) *only on motion-flavored asks* → **forbid them in the prompt**.
 - **#15** — Source table can change for the "same" question — **treat as non-deterministic** (LLM-generated SQL; we saw per-call variation in #20). Identical English *happened to* stay on `GpsLogs` (49×3) in a small sample and only switched to `Trip`=47 with SQL attached, but **don't bank on it** → **read the `FROM` every load**; loads are append-to-bronze + dedup, repairs re-derive from bronze.
@@ -118,7 +118,7 @@ Numbers are **stable IDs** (grouped by severity, never renumbered) so bare `quir
 - **#7** — Column-case drift (`day`→`DAY`) → **key by the returned `columns` array**, not the case you asked for.
 - **#8** — Asking for a "URL/CSV/download" **degrades the schema** → ask for **data + exact columns** (the URL comes anyway); never say url/csv/export.
 - **#16** — Continuous streams ~real-time; **event tables** (`Trip`/`FaultData`/`ExceptionEvent`) update only on an event → gauge them by **counting events in a recent window**, not `max(ts)` vs now.
-- **#17** — SQL pasted into the prompt can 400 (transient) → **prefer specific English; retry**.
+- **#17** — `invalid_value` 400 (transient); **plain English isn't immune** — a *bounded* prompt can 400 where **open-ended** succeeds → **retry; prefer open-ended and clip the tail in the derive**.
 - **#18** — Config/dimension writes lag Ace ~15–30 min → **read just-changed config from `Get`, not Ace**.
 - **#19** — ChatGPT: **both MCP servers must be the same mode**; **preflight Ace** with a tiny call before any DDL.
 
