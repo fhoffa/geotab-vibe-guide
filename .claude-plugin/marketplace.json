@@ -16,6 +16,7 @@
       "strict": false,
       "skills": [
         "./skills/geotab",
+        "./skills/geotab-driver-trip-assignment",
         "./skills/geotab-motherduck-warehouse",
         "./skills/agentic-n8n",
         "./skills/geotab-custom-mcp"
