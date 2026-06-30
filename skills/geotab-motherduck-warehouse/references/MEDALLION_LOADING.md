@@ -44,7 +44,16 @@ CREATE DATABASE IF NOT EXISTS geotab_demo_fh4;          -- one per Geotab source
 CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.bronze;
 CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.silver;
 CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.gold;
-COMMENT ON DATABASE geotab_demo_fh4 IS 'Geotab source: demo_fh4 (my.geotab.com)';   -- source identity, recorded once
+-- Source identity, recorded once in a metadata table (COMMENT ON DATABASE is NOT
+-- implemented in MotherDuck — verified 2026-06-30: "Not implemented Error: Adding
+-- comments to databases is not implemented"). COMMENT ON TABLE *does* work.
+CREATE TABLE IF NOT EXISTS geotab_demo_fh4.main.warehouse_meta (
+  source_db VARCHAR, geotab_server VARCHAR, layout VARCHAR, note VARCHAR,
+  created_at TIMESTAMP DEFAULT now());
+INSERT INTO geotab_demo_fh4.main.warehouse_meta (source_db, geotab_server, layout, note)
+VALUES ('demo_fh4', 'my.geotab.com', 'db-per-source + schema-per-layer (bronze/silver/gold)',
+        'Geotab source identity. One Geotab source per MotherDuck database.');
+COMMENT ON TABLE geotab_demo_fh4.main.warehouse_meta IS 'Geotab source: demo_fh4 (my.geotab.com)';
 -- geotab_demo_fh4.bronze.gps_raw · geotab_demo_fh4.silver.planet_gps_pings
 -- geotab_demo_fh4.silver.dim_device · geotab_demo_fh4.gold.daily_device_km
 ```
@@ -66,9 +75,11 @@ medallion shape (grant analysts `silver`/`gold`, restrict `bronze`).
 > `geotab_<source>.<layer>.<table>`.
 
 **Provenance:** keep per-row **`_batch_id`** (which ingestion produced the row). The **source identity is
-recorded once at the database level** (the `COMMENT ON DATABASE` above, plus `warehouse_ingest_log`) —
-**don't add a per-row `_source_db`**: with one database per source it's a constant column (≈0 bytes after
-compression, but pure noise).
+recorded once at the database level** — in the `main.warehouse_meta` table above (plus the optional
+`COMMENT ON TABLE` and `warehouse_ingest_log`). **Don't use `COMMENT ON DATABASE`** — it's *not
+implemented* in MotherDuck (verified 2026-06-30) and fails/no-ops, so the identity would be lost.
+**Don't add a per-row `_source_db`** either: with one database per source it's a constant column (≈0
+bytes after compression, but pure noise).
 
 ## Always inspect before you derive
 
@@ -145,7 +156,7 @@ FROM read_csv_auto('<signed url>', all_varchar=true)
 WHERE FALSE;                               -- create empty; INSERT below on each run
 ```
 
-(No per-row `_source_db` — the source is one whole database, recorded once via `COMMENT ON DATABASE`;
+(No per-row `_source_db` — the source is one whole database, recorded once in `main.warehouse_meta`;
 see §isolate.)
 
 > `_batch_id` distinguishes ingestion provenance — e.g. `ace:4b008ce3-…` (the Ace chat id) for a live
