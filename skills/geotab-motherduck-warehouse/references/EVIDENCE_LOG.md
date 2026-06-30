@@ -51,7 +51,7 @@ aware of and why*. The measurements behind each quirk live here (point-in-time; 
 
 | # | Sev | Quirk (one-line) | Key measured evidence | Source |
 |---|-----|------------------|-----------------------|--------|
-| 20 | 🔴 | Injected window **upper bound** can drop the current day | Same "most recent raw status" prompt: live max `2026-06-30 14:39–14:40` on 4/6 calls vs `2026-06-29 23:59:59.xxx` on 2/6; clip = `… AND CURRENT_DATE()` vs live `… AND CURRENT_DATETIME()`; window 7d/30d varied per call, not DB-stable; both DBs | P15; ledger 2026-06-30 (10 chat_ids) |
+| 20 | 🔴 | Injected window **upper bound** can drop the current day | Same "most recent raw status" prompt: live max `2026-06-30 14:39–14:40` on 4/6 calls vs `2026-06-29 23:59:59.xxx` on 2/6; clip = `… AND CURRENT_DATE()` vs live `… AND CURRENT_DATETIME()`; window 7d/30d varied per call, not DB-stable; both DBs | P15; ledger 2026-06-30; **full Q&A + all 6 SQL/answers in §3 run archive 2026-06-30** |
 | 12 | 🔴 | Injects unrequested predicates (partition guards; metadata join type) | Widened guards seen: `DATE(GpsDateTime) >= DATE('2026-06-27')` on a `>= 06-28` ask; `BETWEEN '06-26' AND '06-30'` around `[06-27,06-29)`. Metadata join `LEFT` one day, inner `JOIN` the next (inner drops devices w/o metadata) | ledger 2026-06-29 (forward incremental); run archive |
 | 15 | 🔴 | Source table can change for the "same" question (LLM-generated SQL — non-deterministic) | "distinct GPS devices on 2026-06-28" = **49** from `GpsLogs` on 3 identical English runs (same table each time — **small n, not a determinism guarantee**); **47** from `Trip` when `…FROM GpsLogs` SQL attached (Ace ignored it). Cross-DB 2026-06-30: 49 demo / 50 vegas, both `GpsLogs`. Per-call non-determinism confirmed on a different axis in P15 (#20 predicate flip) | P4/P5/P6; P15; run archive 2026-06-29 |
 | 6 | 🔴 | Duplicate rows: boundary second (~always, tiny) + full ~2× (intermittent) | **Boundary (structural, tiny):** P11 raw key 679,581 → parsed key 679,577 = 4 dup rows at the watermark second. **Full ~2× (sometimes):** GPS backfill windows duplicated ≈2.00× — 3,529,928→1,764,333; 3,449,906→1,724,851; 2,472,574→1,236,040 (overall GPS bronze 11.88M→silver 7.16M = 1.66×, so not every batch). **Clean (no 2×):** 23M StatusData export 23,153,282→23,152,677 (605 = 0.003%); GPS bootstrap (4). Unpredictable per pull → dedup always | P11; ledger 2026-06-30 (op-mirror, dedup-twin) |
@@ -194,3 +194,51 @@ on a **second source + second host**:
   IF NOT EXISTS` was run. → MEDALLION §brownfield schema-drift checklist.
 - Minor: the signed URL bucket was `planet-user-results-prod-**us**` (region varies by DB; URL host
   isn't fixed to `-eu`). Store only the `gs://<bucket>/<object>` path, never the signed query string.
+
+### Run 2026-06-30 (demo_fh4 + Demo_fh_vegas4) — the injected-window upper-bound clip (quirk #20)
+
+**Why this matters:** Ace can answer the *same freshness question* with the *true live timestamp* on one
+call and a **stale `<yesterday> 23:59:59.xxx`** on the next — same database, same prompt — because it
+injects a time-window guard whose **upper bound is non-deterministic**. The stale value looks like real
+data. If you trust Ace as a freshness/watermark oracle, you can under-report freshness by a full day and
+not notice. (Mitigation lives in [`ACE_TO_CSV.md`](ACE_TO_CSV.md) #20 / [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md);
+this is the raw record.)
+
+**What we did:** re-ran identical Ace prompts (`GetAceResults`, `new_chat=true`) across **two**
+databases to hunt for quirks, then re-asked the StatusData freshness question **3× per DB**. All calls
+were 2026-06-30, ~14:34–14:41 UTC.
+
+**The prompt (verbatim, identical every time):**
+> *"Across all devices, what is the single most recent raw status data (engine/sensor) timestamp, in UTC?
+> Raw, not a rollup."*
+
+(Note it explicitly says **"raw, not a rollup"** — and was still clipped on 2 of 6 calls.)
+
+**The 6 StatusData runs — generated SQL `WHERE` clause → answer:**
+
+| DB | run | chat_id | injected window (the generated SQL) | answer | verdict |
+|----|-----|---------|-------------------------------------|--------|---------|
+| demo_fh4 | 1 | `tUoHLa6TaTaUG5mTQcQX` | `WHERE DATE(StatusDateTime) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)` (lower-bound only) | `2026-06-30 14:36:53.315` | ✅ live |
+| demo_fh4 | 2 | `4ko9uoBbAM3VFQL5nTR7` | `WHERE StatusDateTime BETWEEN DATETIME_SUB(CURRENT_DATETIME(), INTERVAL 30 DAY) AND CURRENT_DATETIME()` | `2026-06-30 14:39:23.504` | ✅ live |
+| demo_fh4 | 3 | `Flyh8IcCA4bNzzD3qeso` | `WHERE StatusDateTime BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AND CURRENT_DATE()` | `2026-06-29 23:59:59.846` | ❌ **clipped** |
+| Demo_fh_vegas4 | 1 | `ujCORad8QgHLx4JlpI6q` | `WHERE StatusDateTime >= DATE_SUB(CURRENT_DATETIME(), INTERVAL 30 DAY)` (lower-bound only) | `2026-06-30 14:37:15.52` | ✅ live |
+| Demo_fh_vegas4 | 2 | `GrWD6cyc6rhf41J9Knv7` | `WHERE StatusDateTime BETWEEN DATE_SUB(CURRENT_DATE(), INTERVAL 30 DAY) AND CURRENT_DATE()` | `2026-06-29 23:59:59.94` | ❌ **clipped** |
+| Demo_fh_vegas4 | 3 | `ugnG1w9moir9nXJaBYkD` | `WHERE StatusDateTime BETWEEN DATETIME_SUB(CURRENT_DATETIME(), INTERVAL 30 DAY) AND CURRENT_DATETIME()` | `2026-06-30 14:40:45.54` | ✅ live |
+
+All six ran `SELECT MAX(UTC_StatusTimestamp) … FROM \`StatusData\`` — **same table, no source swap.** The
+only thing that changed was the window.
+
+**The mechanism:** the clip correlates exactly with the **upper bound**:
+- `… AND CURRENT_DATETIME()` (or lower-bound-only) → upper bound = *now* → captures today's rows → live max (`14:3x` on 06-30). ✅
+- `… AND CURRENT_DATE()` → `CURRENT_DATE()` is a **DATE = midnight today (00:00:00)**, so every row after midnight today is excluded → `MAX` falls back to the last row of *yesterday* → `2026-06-29 23:59:59.xxx`. ❌ (~14.6 h stale at the time of the call, purely an artifact.)
+
+**Also varied per call (not DB-stable):** window **size** was `7 DAY` (demo run 1) and `30 DAY` (everything
+else); bound **form** was lower-bound-only, `DATE_SUB(CURRENT_DATE(),…)`+`DATE()` cast, and
+`DATETIME_SUB(CURRENT_DATETIME(),…)`. `demo_fh4` produced *both* 7-day and 30-day across its own calls —
+so this is **per-call non-determinism, not a per-database setting.**
+
+**Context runs the same session (for completeness):**
+- GPS freshness, same prompt shape, both DBs used `… FROM GpsLogs WHERE DATE(GpsDateTime) >= DATE_SUB(CURRENT_DATE(), INTERVAL 7 DAY)` (**lower-bound only → never clipped**): demo max `14:34:32.898` vs now `14:34:52.269` → **~19 s**; vegas max `14:35:10.14` vs now `14:35:28.542` → **~18 s**. (chats `6IHIVVDHsDJhvuQShGLB`, `oHYbjyxLWsE199zv7WYO`.)
+- "distinct GPS devices on 2026-06-28": both `SELECT COUNT(DISTINCT DeviceId) FROM GpsLogs WHERE DATE(UTC_GpsTimestamp) = '2026-06-28'` → **demo 49 / vegas 50** (fleet-size difference; both `GpsLogs`). (chats `89zah3zXjSzZoub0iAYD`, `HorGn9NEiJmO2wKm6bdn`.)
+
+**Takeaways (→ #20):** (1) **Never use Ace's `max(timestamp)` as a freshness/watermark oracle** — read true latest from the Get API / `DeviceStatusInfo`; the warehouse takes its watermark from `max(silver)`, not Ace. (2) On any **windowed export**, read the returned SQL and confirm the upper bound reaches *now* (`CURRENT_DATETIME()` / your explicit `hi`), not `CURRENT_DATE()`, or today's rows silently miss the CSV. (3) **Fingerprint:** a "latest" answer landing exactly on `YYYY-MM-DD 23:59:59.xxx` is almost certainly a `CURRENT_DATE()` clip, not a real reading. (4) The bronze-append + dedup + forward-catch-up design tolerates a one-off clipped pull (next run re-pulls), but a *persistently* clipped upper bound means today never lands until tomorrow — so the verify step must catch it.

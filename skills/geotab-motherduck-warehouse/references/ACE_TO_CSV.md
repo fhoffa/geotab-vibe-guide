@@ -244,7 +244,8 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   (looks real). Because it's per-call, *you can't rely on it being correct* — **don't use Ace as a
   freshness/watermark oracle** (use `Get`/`DeviceStatusInfo`); on windowed exports **confirm the upper
   bound is now/your `hi`.** A `…23:59:59.xxx` "latest" is the fingerprint. *(P15: 2/6 status runs clipped,
-  both DBs.)*
+  both DBs — full prompt + all 6 generated SQL/answers in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md) §3 run
+  archive 2026-06-30.)*
 
 ### 🟡 Operational — derails or misleads the run (usually visible / recoverable)
 
