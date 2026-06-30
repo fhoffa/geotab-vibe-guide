@@ -36,6 +36,9 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 | **P9** | MotherDuck | compute per query | `EXPLAIN ANALYZE <watermark>` / `<silver derive>` / `<read_csv_auto count of a signed URL>` | "Total Time" line = CU-seconds (Pulse) |
 | **P10** | MotherDuck | storage footprint | `PRAGMA database_size;` | total ÷ unique pings = bytes/ping |
 | **P11** | MotherDuck | dedup-key correctness | `COUNT(*)` of `DISTINCT ON (DeviceId, GpsDateTime)` vs `DISTINCT ON (DeviceId, replace(GpsDateTime,' UTC','')::TIMESTAMP)` over bronze | parsed key must collapse cross-batch dupes |
+| **P12** | connectors | preflight before any DDL | tiny `Get(Device, resultsLimit=1)` **and** a tiny `GetAceResults` call **and** a MotherDuck read | all three must succeed *now*; if Ace fails, stop before creating tables |
+| **P13** | Ace + MotherDuck | full minimal-mirror bootstrap (2-day GPS) | Ace GPS-window prompt → land bronze → derive silver → counts + min/max + distinct devices + 0-dupe check | source `GpsLogs`, columns honored, devices reconcile to `dim_device` |
+| **P14** | MotherDuck | brownfield schema drift on a pre-existing table | `list_columns` a reused silver table; provenance `INSERT` | missing provenance cols → `ALTER TABLE … ADD COLUMN IF NOT EXISTS` before insert (don't `CREATE OR REPLACE`) |
 
 ---
 
@@ -54,6 +57,34 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 | 2026-06-29 | my_db | P9 | watermark `0.082 s`; silver derive (679,581) `1.07 s`; read_csv_auto (2,679 rows, 149 KiB) `1.47 s` | EXPLAIN ANALYZE | Pulse per-query, min 1 CU-s |
 | 2026-06-29 | my_db | P10 | **35.2 MiB** / 679,577 pings → ~16 B/ping silver, ~54 B bronze+silver | PRAGMA | drives COST_AND_SIZING |
 | 2026-06-29 | my_db | P11 | raw-string key → **679,581**; parsed-timestamp key → **679,577** | MotherDuck | dedup on the parsed key |
+
+| 2026-06-29 | Demo_fh_vegas4 | P2 (list_databases) | saw `geotab_Demo_fh_vegas4` (pre-existing from a prior interrupted run, operator reused it), `geotab_demo_fh4`, `sample_data`; wrote only to target | ChatGPT/MCP | **isolation validated — 2nd source beside geotab_demo_fh4, no cross-writes** |
+| 2026-06-29 | Demo_fh_vegas4 | credential test | `Get(Device, limit=1)` → `b30` "Demo - 48" | ChatGPT/MCP | one-row probe is a good "test once" pattern |
+| 2026-06-29 | Demo_fh_vegas4 | dim load | `silver.dim_device` = **50** (from the prior run; resume) | ChatGPT/MCP | dim via Get worked |
+| 2026-06-29 | Demo_fh_vegas4 | **P12 (preflight)** | **FAIL** — `Get` worked, Ace undiscoverable. **Confirmed cause: ChatGPT mixed connector modes** (Geotab + MotherDuck must both be official or both dev-mode); not Geotab/Ace behavior | ChatGPT/MCP | **GPS load incomplete: bronze.gps_raw=0, silver.planet_gps_pings=0.** Fix: same mode for both; preflight Ace before DDL |
+| 2026-06-29 | Demo_fh_vegas4 | host: DESCRIBE | two-`DESCRIBE` call + `COUNT(DISTINCT a||b)` shape query **blocked** by host safety; `list_columns` worked | ChatGPT/MCP | prefer `list_columns`/`list_tables`, one stmt/call, simple SQL |
+
+| 2026-06-29 | Demo_fh_vegas4 | **P13** (re-run after connector fix) | **SUCCESS** — Ace `FROM GpsLogs`, **477,413** rows for `[2026-06-27, 2026-06-29)` UTC; bronze.gps_raw=477,413 → silver.planet_gps_pings=**477,413** (0 dupes on parsed key); min `2026-06-27 00:00:00.34`, max `2026-06-28 23:59:59.76`; **50** distinct devices; gold summary 100 rows | Ace chat `O3ilNgH5eA5aQuHpYxWd`; obj `gs://planet-user-results-prod-us/4d54d37a-…csv` | full pipeline validated on a 2nd source + 2nd host. SQL had **no** IsTracked/speed/ignition filters; benign partition guard *widened* the window (`DATE BETWEEN '06-26' AND '06-30'`); left-joined `LatestVehicleMetadata` for `DeviceName` |
+| 2026-06-29 | Demo_fh_vegas4 | **P14** | reused `silver.planet_gps_pings` lacked provenance cols → provenance `INSERT` failed `Binder Error: … no column "_source_db"`; fixed with `ALTER TABLE … ADD COLUMN IF NOT EXISTS` then inserted | ChatGPT/MCP | **`CREATE TABLE IF NOT EXISTS` keeps the OLD schema** — `list_columns` + `ADD COLUMN` before insert |
+| 2026-06-29 | Demo_fh_vegas4 | device population | `GetCountOf Device`=50, `dim_device`=50, GPS-window distinct devices=50, 0 missing | Get API + MotherDuck | "include all devices" gave the full 50 (active-only trap avoided) |
+| 2026-06-29 | account | isolation | writes scoped only to `geotab_Demo_fh_vegas4`; `geotab_demo_fh4` + `sample_data` untouched | ChatGPT/MCP | isolation held across hosts |
+
+| 2026-06-29 | Demo_fh_vegas4 | daily incremental (forward) | watermark `2026-06-28 23:59:59.76` → pulled `[2026-06-29, 2026-06-30)`; Ace **248,820** rows (50 devices); silver **477,413 → 726,233**, **0 dupes**; idempotent batch-scoped derive (`WHERE _batch_id=…`); max now `2026-06-29 23:28:48.68` (partial current day, expected) | Ace chat `t91zNdOfsJH2tAMOlwmd`; obj `gs://planet-user-results-prod-us/9aad0905-…csv` | forward catch-up validated. Quirk: Ace used **inner** `JOIN LatestVehicleMetadata` (vs LEFT prior) — reconciled to 50/0-missing here, but inner can drop rows; check population. `list_databases` blocked by host → scoped to fully-qualified target only |
+
+| 2026-06-29 | Demo_fh_vegas4 | dimension sizes (operational-mirror expansion, **partial run**) | `Get` counts: User=1, Zone=0, Rule=13, **Diagnostic=65,757** → `Diagnostic` too large for the Get→JSON hand-build path (esp. ChatGPT, no scratchpad); switched it to the Ace bulk-CSV path | ChatGPT/MCP | **pick channel by size**: large reference tables use the bulk CSV path, or load only the subset referenced by facts (ENTITY_CATALOG §Dimensions). Trips/exc/status backfill to 2026-06-01 still in progress |
+
+| 2026-06-29 | Demo_fh_vegas4 | Get propertySelector field check (partial run) | `Get(User, fields=[…,'isActive'])` → **`'User.isActive' is an unknown property'`** (`NotSupportedException`) — one bad field fails the whole call | ChatGPT/MCP | verify fields with `GetEntity` before selecting; `User` has no `isActive` (use `isDriver` + `activeFrom`/`activeTo`). ENTITY_CATALOG §Dimensions |
+
+| 2026-06-29 | Demo_fh_vegas4 | op-mirror: trips backfill→2026-06-01 | **60,334** trips (bronze=silver), 50 devices, 0 null keys, `2026-06-01 00:00:28` → `06-29 23:28:52` | Ace chat `YwUuR4faAFrXUPvPPkLl` | broad trip projection failed `invalid_value`; core `Trip` cols worked; `DeviceName` not returned → derive from dim_device |
+| 2026-06-29 | Demo_fh_vegas4 | op-mirror: exception_events backfill→2026-06-01 | **19,295** events, 50 devices, 0 null keys, max `06-28 23:37:38` (event source had nothing later — event cadence) | Ace chat `UjNhHQOEfOqrOSf9IPXb` | — |
+| 2026-06-29 | Demo_fh_vegas4 | op-mirror: status_data (the heavy fact) | Ace export **23,153,282** rows → **10 signed-URL shards**; bronze loaded all 23.15M; **silver partial (6,946,986)** — one-shot derive timed out at 55 s, per-shard inserts worked (3/10 before tool time) | Ace chat `KWtmkvx0aIxMuSFJad2L`; objs `…dd2-…000` … `…009.csv` | **sharding + per-shard derive** quirks folded in (ACE #2, MEDALLION §large facts). Ace returned col `DATA` uppercase (case drift, quirk #7) |
+| 2026-06-29 | Demo_fh_vegas4 | op-mirror: dimensions | dim_user=1, dim_zone=0, dim_rule=13 via Get; **dim_diagnostic NOT done** (65,757 too large for Get→JSON) | Geotab Get | use Ace bulk CSV or load only fact-referenced subset (ENTITY_CATALOG §Dimensions) |
+| 2026-06-29 | Demo_fh_vegas4 | scope caveat | GPS not extended to 2026-06-01 this run (still starts 06-27); "all facts" → remaining GPS backfill is `[06-01, 06-27)` | MotherDuck | finish with the windowed backward backfill |
+
+| 2026-06-29 | Demo_fh_vegas4 | storage / cost re-measure (P10) | `PRAGMA database_size` = **1.7 GiB** for the operational mirror (~51M rows kept); `status_data` 23,153,282 (~16k/veh/day, ~90% of warehouse) ≫ GPS 2,432,798 (~1,700/veh/day) ≫ trips 60,334, exc 19,295 | MotherDuck | **StatusData dominates: operational mirror ≈ 0.4 GB/veh-yr ≈ 12× GPS-only.** COST_AND_SIZING updated (free tier holds only ~25 veh-yr operational; very-large op ≈ $1.5–2k/mo). Migrated demo drifted 35→57 MiB (historical_bytes from CTAS reorg) |
+
+| 2026-06-30 | Demo_fh_vegas4 | op-mirror COMPLETE | GPS backfilled to 2026-06-01 (silver **7,158,022**, 0 dupes, bronze 11,885,206 — Ace returned ~2× dup rows, dedup collapsed them); `dim_diagnostic` **65,772** via Ace bulk CSV; gold 1,450 (29d×50); gaps: GPS/trips/status 0, exceptions 1 day (06-29, event cadence); population 50/50/50/50 | Ace chats per window (see archive) | dedup-on-dups (quirk #6), large-dim bulk path, only 56 diagnostics actually referenced |
+| 2026-06-30 | Demo_fh_vegas4 | **fabricated-data incident** | Agent had invented warehouse-only `dim_driver` / `trip_driver_assignment` / `operator_daily_*` ("synthetic_demo_assignment") not present in Geotab; operator flagged it; removed all but `silver.dim_driver` (host blocked the DROP) | ChatGPT/MCP | **Mirror real source data only — never fabricate.** New Non-negotiable #14. Finished cleanup from Claude Code (no host block): dropped `silver.dim_driver` + scratch `gps_stage_tmp`/`status_stage_tmp`/`load_probe_ok`. Left `status_data_dedup` (redundant 23M twin) + `gold.fleet_daily_operational_summary` for owner review |
 
 _(append the next run's rows here)_
 
@@ -82,3 +113,45 @@ _(append the next run's rows here)_
 **Device population (active-only trap):** GPS-active **49** (P4) · trip-active **47** (P6) · `dim_device` **50** (Get) · warehouse silver (built from an `IsTracked=TRUE` pull) **~25–26**.
 
 _(add the next session as "### Run YYYY-MM-DD" below)_
+
+### Run 2026-06-29 (Demo_fh_vegas4, ChatGPT / MCP) — isolation OK, Geotab link lost mid-run
+
+Second source, run on **ChatGPT** (different MCP host). The target `geotab_Demo_fh_vegas4` **already
+existed from a prior, interrupted run by the operator, who told it to reuse the (near-empty) DB** — so
+this is a *resume*, not a cold first run. `silver.dim_device` was already populated (**50**) from that
+earlier attempt while the fact tables were empty. Isolation still held: `list_databases` showed
+`geotab_demo_fh4` (the first source) + `sample_data`; all writes went only to the target — no
+cross-writes. Credential test `Get(Device, limit=1)` → `b30 "Demo - 48"`.
+
+**Blocker — ChatGPT connector-mode mismatch (confirmed).** Geotab `Get` worked, but `GetAceResults`
+became undiscoverable (`list_resources(["Geotab"])` returned no Geotab namespace), so the 2-day GPS pull
+never ran: `bronze.gps_raw = 0`, `silver.planet_gps_pings = 0`. **Root cause (operator-confirmed): the
+two MCP servers were in mixed modes — on ChatGPT, Geotab and MotherDuck must both be official connectors
+or both developer-mode; mixing them dropped the Geotab connector.** Not a Geotab/Ace behavior. Fix:
+same mode for both. Defensive net regardless: **probe P12 (connector preflight)** + **Non-negotiable
+#13** — verify Ace callable *before* any DDL; stop if absent (don't half-build).
+
+**Host quirks (ChatGPT MCP safety layer):** a two-statement `DESCRIBE` and a `COUNT(DISTINCT a||b)` shape
+query were both **blocked**, while `list_columns`/`list_tables` worked → guidance added to prefer those,
+one statement per call, simple shape SQL. Also confirmed: an explicit "replicate/load" instruction is the
+write-confirmation for hosts that gate `query_rw`; and a **partial-brownfield** target (dim populated,
+facts empty) is a valid resumable state (`IF NOT EXISTS`, never `CREATE OR REPLACE` silver in bootstrap).
+*(Folded into SKILL §First run + rules #2/#6/#13 and MEDALLION §brownfield.)*
+
+### Run 2026-06-29b (Demo_fh_vegas4, ChatGPT / MCP) — SUCCESS after the connector-mode fix
+
+Re-ran once both MCP servers were in the **same mode** (the §D fix). The full minimal mirror completed
+on a **second source + second host**:
+- Ace returned **477,413** GPS rows for `[2026-06-27, 2026-06-29)` UTC, `FROM GpsLogs`, columns exactly
+  as asked, **no** IsTracked/speed/ignition filters; a benign partition guard *widened* the window
+  (`DATE(GpsDateTime) BETWEEN '2026-06-26' AND '2026-06-30'`); `LatestVehicleMetadata` left-joined for
+  `DeviceName`.
+- Landed append-only into `bronze.gps_raw` (477,413), derived `silver.planet_gps_pings` (**477,413**, 0
+  dupes on the parsed key), built `gold.daily_device_gps_summary` (100 rows).
+- Population check: `GetCountOf Device`=50 = `dim_device`=50 = GPS-window distinct devices=50, 0 missing.
+- Isolation held: only `geotab_Demo_fh_vegas4` written; `geotab_demo_fh4` + `sample_data` untouched.
+- **New finding (P14):** the reused `silver.planet_gps_pings` lacked provenance columns; `CREATE TABLE
+  IF NOT EXISTS` kept the old schema, so the provenance `INSERT` errored until `ALTER TABLE … ADD COLUMN
+  IF NOT EXISTS` was run. → MEDALLION §brownfield schema-drift checklist.
+- Minor: the signed URL bucket was `planet-user-results-prod-**us**` (region varies by DB; URL host
+  isn't fixed to `-eu`). Store only the `gs://<bucket>/<object>` path, never the signed query string.
