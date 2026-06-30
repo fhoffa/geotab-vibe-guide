@@ -107,16 +107,18 @@ produced `driving_duration_minutes` for trips).
 
 Every `GetAceResults` call here returned **110–192 KB** — even a 3-row answer (110 KB), because the
 payload is the whole chat object (reasoning, message history, schema context, generated SQL, a preview)
-— **the data itself is not inline, it's at the signed URL.** In *this* harness the oversized result is
-**spilled to a file** and you get a path. **Treat the blob as data to parse with a tool, never as text
-to read into context.** You need exactly **three** things — the **URL** (to load), the **`columns`**
-(to reconcile), and the **SQL Ace ran** (to verify before loading — quirks #11/#15):
+— **the data itself is not inline, it's at the signed URL(s).** In *this* harness the oversized result
+is **spilled to a file** and you get a path. **Treat the blob as data to parse with a tool, never as
+text to read into context.** You need three things — the **URL(s)** (to load — **may be several shards
+for a large export; load them all**), the **`columns`** (to reconcile), and the **SQL Ace ran** (to
+verify before loading — quirks #11/#15):
 
 ```bash
 F="<path the tool gave you>"
 
-# 1. The signed CSV URL (what you load from):
-grep -oE 'https://[^" ]*storage\.googleapis\.com[^" ]*\.csv[^" ]*' "$F" | head -1
+# 1. The signed CSV URL(s) — grep ALL of them, not head -1. Large exports SHARD into many
+#    (`signed_urls` is an array; a 23.15M-row StatusData pull came back as 10 shards). Load EVERY shard.
+grep -oE 'https://[^" ]*storage\.googleapis\.com[^" ]*\.csv[^" ]*' "$F" | sort -u
 
 # 2. What Ace ACTUALLY named the columns (reconcile vs what you asked):
 grep -oE '"columns":\[[^]]*\]' "$F" | head -1
@@ -198,8 +200,10 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
    payload is the whole chat object (reasoning, generated SQL, message history) — not the data.
    → Grep the file; never inline.
 
-2. **A signed CSV URL is always present** — even for the 3-row top-N query. So your loader can always
-   rely on the URL path. (`preview_array` is a bonus for small sets.)
+2. **A signed CSV URL is always present** — even for the 3-row top-N query — and **`signed_urls` is an
+   array that SHARDS for large exports** (a 23.15M-row StatusData pull returned **10** shard URLs
+   `…-000000000000.csv` … `…-000000000009.csv`). **Load every shard**, not just the first, or your counts
+   are silently wrong. (`preview_array` is a bonus for small sets.)
 
 3. **`preview_array` = inline rows for ≤10.** Example (top-3 distance):
    `[{"distance_km":2624.65,"vehicle_label":"Demo - 22"}, …]`. Beyond 10 rows, use the URL.
@@ -213,9 +217,13 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
    ever force VARCHAR or hand-parse, use `replace(col,' UTC','')::TIMESTAMP` — **not** a fixed
    `strptime` (the fraction width varies).
 
-6. **Second-precision boundary.** Asked for "after 2026-06-26 01:42:40.779"-equivalent; the CSV's min
-   was `…40.423` — 4 rows in that second sat at/below our watermark. → **Dedup mandatory.** The
-   `WHERE event_time > (SELECT max(event_time) …)` filter skipped exactly those 4.
+6. **Second-precision boundary + outright duplicate rows.** Two ways Ace hands you dupes: (a) the
+   "after HH:MM:SS.mmm" lower bound is honored only to the second, so the boundary second re-appears (we
+   saw 4 rows at/below the watermark); and (b) **Ace can return each row literally ~2×** — observed in
+   GPS backfill windows where the CSV had exact duplicate `(DeviceId, GpsDateTime)` pairs:
+   3,529,928→1,764,333, 3,449,906→1,724,851, 2,472,574→1,236,040 after dedup (and bronze 11.88M → silver
+   7.16M overall). → **Dedup on the natural key is mandatory, every load** (`DISTINCT ON` / anti-join on
+   the parsed key). Bronze keeps the dupes (append-only); silver collapses them.
 
 7. **Inconsistent column honoring.** Honored: `DeviceId,DeviceName,…,Speed`; `vehicle_label`;
    `distance_km`; `trip_start_utc`,`trip_end_utc`,`driving_duration_minutes`. **Not** honored:
@@ -250,9 +258,17 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
 
 12. **It injects unrequested partition-prune predicates.** Even in plain-English mode and even when
     handed exact SQL, Ace tends to add a `DATE(<ts>) >= DATE('…')` / `DATE(<ts>) BETWEEN …` guard it
-    wasn't asked for (BigQuery partition pruning). Harmless when it's a *superset* of your range (we saw
-    `DATE(GpsDateTime) >= DATE('2026-06-27')` on a `>= 2026-06-28` ask), but it means "Ace ran my query
-    verbatim" is rare — **always read the returned SQL and confirm the guard doesn't clip your window.**
+    wasn't asked for (BigQuery partition pruning). **Benign when it *widens/supersets* your range**
+    (seen: `DATE(GpsDateTime) >= DATE('2026-06-27')` on a `>= 2026-06-28` ask; and
+    `DATE(GpsDateTime) BETWEEN '2026-06-26' AND '2026-06-30'` around a `[06-27, 06-29)` UTC window) —
+    **only a problem if it *narrows* your UTC bounds** or adds active/speed/ignition predicates. Either
+    way "Ace ran my query verbatim" is rare → **always read the returned SQL and confirm the guard
+    doesn't clip your window.** (Also: asking for `DeviceName` makes Ace join `LatestVehicleMetadata` —
+    and it **varies the join type across runs** (seen: `LEFT JOIN` one day, inner `JOIN` the next). An
+    **inner** join silently **drops fact rows for devices missing from metadata**; it happened to
+    reconcile to all 50 devices here, but **always run the row-count + device-population check after the
+    load**, and if rows are short, re-ask with "left join metadata; include all devices even if metadata
+    is missing.")
 
 13. **It converts units unless you pin them.** Distances/speeds silently flip km↔miles
     (`ROUND(TripDistance_Km * 0.621, 2) AS Distance_Miles`). Say "in kilometers, do not convert units"
@@ -294,6 +310,39 @@ signed URL directly via the pre-installed `httpfs` extension — no download nee
     Telematics (`GpsLogs`, `StatusData`) lands in seconds. → **For anything you just created/changed
     (zones, device metadata, groups, rules, users) read it from the Get API, not Ace.** See
     [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
+
+19. **ChatGPT setup gotcha: use both MCP servers in the *same* mode.** Confirmed cause of a Geotab
+    connector dropping mid-session on ChatGPT (2026-06-29): the two servers were in **mixed modes**. In
+    ChatGPT, Geotab and MotherDuck must **both** be official connectors **or both** developer-mode —
+    mixing them made the Geotab connector go undiscoverable, so a GPS pull never ran and a warehouse was
+    left with empty bronze. **Fix: configure both the same way.** Belt-and-suspenders: **before any
+    DDL/write, preflight that Ace is actually callable** (a tiny `GetAceResults`, not just `Get`); if it
+    isn't, stop before creating tables (bootstrap is resumable). Not a Geotab/Ace behavior — a host
+    config issue. (Non-negotiable #13.)
+
+20. **The injected window's *upper bound* can silently drop the current day — a freshness/export trap.**
+    (Measured 2026-06-30 on **both** `demo_fh4` and `Demo_fh_vegas4`; this is the sharp edge of #12.)
+    The *same* prompt — "single most recent raw status data timestamp, raw not a rollup" — returned the
+    true live max on some calls but **`2026-06-29 23:59:59.xxx UTC`** (yesterday, end-of-day) on others,
+    **non-deterministically, per call**. All calls used `FROM StatusData` (same table — *not* a #15
+    source swap); the difference was the injected `BETWEEN … AND <upper>` bound:
+    - `… AND CURRENT_DATETIME()` → upper bound = *now* → live max `2026-06-30 14:39–14:40 UTC` ✓
+    - `… AND CURRENT_DATE()` → upper bound = **midnight today** → everything after 00:00 today is
+      excluded → max collapses to `2026-06-29 23:59:59.xxx` ✗ (looks like real data; it's an artifact)
+
+    Two tells: (a) a "most recent" answer landing exactly on `YYYY-MM-DD 23:59:59.xxx` is almost always a
+    `CURRENT_DATE()` upper-bound clip, not a real reading; (b) the window **size and bound type also vary
+    per call** — seen `7 DAY`/`30 DAY`, `DATE_SUB(CURRENT_DATE(),…)`+`DATE()` cast vs
+    `DATETIME_SUB(CURRENT_DATETIME(),…)`, lower-bound-only vs `BETWEEN`; **not DB-stable** (`demo_fh4`
+    gave both 7-day and 30-day across calls). Lower-bound-only guards (the GPS-freshness form,
+    `WHERE DATE(GpsDateTime) >= …`) stayed live; the **upper bound is the dangerous half**.
+    → **Consequences:** (1) Don't use Ace as a freshness/watermark oracle — it can under-report by a full
+    day; read true latest from the **Get API / `DeviceStatusInfo`** (the skill already takes the watermark
+    from the warehouse, not Ace). (2) On any **windowed export**, read the returned SQL and confirm the
+    upper bound is `CURRENT_DATETIME()`/your explicit `hi`, **not** `CURRENT_DATE()` — otherwise today's
+    rows silently miss the CSV. The bronze-append + dedup + forward-catch-up design tolerates a clipped
+    pull (next run re-pulls), but a *persistently* clipped upper bound means today never lands until
+    tomorrow. Pin it: *"upper bound = now (current timestamp), include rows through the present moment."*
 
 ### Ace's SQL is a feature, not a leak — use it as an approval gate
 

@@ -148,7 +148,7 @@ bronze first, then derive silver from it so the patch is replayable like everyth
 ```sql
 -- 1. land the re-pulled window in bronze (append-only)
 INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'backfill:<window_lo>', now(), 'demo_fh4', 'ace_csv', 'gs://…/<uuid>….csv'
+SELECT *, 'backfill:<window_lo>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
 FROM read_csv_auto('<window url>', all_varchar=true);
 -- 2. derive only the genuinely-missing rows into silver
 INSERT INTO my_db.planet_gps_pings (DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed)

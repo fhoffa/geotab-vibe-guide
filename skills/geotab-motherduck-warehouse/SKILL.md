@@ -76,7 +76,7 @@ SELECT max(GpsDateTime) FROM my_db.planet_gps_pings;          -- 2026-06-26 01:4
 ```sql
 -- 3. Land raw in bronze, append-only, lossless (no dedup, no watermark — keep everything)
 INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'ace:<chat-uuid>', now(), 'demo_fh4', 'ace_csv', 'gs://…/<uuid>….csv'
+SELECT *, 'ace:<chat-uuid>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
 FROM read_csv_auto('https://storage.googleapis.com/planet-user-results-prod-eu/<uuid>-000000000000.csv?X-Goog-...',
                    all_varchar=true);
    → 157,419 rows appended. bronze_gps_raw: 522,162 (bootstrap) → 679,581.
@@ -101,12 +101,14 @@ blind. See [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md).
 ## Critical quirks (all observed in testing)
 
 The single most important file is [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md), which holds
-the **full 18-quirk catalog with evidence**. The decision-critical ones:
+the **full 20-quirk catalog with evidence** — that catalog's numbering is canonical (bare `quirk #N`
+references point to it). The decision-critical ones below (rows 1–11 share its numbers; 12+ are a
+curated subset):
 
 | # | Quirk | Engineering consequence |
 |---|-------|------------------------|
 | 1 | **Ace MCP response is always huge** (110–192 KB even for 3 rows — it's the chat object, not the data) and exceeds the token cap → this harness spills it to a file | **Never read it inline; parse it as a file** for the URL, `"columns"`, and the **SQL to verify**. Spill-to-file is harness-specific — if your client returns it inline/truncated, offload to a file first ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Step 2). |
-| 2 | **A signed GCS CSV URL is always returned** (`storage.googleapis.com/planet-user-results-prod-eu/<uuid>-…csv`), even for tiny results; expires in ~24h (`X-Goog-Expires=86399`) | Load via `read_csv_auto('<url>')` directly from MotherDuck — no local download. Load **within 24h**. |
+| 2 | **A signed GCS CSV URL is always returned** (`storage.googleapis.com/planet-user-results-prod-<region>/<uuid>-…csv` — region varies, e.g. `-eu`,`-us`), even for tiny results; **`signed_urls` SHARDS for large exports** (23.15M rows → 10 shard URLs); expires ~24h | `read_csv_auto('<url>')` per shard from MotherDuck — **load *every* shard** or counts are wrong. Load within 24h; match by shape, not a fixed region host. |
 | 3 | `preview_array` holds the rows **inline for ≤10 rows**; bigger sets need the URL | Small lookups can skip the URL; bulk loads always use it. |
 | 4 | **NULLs are omitted** from the JSON (the key disappears) | "Missing key = null." Don't positional-parse assuming all keys exist. |
 | 5 | **Timestamps carry a literal ` UTC` suffix** (`2026-06-26 01:42:40.423 UTC`) with **variable fractional digits** (`.423`, `.55`, `.685`) | `read_csv_auto` coerces to `TIMESTAMP` automatically; if you parse by hand, strip ` UTC` + `::TIMESTAMP` — **never a fixed `strptime`**. |
@@ -120,6 +122,7 @@ the **full 18-quirk catalog with evidence**. The decision-critical ones:
 | 13 | **Source-table selection varies for the same question** (not numeric noise) — "distinct GPS devices on a day" gave **49** from `GpsLogs` on 3 identical runs, but **47** from `Trip` when an explicit `…FROM GpsLogs` SQL was attached (Ace ignored it) | A differing count across runs is usually a different `FROM`, not randomness — **read the returned SQL**, pin the table, don't trust an attached SQL to force the source. This is *why* loads are append-to-bronze + dedup and repairs re-derive from bronze. |
 | 14 | **Near-real-time for continuous streams** (GPS ~19–98 s; StatusData = live API's exact freshest), not batch. **Event tables** (`Trip`/`FaultData`/`ExceptionEvent`) only update when an event fires | Ace is fine for fresh loads. Gauge event tables by **counting events in a recent window**, not `max(ts)` vs now (a 9 h-old fault ≠ lag). ([`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md)) |
 | 15 | **Ace returns the SQL it ran, by design** — a transparency/approval surface, not a leak | **Lint it before loading** — it catches every Class-A semantic problem while it's free to fix ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). |
+| 16 | **Injected window's *upper bound* can drop the current day** (catalog #20) — same "most recent raw status" prompt returned the live max on some calls but `2026-06-29 23:59:59.xxx` on others, because the guard sometimes upper-bounds on `CURRENT_DATE()` (midnight today) instead of `CURRENT_DATETIME()`. Per-call, non-DB-stable; seen on both DBs 2026-06-30 | **Don't use Ace for freshness/watermark** (it can under-report by a day — use `Get`/`DeviceStatusInfo`). On windowed exports, confirm the SQL's upper bound is `CURRENT_DATETIME()`/your `hi`, not `CURRENT_DATE()`. A `…23:59:59.xxx` "latest" is the fingerprint. |
 
 ## Three source channels — pick per entity *and* per freshness need
 
@@ -157,7 +160,7 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 
 | Reference | When to read |
 |-----------|--------------|
-| [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 11 quirks in depth, timing/volume benchmarks, continue-chat |
+| [`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) | Extracting bulk data from Ace: prompt rules, finding the URL in the spilled file, the 20 quirks in depth, timing/volume benchmarks, continue-chat |
 | [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | The bronze-vs-`Get` decision rule, bronze/silver/gold DDL, append-only bronze + deriving silver from it, the brownfield bootstrap, shape checks, normalized-key dedup, full replay |
 | [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The three backfills (forward catch-up, historical recovery, cross-channel reconciliation), the `warehouse_ingest_log` state table, watermarks, gap detection, the active-only population check, and the settle loop |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |
@@ -170,26 +173,54 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 
 The examples in this skill use **`my_db`**, the demo warehouse for `demo_fh4`. **For a different Geotab
 database, never reuse `my_db` or any other source's database** — Geotab IDs (`b1`,`b2`,…) repeat across
-databases, so sharing tables silently collides (Non-negotiable #12). Do this Step 0 first:
+databases, so sharing tables silently collides (Non-negotiable #12). Do these steps before any write:
 
-1. **See what already exists** — `mcp__MotherDuck__list_databases` (or `SHOW DATABASES`). Confirm the
+1. **Preflight the connectors — *before* any DDL.** Confirm all three tools you'll need are actually
+   callable now: MotherDuck, Geotab **`Get`** (dimensions), and Geotab **`GetAceResults`** (Ace, the bulk
+   fact channel). Verify Ace with a tiny call, not just `Get`. **ChatGPT setup gotcha:** the Geotab and
+   MotherDuck servers must be in the **same mode** — both official connectors *or* both developer-mode;
+   a mixed setup dropped the Geotab connector mid-session (2026-06-29), leaving a warehouse with empty
+   bronze. **If Ace isn't callable, fix the connector setup and stop before creating tables** — facts
+   need it; don't leave a half-built warehouse.
+2. **See what already exists** — `mcp__MotherDuck__list_databases` (or `SHOW DATABASES`). Confirm the
    name you're about to use is new and isn't another source's warehouse. (This account already holds
    **`geotab_demo_fh4`** — the demo, in the recommended `bronze`/`silver`/`gold` layout — plus
-   `sample_data`, so a new source needs its own `geotab_<source>` database.)
-2. **Create an isolated namespace** (recommended: **database per source + schema per layer**):
+   `sample_data`, so a new source needs its own `geotab_<source>` database. Reading other DBs is fine;
+   **writing** must be target-only.) **If the host blocks `list_databases`** (some MCP safety layers do —
+   seen on ChatGPT), proceed scoped strictly to your fully-qualified `geotab_<source>.*` target, never
+   reference another database name, and note the blocked check in the report.
+3. **Create an isolated namespace** (recommended: **database per source + schema per layer**):
    ```sql
    CREATE DATABASE IF NOT EXISTS geotab_<source>;
    CREATE SCHEMA   IF NOT EXISTS geotab_<source>.bronze;
    CREATE SCHEMA   IF NOT EXISTS geotab_<source>.silver;
    CREATE SCHEMA   IF NOT EXISTS geotab_<source>.gold;
+   CREATE TABLE IF NOT EXISTS geotab_<source>.main.warehouse_meta (
+     source_db VARCHAR, geotab_server VARCHAR, layout VARCHAR, note VARCHAR,
+     created_at TIMESTAMP DEFAULT now());
+   INSERT INTO geotab_<source>.main.warehouse_meta (source_db, geotab_server, layout, note)
+   VALUES ('<source>', '<server>', 'db-per-source + schema-per-layer', 'Geotab source identity');
    ```
    Use `geotab_<source>` (with `bronze`/`silver`/`gold` schemas) everywhere the examples say `my_db`, and
-   stamp `_source_db='<source>'` in every bronze insert.
-3. **Gate before the first write:** the target database name must encode *this* source and must not be an
+   stamp `_batch_id` on every bronze insert (the source DB is recorded once at the database level in
+   `main.warehouse_meta` — see rule #12; no per-row `_source_db`). **`CREATE TABLE IF NOT EXISTS` only — never
+   `CREATE OR REPLACE` silver during bootstrap.** A partial-brownfield target is fine and resumable: a
+   dimension may already be populated while bronze/facts are empty — preserve the dim, create bronze,
+   continue the fact bootstrap.
+4. **Gate before the first write:** the target database name must encode *this* source and must not be an
    existing other-source DB. `IF NOT EXISTS` keeps a re-run safe. Then proceed to the loop / backfill.
 
-Two sources must never share a database+schema. Rationale + the schema-per-source alternative:
-[`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
+> **Restrictive MCP hosts (e.g. ChatGPT).** Some hosts' safety layer blocks **multi-statement** calls and
+> complex read-only SQL. Observed: a two-`DESCRIBE` call and a `COUNT(DISTINCT … || …)` shape query were
+> both blocked, but `mcp__MotherDuck__list_columns` / `list_tables` worked. So: **prefer `list_columns` /
+> `list_tables` over `DESCRIBE`, run one statement per call, and keep shape-check SQL simple** (split
+> concat/parse aggregates into small steps). Same spirit as never reading the spilled Ace payload inline.
+> Also seen: a **long signed URL inline in `read_csv_auto('<url>')` was blocked**; concatenating the URL
+> from string pieces in SQL got it through. And a one-shot derive over 20M+ rows hit the tool timeout —
+> derive **per shard/day** (see [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §large facts).
+
+Two sources must never share a database (db-per-source + schema-per-layer is the only supported layout).
+Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 
 ## Bootstrap vs daily run vs the three backfills
 
@@ -220,7 +251,9 @@ Two sources must never share a database+schema. Rationale + the schema-per-sourc
    replayable record. Bronze is **append-only** (`CREATE TABLE IF NOT EXISTS` + `INSERT`, never
    `CREATE OR REPLACE`); stamp every batch with provenance (`_batch_id`, `_source_channel`, …).
 2. **Always check shape & size before deriving.** `DESCRIBE SELECT * FROM read_csv_auto('<url>')` and a
-   `COUNT(*)` + `min/max(event_time)`. Confirm columns/types *or* map by position in the derive.
+   `COUNT(*)` + `min/max(event_time)`. Confirm columns/types *or* map by position in the derive. (On
+   restrictive MCP hosts that block `DESCRIBE`/multi-statement/complex SQL — e.g. ChatGPT — use
+   `list_columns`/`list_tables`, one statement per call, and simple staged shape-check SQL.)
 3. **Dedup every silver derive** (quirk #6) — `> watermark` filter or natural-key anti-join, and dedup
    on the **parsed/normalized** key (bronze mixes ` UTC`-suffixed and clean timestamps). Never trust Ace's boundary.
 4. **Never ask Ace for a URL/CSV/download** (quirk #8). Ask for data + columns. **Specificity beats
@@ -229,10 +262,12 @@ Two sources must never share a database+schema. Rationale + the schema-per-sourc
    reliable as feeding Ace the SQL, and attaching SQL adds gateway-rejection risk without fixing
    non-determinism ([`ACE_TO_CSV.md`](references/ACE_TO_CSV.md) §Does adding SQL help).
 5. **Never read the raw Ace MCP result inline** (quirk #1) — parse it as a file for the URL, `columns`, and the **SQL** (lint the SQL before loading — it's the approval gate). If your client returns it inline instead of spilling, offload to a file first; never let ~150 KB into context.
-6. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts.
+6. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts. An explicit "replicate/load/sync this database" request *is* that intent — it's the confirmation for hosts that gate writes.
 7. **Test credentials/queries once**, not in a loop. Load CSVs into bronze **within ~24h** before the URL expires.
-8. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead.
+8. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead: drop everything from `?` and rewrite the host, `https://storage.googleapis.com/<bucket>/<object>?X-Goog-…` → `gs://<bucket>/<object>`. (The bucket region varies by DB — `…-prod-us`, `…-prod-eu`, … — so match by shape, not a fixed host.)
 9. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the derive**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
 10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, reconciliation). Reconcile **dimensions** with `GetCountOf` (exact); reconcile **fact windows** with a bounded `Get` read of the same window — **`GetCountOf` ignores date/device filters for facts** and returns the whole-table count. To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace can answer the same question from a different source table across runs (a "distinct devices" ask resolved to `GpsLogs`=49 vs `Trip`=47), so a full re-ask can replace good data with a differently-shaped answer.
 11. **Writes can drop mid-call** — keep them idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying.
-12. **Isolate each Geotab source.** Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so loading a second source into the *same* tables **collides** in silver/dims (it appends+dedups, not overwrites — worse). **Recommended: a MotherDuck database per Geotab source + a schema per medallion layer** (`geotab_demo_fh4.bronze.*` / `.silver.*` / `.gold.*`) — source isolation lands at the database level where Sharing, retention, access, and cost are scoped, and layers read cleanly as schemas. Alternative for one owner's own fleets wanting easy cross-fleet joins: one shared database, **schema per source** (layer as table prefix). **On a new source, `list_databases` FIRST and create a fresh `geotab_<source>`; never write into a database that already holds another source.** Never mix sources in one schema; keep `_source_db` in bronze for provenance. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate, [`SKILL.md`](SKILL.md) §First run.)
+12. **One MotherDuck database per Geotab source + a schema per medallion layer** (`geotab_<source>.bronze.*` / `.silver.*` / `.gold.*`). Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so two sources in the *same* tables **collide** in silver/dims (append+dedup, not overwrite — worse). Database-level isolation is also where MotherDuck scopes Sharing, retention, access, and cost. **On a new source, `list_databases` FIRST and create a fresh `geotab_<source>`; never write into a database that already holds another source.** **Provenance: keep per-row `_batch_id`; record the source identity once at the DB level** in a `main.warehouse_meta` table (+ optional `COMMENT ON TABLE`, `warehouse_ingest_log`) — **no per-row `_source_db`** (constant in this layout). **Don't use `COMMENT ON DATABASE` — it's *not implemented* in MotherDuck** (verified 2026-06-30: "Not implemented Error: Adding comments to databases is not implemented"); `COMMENT ON TABLE`/`COLUMN` do work. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate, [`SKILL.md`](SKILL.md) §First run.)
+13. **Preflight the connectors before any DDL/write.** Confirm MotherDuck, Geotab `Get`, **and** Geotab `GetAceResults` (Ace) are callable *now* — verify Ace with a tiny call, not just `Get`. **On ChatGPT, use both servers in the same mode** (both official connectors or both developer-mode) — a mixed setup dropped the Geotab connector mid-session (2026-06-29), leaving an empty-bronze warehouse. If Ace is unavailable, fix the setup and **stop before creating tables** — bulk facts need it. Bootstrap is resumable (`IF NOT EXISTS`), so a clean stop is safe to continue later.
+14. **Mirror real source data only — never fabricate, synthesize, or infer rows/tables.** Every table must trace to a Geotab pull (Ace or `Get`). Don't invent dimensions or "demo" layers (observed: an agent created `dim_driver` / `trip_driver_assignment` / `operator_*` "synthetic assignments" that didn't exist in the source — they had to be removed). If the source has no drivers, the mirror has no drivers. Need a derived/illustrative table? Put it in **`gold`**, clearly named, built **only** from real silver — never seeded with made-up values. When asked for something the source doesn't contain, say so; don't fill the gap with synthetic data.

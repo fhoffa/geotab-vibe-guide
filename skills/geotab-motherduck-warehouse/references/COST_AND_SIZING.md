@@ -43,19 +43,46 @@ rows (~75 B/row); DuckDB compresses the typed silver to roughly a quarter of tha
 | **Bronze + silver** (keep full raw, the default) | ~54 B | **~33 MB ≈ 0.033 GB** |
 
 ¹ Assuming **~1,700 GPS pings / vehicle / day** — the observed rate for *active* demo vehicles
-(`b3` logged 1,756 on 2026-06-28; fleet average 157,419 ÷ 26 ÷ 3.7 days ≈ 1,636). Parked/idle vehicles
-or a different logging cadence scale this down; **cost is linear in ping rate**, so adjust if your fleet
-differs. Trips + exceptions are <15% on top of GPS and rounded into the per-vehicle figure.
+(`b3` logged 1,756 on 2026-06-28; fleet averages 157,419 ÷ 26 ÷ 3.7 ≈ 1,636 and, on the Vegas fleet,
+2,432,798 ÷ 50 ÷ 29 ≈ 1,678). Parked/idle vehicles or a different cadence scale this down; **cost is
+linear in ping rate.** The above is **GPS-only (a minimal mirror)** — trips + exceptions add <15%.
+
+### …but an operational mirror is ~10× bigger — StatusData dominates
+
+Measured **2026-06-29 on `geotab_Demo_fh_vegas4`** (50 vehicles, ~1 month, full operational mirror):
+`PRAGMA database_size` = **1.7 GiB** for **~51 M rows kept** (bronze + silver) — ~36 B/row average. The
+breakdown is the point:
+
+| Fact | silver rows | ≈ rows / veh / day | share of the warehouse |
+|------|-------------|--------------------|------------------------|
+| **`status_data`** (engine/sensor) | **23,152,677** | **~16,000** | **~90%** |
+| GPS | 2,432,798 | ~1,700 | ~9% |
+| trips | 60,334 | ~42 | <1% |
+| exception_events | 19,295 | ~14 | <1% |
+
+**`StatusData` is ~10× GPS** and swamps everything else. So:
+
+| Mirror | ≈ per vehicle-year (bronze+silver) |
+|--------|-----------------------------------|
+| **Minimal** (GPS + dims) | ~0.033 GB |
+| **Operational** (GPS + trips + exceptions + **StatusData**) | **~0.4 GB** (1.7 GiB ÷ 50 veh ÷ ~1 mo × 12) |
+
+Caveats: StatusData volume swings hugely with how many diagnostics a device reports — re-measure for your
+fleet. And that 1.7 GiB includes some `historical_bytes` retention churn from a messy multi-attempt load
+(the migrated demo similarly drifted 35 → 57 MiB after its CTAS reorg) — steady-state is somewhat lower.
+If you don't need engine/sensor data, **skip `status_data`** and you're back to the ~0.033 GB/veh-yr row.
 
 ## How much fits in the free 10 GB?
 
-| Keeping | 10 GB holds | In practice |
-|---------|-------------|-------------|
-| Silver only | **~1,000 vehicle-years** | 50 vehicles for ~20 yrs · 500 vehicles for ~2 yrs |
-| Bronze + silver | **~300 vehicle-years** | 50 vehicles for ~6 yrs · 100 vehicles for ~3 yrs · ~300 vehicles for ~1 yr |
+| Mirror / keeping | 10 GB holds | In practice |
+|------------------|-------------|-------------|
+| **Minimal** (GPS), silver only | **~1,000 vehicle-years** | 50 vehicles for ~20 yrs · 500 for ~2 yrs |
+| **Minimal** (GPS), bronze + silver | **~300 vehicle-years** | 50 vehicles for ~6 yrs · ~300 for ~1 yr |
+| **Operational** (incl. StatusData), bronze + silver | **~25 vehicle-years** | 50 vehicles for ~6 **months** · 25 for ~1 yr |
 
-**A small fleet (tens of vehicles) lives in the free tier for years.** A few-hundred-vehicle fleet fits
-for months-to-years depending on whether you keep raw.
+**A small GPS-only mirror lives in the free tier for years; an *operational* mirror (with StatusData)
+fills 10 GB in months** even for a small fleet (the Vegas one-month operational mirror was already
+1.7 GiB). For operational mirrors, plan on Business storage early, prune stable raw, or skip StatusData.
 
 ## Compute: how cheap a refresh is, and how often you can run it free
 
@@ -103,16 +130,17 @@ For small fleets, this all stays inside the 10 CU-hr free allotment, so **the bi
 
 ## What a large / very large customer should expect
 
-Steady state, retaining **1 year** of history, **keeping full raw** (bronze+silver, ~0.033 GB/veh-yr),
-us-east-1. Storage is the only fleet-linear cost; the Business platform fee and analytics compute
-dominate the total.
+Steady state, retaining **1 year** of history, **keeping full raw** (bronze+silver), us-east-1. Storage
+is the only fleet-linear cost; the Business platform fee and analytics compute dominate the total. Two
+storage columns: **minimal** (GPS, ~0.033 GB/veh-yr) vs **operational** (incl. StatusData, ~0.4 GB/veh-yr
+— ~12×, measured on Vegas).
 
-| Fleet | GPS pings/day | Storage @ 1 yr | Storage $/mo | + Platform | + Compute (est.²) | **≈ Total / mo** |
-|-------|---------------|----------------|--------------|------------|-------------------|------------------|
-| Small — 50 | ~85 K | 1.7 GB | **$0** (free tier) | $0 (Lite) | $0 (incl.) | **$0** |
-| Medium — 500 | ~850 K | 16.5 GB | $0.66 | $250 (Business)³ | ~$10 | **~$260** |
-| Large — 5,000 | ~8.5 M | 165 GB | $6.60 | $250 | ~$10–40 | **~$270–300** |
-| Very large — 50,000 | ~85 M | 1.65 TB | $66 | $250 | ~$50–200 | **~$370–520** |
+| Fleet | Storage @ 1 yr — minimal (GPS) | Storage @ 1 yr — **operational (StatusData)** | Storage $/mo (min → op) | + Platform | + Compute² | **≈ Total/mo (min → op)** |
+|-------|------|------|------|------|------|------|
+| Small — 50 | 1.7 GB (free) | **20 GB** | $0 → $0.80 | $0 Lite / $250 Biz³ | ~$0–10 | **$0 → ~$260** |
+| Medium — 500 | 16.5 GB | **200 GB** | $0.66 → $8 | $250 | ~$10–40 | **~$260 → ~$300** |
+| Large — 5,000 | 165 GB | **2 TB** | $6.60 → $80 | $250 | ~$40–200 | **~$300 → ~$530** |
+| Very large — 50,000 | 1.65 TB | **20 TB** | $66 → **$800** | $250 | ~$200–800 | **~$520 → ~$1,850** |
 
 ² **Compute is usage-driven, not fleet-linear.** *Ingestion* is cheap — DuckDB loads millions of
 rows/sec, so even 85 M pings/day is minutes of Duckling time. The variable cost is *analytics* (gold
@@ -121,19 +149,60 @@ Standard/Jumbo Duckling at $2.40–$4.80/hr). This skill's pipeline alone stays 
 ³ Medium can stay on **Lite silver-only** (5 GB/yr < 10 GB) for **$0** if it prunes raw and skips the
 Business features — the $250 is the cost of *choosing* Business, not a fleet requirement.
 
-**Headline:** even a 50,000-vehicle fleet keeping years of history is **a few hundred dollars a month** —
-storage at $0.04/GB is almost a rounding error (1.65 TB ≈ $66/mo); the $250 Business platform fee is the
-biggest single line. Retain 3 years instead of 1 and very-large storage roughly triples to ~$198/mo
-(~$500–650/mo all-in). MotherDuck does not meter the Geotab pulls — those ride the Go plan.
+**Headline:** a **minimal (GPS) mirror** is cheap at any size — even 50,000 vehicles for a year is
+~$520/mo, storage a rounding error (1.65 TB ≈ $66/mo) and the $250 platform fee the biggest line. An
+**operational mirror with StatusData is ~12× the storage** and pushes very-large into the **~$1.5–2k/mo**
+range (20 TB ≈ $800/mo storage + heavier ingest/analytics compute). Retaining 3 years instead of 1
+roughly triples the storage line. Levers: **skip StatusData if you don't need it**, prune stable raw,
+cap retention. MotherDuck does not meter the Geotab pulls — those ride the Go plan.
+
+## With good bronze cleanup (the recommended steady state)
+
+**Policy:** keep **silver for the full retention** (it's the queryable history, deterministically derived
+and dedup'd), but keep **bronze only for a rolling recent window** — long enough to replay/re-derive or
+re-pull a suspect load (7–30 days is plenty; the signed URL expires in 24 h anyway) — and **prune bronze
+older than that.** Bronze stays the system of record for *recent* data; old raw is dropped once its silver
+is verified.
+
+**Why it's the biggest lever:** bronze (`all_varchar`) is ~**70%** of the full-raw footprint, silver only
+~**30%** (16 B/ping vs 54 B/ping, measured). So pruning stable bronze drops storage toward **silver +
+a thin rolling slice** — and the saving *grows* with retention, because the bronze window is a fixed size
+while silver accumulates.
+
+Effective per-vehicle-year (silver kept + a 30-day rolling bronze window):
+
+| Mirror | full raw (current) | **good cleanup** | saving |
+|--------|--------------------|------------------|--------|
+| Minimal (GPS) | ~0.033 GB/veh-yr | **~0.012 GB/veh-yr** | ~65% |
+| Operational (StatusData) | ~0.4 GB/veh-yr | **~0.14 GB/veh-yr** (1 yr) → ~0.12 at the silver-only floor | ~65–70% |
+
+Fleet storage, **operational mirror, good cleanup, 1-yr silver + 30-day bronze** (us-east-1, $0.04/GB):
+
+| Fleet | storage | storage $/mo | vs full-raw op |
+|-------|---------|--------------|----------------|
+| Small — 50 | **~7 GB** (fits free tier) | $0 | was 20 GB |
+| Medium — 500 | ~70 GB | ~$2.80 | was 200 GB |
+| Large — 5,000 | ~700 GB | ~$28 | was 2 TB ($80) |
+| Very large — 50,000 | ~7 TB | **~$280** | was 20 TB ($800) |
+
+So with cleanup a **50-vehicle operational mirror lives in the free 10 GB for ~1.5 years** (vs ~6 months
+full-raw), the free tier holds **~70 operational vehicle-years** (vs ~25), and **very-large operational
+storage drops from ~$800 to ~$280/mo**. Longer retention widens the gap further (silver-only is the floor
+at ~30% of full-raw). Shrink the bronze window to ~7 days and you're essentially at the silver-only floor.
 
 ## Cost-control levers
 
-- **Prune stable raw.** Bronze is the non-reproducible system of record, but *old, settled* batches can
-  be dropped once you trust them — that drops you from ~54 B/ping toward ~16 B/ping (the silver-only
-  column). See [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md) §Storage note. Don't prune recent raw.
-- **Mark silver/gold `TRANSIENT`.** They're rebuildable from bronze, so they don't need the 7-day
-  point-in-time `historical_bytes` retention Business keeps by default (configurable 0–90 days). Keep
-  **bronze standard** (it's irreplaceable). This trims retained-byte overhead on the churny layers.
+- **Prune stable raw — the biggest lever** (see §With good bronze cleanup above). Keep bronze for a
+  rolling 7–30 day window, drop older raw once its silver is verified: ~65–70% off, growing with
+  retention. Prune **per table** (`bronze.*` is not a valid delete target — there's no wildcard `DELETE`):
+  run one `DELETE FROM bronze.<table> WHERE _loaded_at < now() - INTERVAL 30 DAY` per bronze table (or
+  generate them from `information_schema.tables WHERE table_schema='bronze'`). See also
+  [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md) §Storage note. Don't prune recent raw.
+- **Don't pay to protect silver/gold — they re-derive from bronze.** Keep retention/backup effort on
+  **bronze** (the irreplaceable system of record) and simply drop+rebuild silver/gold when needed rather
+  than retaining their time-travel history. (Note: DuckDB/MotherDuck has **no `TRANSIENT` table** — that's
+  Snowflake; `CREATE TRANSIENT TABLE` is a parser error, verified 2026-06-30. `TEMPORARY` is session-only,
+  so it's not for persistent layers either.)
 - **Right-size history.** Cap retention to what the use case needs; storage is linear in
   vehicle-*years*, so 1 yr vs 5 yr is a 5× swing.
 - **Don't historize live snapshots.** `DeviceStatusInfo` is a snapshot, not an event stream — persisting

@@ -20,7 +20,7 @@ reference data). Pick the channel per entity.
 | `User` (incl. drivers) | dimension | `Get` (`{isDriver:true}` for drivers) | `id` | weekly |
 | `Zone` (geofences) | dimension | `Get` | `id` | weekly |
 | `Group` (hierarchy) | dimension | `Get` | `id` | weekly |
-| `Diagnostic` | dimension (decodes StatusData/Fault) | `Get` | `id` | monthly |
+| `Diagnostic` | dimension (decodes StatusData/Fault) | `Get` if small; **Ace bulk CSV if large** | `id` | monthly |
 | `Rule` | dimension (decodes ExceptionEvent) | `Get` | `id` | monthly |
 | `Driver`* | — | use `User` + `{isDriver:true}` | — | — |
 
@@ -47,6 +47,18 @@ see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the 
 
 ## Dimensions via `Get`
 
+> **Pick the channel by *size*, not just fact-vs-dimension.** The `Get` → JSON → hand-built `INSERT`
+> path is great for small/medium dimensions but **doesn't scale to large ones** — observed on
+> `Demo_fh_vegas4` (2026-06-29): `User`=1, `Zone`=0, `Rule`=13, but **`Diagnostic`=65,757** (`GetCountOf`;
+> the Ace bulk CSV returned 65,772 — see the Get-vs-Ace gap below). Serializing
+> 65 K rows of JSON into SQL is impractical (and impossible to hand-build in clients without a scratchpad,
+> e.g. ChatGPT). For a **large reference table, use the Ace bulk-CSV path** (land it via `read_csv_auto`
+> like a fact, then treat the typed result as your `dim_*`), **or load only the subset your facts
+> reference** (e.g. the `DiagnosticId`s present in `status_data`/`fault_data`) — you rarely need all
+> 65 K. **Measured: of 65,772 diagnostics, `status_data` referenced only 56** (~0.1%); the referenced
+> subset is tiny. Small dims stay on `Get` (exact, reproducible). (Bulk-CSV `Diagnostic` quirks: Ace
+> returned 65,772 vs `GetCountOf`=65,757, couldn't return `Controller` → loaded NULL, uppercased `SOURCE`.)
+
 `mcp__Geotab_MCP__Get(database, typeName, resultsLimit, propertySelector, search, sort)`. Returns
 JSON. Validated on `demo_fh4`:
 
@@ -61,6 +73,10 @@ Get(typeName='Device', resultsLimit=3, propertySelector={fields:['id','name','se
 Tips:
 - **Always pass `propertySelector`** to shrink the payload (entities like `Device`/`User`/`Trip` have
   dozens of fields). Pull only what your dimension needs.
+- **Verify field names with `GetEntity` first — don't guess.** One unknown field fails the *whole* `Get`
+  call: `Get(User, fields=[…,'isActive'])` → `'User.isActive' is an unknown property`
+  (`NotSupportedException`). `User` has no `isActive` — use `isDriver` + `activeFrom`/`activeTo`. Call
+  `GetEntity(entity_type='User')` (or read `mygeotab://entities/{name}`) before building the selector.
 - **Always pass `resultsLimit`.** Omitting it returns *everything* and can overflow context.
 - Land it as in [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md) → `dim_device`, `dim_user`, `dim_zone`,
   `dim_group`, `dim_diagnostic`, `dim_rule`. Refresh with delete-then-insert or `ON CONFLICT` upsert.
@@ -100,7 +116,8 @@ on the 50-device `demo_fh4` fleet:
 
 **`id` is the only safe natural key.** On `demo_fh4`, the 50 devices share just **10 distinct VINs**
 (the demo reuses them) — so never key a device dimension on `vehicleIdentificationNumber`. Refresh
-slowly-changing dims with `CREATE OR REPLACE` or delete-then-insert keyed on `id`.
+slowly-changing dims with `CREATE OR REPLACE` or delete-then-insert keyed on `id` (**dims only — they're
+reproducible from `Get`; never `CREATE OR REPLACE` bronze or silver during a load**).
 
 ### Entities cover different device populations
 

@@ -33,71 +33,53 @@ It hinges on **one question: can you reproduce the source on demand?**
 so it grows ~2× silver. That's intended — full raw is the point. Pruning *stable, old* raw batches is a
 later optimization once a window is proven settled; don't pre-optimize it away.
 
-## Isolate each Geotab source — database per source, schema per layer (recommended)
+## Isolate each Geotab source — one database per source, schema per layer
 
-**Will running this skill for a second Geotab database overwrite the first? No — it does something
-worse: it *mixes and collides* them.** Tables are created `IF NOT EXISTS` and loads *append*, so a
-second source doesn't replace the first — it lands rows into the same tables. And the keys collide:
-
-- **Geotab entity IDs are unique only *within* one database.** Every Geotab DB reuses `b1`, `b2`,
-  `b3`, … for devices (and for zones, rules, users, groups). Two databases both have a device `b3`.
-- Silver dedups on the **natural key** (`(DeviceId, GpsDateTime)`), and dimensions key on **`id`**.
-  Neither includes the source DB (only **bronze** carries `_source_db`/`_batch_id` provenance). So
-  DB-A's `b3` and DB-B's `b3` **dedup into one silver row**, and `dim_device.id = 'b2'` from one source
-  **overwrites** the other. Both mirrors are corrupted, silently.
-
-**The fix is to give every source its own table namespace.** There are two things to organize — the
-**Geotab source** and the **medallion layer** — and MotherDuck gives you two nesting levels (database →
-schema). Map them like this:
-
-### Recommended — database per Geotab source, schema per layer
-
-One MotherDuck **database per Geotab database**, and a **schema per medallion layer** (`bronze` /
-`silver` / `gold`) inside it. Names announce exactly what a table is:
+**One MotherDuck database per Geotab database, with a schema per medallion layer
+(`bronze`/`silver`/`gold`).** This is the only supported layout — never put two sources in the same
+database.
 
 ```sql
 CREATE DATABASE IF NOT EXISTS geotab_demo_fh4;          -- one per Geotab source DB
 CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.bronze;
 CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.silver;
 CREATE SCHEMA  IF NOT EXISTS geotab_demo_fh4.gold;
--- geotab_demo_fh4.bronze.gps_raw  ·  geotab_demo_fh4.silver.planet_gps_pings
--- geotab_demo_fh4.silver.dim_device  ·  geotab_demo_fh4.gold.daily_device_km
+-- Source identity, recorded once in a metadata table (COMMENT ON DATABASE is NOT
+-- implemented in MotherDuck — verified 2026-06-30: "Not implemented Error: Adding
+-- comments to databases is not implemented"). COMMENT ON TABLE *does* work.
+CREATE TABLE IF NOT EXISTS geotab_demo_fh4.main.warehouse_meta (
+  source_db VARCHAR, geotab_server VARCHAR, layout VARCHAR, note VARCHAR,
+  created_at TIMESTAMP DEFAULT now());
+INSERT INTO geotab_demo_fh4.main.warehouse_meta (source_db, geotab_server, layout, note)
+VALUES ('demo_fh4', 'my.geotab.com', 'db-per-source + schema-per-layer (bronze/silver/gold)',
+        'Geotab source identity. One Geotab source per MotherDuck database.');
+COMMENT ON TABLE geotab_demo_fh4.main.warehouse_meta IS 'Geotab source: demo_fh4 (my.geotab.com)';
+-- geotab_demo_fh4.bronze.gps_raw · geotab_demo_fh4.silver.planet_gps_pings
+-- geotab_demo_fh4.silver.dim_device · geotab_demo_fh4.gold.daily_device_km
 ```
 
-Why this is the default:
-- **Source isolation is the strong, database-level boundary** — exactly where MotherDuck scopes the
-  things you want *per customer/source*: **Sharing** (zero-copy Shares are per-database — share one
-  source without exposing the others), **retention/backup** (`historical_bytes` 0–90 days, point-in-time
-  restore, `TRANSIENT` are per-database), **access control**, and **cost attribution**.
-- **Layers as schemas** is the conventional medallion shape — you can grant analysts read on
-  `silver`/`gold` while restricting `bronze`, and the layer of any table is obvious from its name.
+**Why a whole database per source, not a shared one:** Geotab entity IDs are unique only *within* one
+database — every Geotab DB reuses `b1`, `b2`, `b3`, … for devices (and zones, rules, users, groups).
+Silver dedups on the natural key (`(DeviceId, GpsDateTime)`) and dimensions key on `id`, so two sources
+in the same tables would **collide** — DB-A's `b3` and DB-B's `b3` dedup into one silver row,
+`dim_device.id='b2'` from one clobbers the other — corrupting both, silently. A separate database also
+puts isolation at the level where MotherDuck scopes **Sharing** (zero-copy Shares are per-database),
+**retention/backup** (`historical_bytes`, point-in-time restore), **access**, and **cost** —
+so you can share or drop one source without touching another. Layers as schemas is the conventional
+medallion shape (grant analysts `silver`/`gold`, restrict `bronze`).
 
-### Alternative — one shared database, schema per source (layer as table prefix)
+> Validated 2026-06-29: same table name lives independently in two databases (and in two schemas of one
+> DB) with no collision; `DROP DATABASE` / `DROP SCHEMA … CASCADE` removes one cleanly. The demo warehouse
+> was migrated from the generic `my_db.main.*` to `geotab_demo_fh4` with `bronze`/`silver`/`gold` schemas.
+> Worked-SQL examples below still use the short `my_db.<table>` form for brevity — read them as
+> `geotab_<source>.<layer>.<table>`.
 
-If a **single owner** mirrors several of their **own** fleets and wants cross-fleet joins without
-`ATTACH` (and doesn't need per-source sharing/retention/access boundaries), collapse source to a schema
-and carry the layer in the table name:
-
-```sql
-CREATE SCHEMA IF NOT EXISTS geotab.demo_fh4;     -- source = schema; layer = bronze_/silver_ prefix
--- geotab.demo_fh4.bronze_gps_raw  ·  geotab.demo_fh4.planet_gps_pings
-```
-
-> Validated 2026-06-29: a second schema's `planet_gps_pings` held its own rows (1) entirely independent
-> of `main.planet_gps_pings` (679,577); `DROP SCHEMA … CASCADE` removes a source cleanly. (You can't have
-> schema-per-source *and* schema-per-layer — there's only one schema level — so here the layer is a
-> prefix.) Cross-fleet joins are trivial (`geotab.demo_fh4.x JOIN geotab.acme_prod.y`, no `ATTACH`).
-
-**Rule of thumb:** serving separate customers / need per-source sharing, retention, or access → **database
-per source + schema per layer** (recommended). Your own handful of fleets, want easy cross-fleet joins →
-**one database, schema per source**. **Never** put two sources in the same schema/tables.
-
-(The demo warehouse was migrated 2026-06-29 from the generic `my_db.main.*` to this recommended layout:
-**`geotab_demo_fh4`** with `bronze`/`silver`/`gold` schemas — `bronze.gps_raw`, `silver.planet_gps_pings`,
-`silver.dim_device`, etc. The worked-SQL examples in this skill still use the short `my_db.<table>` form
-for brevity; read them as `geotab_<source>.<layer>.<table>`.) Whichever layout you pick, **keep
-`_source_db` populated in bronze** for provenance — it tags a row's origin but, on its own, does *not*
-stop the silver/dim key collisions above.
+**Provenance:** keep per-row **`_batch_id`** (which ingestion produced the row). The **source identity is
+recorded once at the database level** — in the `main.warehouse_meta` table above (plus the optional
+`COMMENT ON TABLE` and `warehouse_ingest_log`). **Don't use `COMMENT ON DATABASE`** — it's *not
+implemented* in MotherDuck (verified 2026-06-30) and fails/no-ops, so the identity would be lost.
+**Don't add a per-row `_source_db`** either: with one database per source it's a constant column (≈0
+bytes after compression, but pure noise).
 
 ## Always inspect before you derive
 
@@ -168,12 +150,14 @@ CREATE TABLE IF NOT EXISTS my_db.bronze_gps_raw AS
 SELECT *,                                  -- raw columns exactly as returned
        'ace:<chat-uuid>' AS _batch_id,     -- identifies the exact ingestion that produced this row
        now()      AS _loaded_at,
-       'demo_fh4' AS _source_db,
        'ace_csv'  AS _source_channel,      -- how it arrived: ace_csv | bootstrap_from_silver | …
-       'gs://planet-user-results-prod-eu/<uuid>-000000000000.csv' AS _source_uri
+       'gs://planet-user-results-prod-<region>/<uuid>-000000000000.csv' AS _source_uri
 FROM read_csv_auto('<signed url>', all_varchar=true)
 WHERE FALSE;                               -- create empty; INSERT below on each run
 ```
+
+(No per-row `_source_db` — the source is one whole database, recorded once in `main.warehouse_meta`;
+see §isolate.)
 
 > `_batch_id` distinguishes ingestion provenance — e.g. `ace:4b008ce3-…` (the Ace chat id) for a live
 > window pull vs. `bootstrap_from_silver:2026-06-29` for the one-time reconstruction (see "Brownfield"
@@ -190,15 +174,48 @@ including the boundary overlap (quirk #6) and any drift. Dedup happens later, in
 
 ```sql
 INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'ace:<chat-uuid>', now(), 'demo_fh4', 'ace_csv', 'gs://…/<uuid>….csv'
+SELECT *, 'ace:<chat-uuid>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
 FROM read_csv_auto('<signed url>', all_varchar=true);
 ```
+
+> The append stamps **4 provenance values** (`_batch_id`, `_loaded_at`, `_source_channel`, `_source_uri`)
+> to match the 4 provenance columns in the bronze DDL above. **Brownfield note:** an *earlier* version of
+> this guide also added a per-row `_source_db` column; that's been removed (one database per source already
+> records identity — see §isolate). If you have a pre-existing bronze table from that version, the `SELECT
+> *, …4 values` here will hit a column-count mismatch — drop the stale column once and the append matches:
+> `ALTER TABLE <bronze table> DROP COLUMN IF EXISTS _source_db;` (apply to every bronze/silver/gold table
+> that has it). Treat `_source_db` as if it never existed going forward.
 
 ## Deriving silver from bronze (the workhorse)
 
 Silver is **always** a deterministic projection of bronze — type-cast + strip ` UTC` + dedup on the
 natural key. Re-running adds only newer rows (watermark advances), so it's idempotent and safe to
 retry. This is the one path for facts; there is no "load silver straight from the URL."
+
+> **Large facts: derive per shard / per day, not one-shot.** A single `INSERT … DISTINCT ON …` over a
+> very large bronze can exceed the host's tool timeout — observed on `status_data` (ChatGPT/MCP,
+> 2026-06-29): a one-shot deduped derive over **23.15M** rows timed out at 55 s, while **per-shard**
+> inserts (one statement per shard) succeeded. **Bound each derive by `_source_uri`** (the shard's
+> `gs://…` object path — genuinely per-shard) **or by an event-time day** (`WHERE
+> replace(GpsDateTime,' UTC','')::TIMESTAMP >= '<day>' AND < '<day+1>'`). **Do *not* filter by
+> `_batch_id`**: every shard of one Ace export shares the *same* `_batch_id` (the chat id), so a
+> `WHERE _batch_id = '<shard>'` matches all shards or none. So for high-volume facts (StatusData
+> especially), **load each Ace CSV shard to bronze, then derive silver one shard (or one day) per
+> statement** — same projection, bounded per call. The anti-join / `DISTINCT ON` still dedups across
+> shards.
+>
+> **Housekeeping:** make the **silver fact itself deduped** — don't ship an un-deduped `status_data`
+> plus a separate `status_data_dedup` (observed on Vegas: `status_data` had 605 duplicate `StatusId`s
+> and a `status_data_dedup` *view* sat on top to fix it). Fold the dedup into the base table (the
+> `QUALIFY row_number() OVER (PARTITION BY <natural key> …) = 1` projection) and drop the helper. Drop
+> staging/probe scratch (`*_stage_tmp`, `*_probe*`) once the load lands.
+>
+> **Before `DROP`/`RENAME`, check table vs view** (`information_schema.tables.table_type` /
+> `duckdb_views()`). A `_dedup`/`_clean` sibling is often a **view** over the base table — dropping the
+> base breaks it, and `ALTER TABLE … RENAME` errors on a view. (And MotherDuck doesn't implement
+> `ALTER TABLE … SET SCHEMA`.) If you do drop the wrong silver table, it's fine: **re-derive it from
+> bronze** — that's the replay guarantee. (Verified live: dropped `silver.status_data`, rebuilt it
+> deduped from `bronze.status_data_raw` with zero data loss.)
 
 ```sql
 INSERT INTO my_db.planet_gps_pings
@@ -265,6 +282,23 @@ faster (no full-table probe) for steady daily loads; the anti-join is bullet-pro
 
 ## Brownfield: bootstrapping bronze under an existing silver
 
+> **Partial / resumable bootstrap.** Re-running against a target that already has *some* tables is normal
+> and safe — bootstrap is resumable. Observed (ChatGPT/MCP, 2026-06-29): **resuming a prior interrupted
+> run** (the operator reused the existing DB), `silver.dim_device` was already populated (50) while
+> `bronze.gps_raw`/`silver.planet_gps_pings` were still empty (the fact load hadn't completed). The right
+> move: **`CREATE TABLE IF NOT EXISTS` only, never `CREATE OR REPLACE` silver during bootstrap** —
+> preserve the dimension, create bronze, continue the fact load, then run the population checks. (If the
+> *fact* silver pre-exists without a bronze, do the one-time reconstruction below.)
+>
+> **Schema drift on a pre-existing table — `IF NOT EXISTS` gives you the OLD schema, not the recommended
+> one.** Confirmed (ChatGPT/MCP, 2026-06-29): a reused `silver.planet_gps_pings` had only the 7 data
+> columns and lacked a provenance column the `INSERT` referenced, so it failed with a `Binder Error: …
+> does not have a column …`. **Before inserting into any pre-existing table, `list_columns` it and add
+> what's missing** — never `CREATE OR REPLACE` to "fix" the schema:
+> ```sql
+> ALTER TABLE silver.planet_gps_pings ADD COLUMN IF NOT EXISTS _first_loaded_at TIMESTAMP;
+> ```
+
 If silver already exists but bronze doesn't (the "muddy middle" — silver was loaded directly from the
 URL before bronze was a rule), reconstruct bronze from silver **once**, clearly labeled, so silver
 becomes fully rebuildable from bronze going forward:
@@ -277,7 +311,7 @@ SELECT DeviceId::VARCHAR, DeviceName::VARCHAR, DeviceTimeZoneId::VARCHAR,
        Latitude::VARCHAR, Longitude::VARCHAR,
        GpsDateTime::VARCHAR, Speed::VARCHAR,           -- cast back to text (lossless landing contract)
        'bootstrap_from_silver:2026-06-29',             -- _batch_id (the day you bootstrapped)
-       now(), 'demo_fh4', 'bootstrap_from_silver', 'reconstructed-from-silver'
+       now(), 'bootstrap_from_silver', 'reconstructed-from-silver'
 FROM my_db.planet_gps_pings;
 ```
 
