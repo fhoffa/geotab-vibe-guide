@@ -267,9 +267,15 @@ lo      = prev_wm − L                                      # covers re-splits 
          → land append-only in bronze (_batch_id='reconcile:<lo>')       #   (a bounded "…and before Y" prompt
                                                                           #    flaked with invalid_value 400s — quirk #17)
 2. Truth set: a fresh source pull of the affected day(s), keyed by TripId (Ace, or Get Trip per device)
+2a. GUARD — validate the truth set BEFORE deleting, or a bad pull wipes valid trips:
+      require  count(truth set) > 0  AND  count(truth set) ≈ the silver count for the window
+      (and the expected device population). If the pull is empty or implausibly short — Ace
+      source-table variability (#15), an `invalid_value` 400 (#17), or a failed staging load —
+      **ABORT, do not DELETE; re-pull/retry first.** With an empty/partial truth set,
+      `TripId NOT IN (truth set)` is true for every row and step 3 deletes the whole window.
 3. DELETE FROM silver.trips                                              # drop the retired orphans
      WHERE trip_start_utc >= <lo> AND trip_start_utc < <day_end>
-       AND TripId NOT IN (truth set)
+       AND TripId NOT IN (truth set)                                     # only after guard 2a passes
 4. INSERT … SELECT DISTINCT ON (TripId) …                               # add the current splits + late completions
      FROM bronze <reconcile batch>
      WHERE NOT EXISTS (… silver.TripId = bronze.TripId)
@@ -282,7 +288,9 @@ orphans, step 4 inserted **51** current splits, and step 5 went from `2138 sourc
 50 orphans / 51 missing` to **`2138 == 2138, 0 orphans, 0 missing`**.
 
 > **This is the one place the warehouse `DELETE`s silver fact rows** — justified because the *source*
-> retired those ids. Keep everything else append + anti-join. The same pattern applies to any
+> retired those ids. **Never run step 3 without guard 2a:** a destructive delete keyed on a `NOT IN`
+> source set must first verify that set is non-empty and plausibly complete, or an Ace miss wipes the
+> window. Keep everything else append + anti-join. The same pattern applies to any
 > *derived/recomputed* fact; `Trip` is the one we hit. **Pure event tables (`ExceptionEvent`, `FaultData`)
 > are append-only once fired**, so A/B/C suffice for them — don't delete-reconcile those. (`silver.trips`
 > must carry `TripId` for any of this to work — the
