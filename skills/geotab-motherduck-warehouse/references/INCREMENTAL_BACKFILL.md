@@ -17,7 +17,7 @@ A and B move the *frontiers* (newest / oldest). C fills holes *between* them and
 loaded, never changes). **D handles the one fact that breaks that assumption — `Trip` — which Geotab
 *recomputes*.** You usually run A→B→C in order; run D right after each forward **trips** load (§D).
 
-## The state table (shared by all three)
+## The state table (shared by all three) — log-ahead, two events per load
 
 Track every load so you can derive watermarks, detect gaps, resume, and audit. Created and validated live:
 
@@ -25,28 +25,88 @@ Track every load so you can derive watermarks, detect gaps, resume, and audit. C
 CREATE TABLE IF NOT EXISTS my_db.warehouse_ingest_log (
   run_id          UUID      DEFAULT uuid(),
   target_table    VARCHAR   NOT NULL,
+  batch_id        VARCHAR,                 -- ties the log row to bronze._batch_id
+  status          VARCHAR,                 -- 'started' | 'completed'  (two rows per load; append-only)
   source_db       VARCHAR   NOT NULL,
   source_channel  VARCHAR   NOT NULL,      -- 'ace_csv' | 'direct_get' | 'bootstrap_from_silver'
   backfill_kind   VARCHAR,                 -- 'forward' | 'historical' | 'reconcile' (which of the 3)
   watermark_from  TIMESTAMP,               -- lower bound of the window requested
-  watermark_to    TIMESTAMP,               -- max event-time actually loaded
-  rows_loaded     BIGINT,
+  watermark_to    TIMESTAMP,               -- max event-time actually loaded (NULL on the 'started' row)
+  rows_loaded     BIGINT,                  -- NULL on the 'started' row
   source_uri      VARCHAR,                 -- gs:// object path (NOT the signed query string)
   loaded_at       TIMESTAMP DEFAULT now()
 );
+-- Existing warehouse (pre-status schema)? Don't recreate — extend (the P14 lesson):
+--   ALTER TABLE …warehouse_ingest_log ADD COLUMN IF NOT EXISTS batch_id VARCHAR;
+--   ALTER TABLE …warehouse_ingest_log ADD COLUMN IF NOT EXISTS status  VARCHAR;
+-- (old single-row entries read as completions with NULL status — treat NULL as 'completed')
 ```
 
+**Why two rows: an interrupted run must leave a *visible* orphan, not a silent hole.** With a single
+log-at-the-end row, any interruption after the bronze append but before the log leaves loaded data with
+no audit trail — and we've seen exactly that in the wild (2026-07-02, `geotab_Demo_fh_vegas4`: bronze
+batch `ace:dsn1wQaKsAhZN1mBPVBP`, 522,571 GPS rows, silver derived, **no log row, and the run's other
+three fact tables never loaded** — a mid-loop interruption; EVIDENCE_LOG ledger). So log **ahead**:
+
 ```sql
+-- Row 1 — 'started': write it the moment Ace returns, BEFORE the bronze append.
+-- It persists the two things a dead session loses: the window you asked for and the object path.
 INSERT INTO my_db.warehouse_ingest_log
-  (target_table, source_db, source_channel, backfill_kind, watermark_from, watermark_to, rows_loaded, source_uri)
+  (target_table, batch_id, status, source_db, source_channel, backfill_kind, watermark_from, source_uri)
 VALUES
-  ('planet_gps_pings','demo_fh4','ace_csv','forward',
+  ('planet_gps_pings', 'ace:<chat-uuid>', 'started', 'demo_fh4', 'ace_csv', 'forward',
+   TIMESTAMP '2026-06-26 01:42:40.779', 'gs://planet-user-results-prod-eu/<uuid>-000000000000.csv');
+
+-- Row 2 — 'completed': write it after the verify step, same batch_id.
+INSERT INTO my_db.warehouse_ingest_log
+  (target_table, batch_id, status, source_db, source_channel, backfill_kind,
+   watermark_from, watermark_to, rows_loaded, source_uri)
+VALUES
+  ('planet_gps_pings', 'ace:<chat-uuid>', 'completed', 'demo_fh4', 'ace_csv', 'forward',
    TIMESTAMP '2026-06-26 01:42:40.779', TIMESTAMP '2026-06-29 18:45:58.658',
    157415, 'gs://planet-user-results-prod-eu/<uuid>-000000000000.csv');
 ```
 
+(Not before the Ace call: pre-Ace there is nothing worth recovering — a re-run just re-asks. Post-Ace
+there is: the window and the `gs://` path. Both rows are plain `INSERT`s — append-only, no `UPDATE`, so
+restrictive hosts and dropped connections can't half-write a state transition.)
+
+**Resuming: an orphaned `started` row is the worklist.** On session start (or in the health check):
+
+```sql
+SELECT s.target_table, s.batch_id, s.watermark_from, s.source_uri, s.loaded_at
+FROM my_db.warehouse_ingest_log s
+LEFT JOIN my_db.warehouse_ingest_log c
+  ON c.batch_id = s.batch_id AND c.target_table = s.target_table AND c.status = 'completed'
+WHERE s.status = 'started' AND c.batch_id IS NULL
+ORDER BY s.loaded_at;
+```
+
+For each orphan, check bronze for that `batch_id`:
+- **Batch present in bronze** → the load died between append and log: re-run the silver derive (it's
+  idempotent) and write the `completed` row. No re-pull needed — bronze has the data.
+- **Batch absent from bronze** → it died before landing: re-ask Ace for the *same window* (the
+  `started` row preserved it; the stored `gs://` path can't be re-downloaded — the signature wasn't
+  kept — but the window makes the re-ask exact), then continue the loop normally.
+
+**Self-healing: the log is *reconstructible from bronze*, so a hole is never permanent.** Bronze's
+provenance columns carry everything a completion row needs. Find batches the log missed, then rebuild
+their rows (this is how the 2026-07-02 unlogged load gets repaired):
+
+```sql
+-- Detect: bronze batches with no log entry at all (run per bronze table)
+SELECT b._batch_id, min(b._loaded_at) AS loaded_at, count(*) AS rows_, any_value(b._source_uri) AS uri
+FROM bronze.gps_raw b
+LEFT JOIN my_db.warehouse_ingest_log l ON l.batch_id = b._batch_id
+WHERE l.batch_id IS NULL
+GROUP BY b._batch_id;
+-- Repair: INSERT a 'completed' row per missing batch from those values
+-- (+ min/max of the parsed event time for watermark_from/to), backfill_kind='log_repair'.
+```
+
 The watermark can come from the **data** (`max(event_time)`) or the **log** (`max(watermark_to)`).
-The data table is the source of truth; the log is for observability, resumption, and gap reasoning.
+The data table is the source of truth; the log is for observability, resumption, and gap reasoning —
+which is exactly why it's allowed to be rebuilt from the data, never the other way around.
 
 ---
 
@@ -63,15 +123,23 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   2. ace_file  = Geotab Ace:  GetAceResults(new_chat=true, database=<db>,
                               prompt="<entity> rows after <watermark> UTC, columns: …")   # ~33–60s
      url, cols = grep(ace_file)                                                            # never inline
+  2b. log 'started': INSERT INTO warehouse_ingest_log (…, batch_id, status='started',      # LOG-AHEAD: persist the
+                     watermark_from, source_uri) VALUES (…);                               # window + gs:// path NOW —
+                                                                                           # an interruption from here
+                                                                                           # on leaves a visible orphan
   3. probe     = MotherDuck:  DESCRIBE + COUNT/min/max from read_csv_auto(url)             # shape & size check
      if schema mismatch -> map by position in the derive or re-ask; if new_rows==0 -> skip (no append)
   4. land      = MotherDuck (rw): INSERT INTO <bronze> SELECT *, provenance                # append-only, all_varchar
                               FROM read_csv_auto(url, all_varchar=true);                   # lossless, no dedup
   5. derive    = MotherDuck (rw): INSERT INTO <silver> SELECT <typed,deduped>              # deterministic projection
                               FROM <bronze> WHERE <event_time> > coalesce(watermark, '1970-01-01');
-  6. log:      INSERT INTO warehouse_ingest_log (…, backfill_kind='forward', …) VALUES (…);
-  7. verify:   SELECT count(*), max(<event_time>) FROM my_db.<silver>;
+  6. verify:   SELECT count(*), max(<event_time>) FROM my_db.<silver>;
+  7. log 'completed': INSERT INTO warehouse_ingest_log (…, batch_id, status='completed',   # same batch_id as 2b
+                      …, watermark_to, rows_loaded, …) VALUES (…);
 ```
+
+(On resume, clear any orphaned `started` rows first — §The state table above. Verify **before** the
+`completed` row: a log that says completed must mean the verify passed.)
 
 - **Idempotent:** re-running the same day appends raw rows to bronze again (bronze keeps everything) but
   the silver derive inserts 0 (watermark already advanced) and dedups on the natural key, so silver is
@@ -384,6 +452,11 @@ stats views play the same role). Reading it:
 - **`latest_event` newer than `last_loaded_at` explains itself** (the load happened, log says when);
   `latest_event` advancing with **no matching log row is a red flag** — someone loaded without logging.
   The validation run caught exactly that: GPS `latest_event` `2026-07-02 17:20` vs last logged load
-  `2026-06-30 16:04` — a real unlogged load, surfaced by the view on its first execution.
+  `2026-06-30 16:04` — a real unlogged load, surfaced by the view on its first execution. (Follow-up
+  diagnosis: bronze batch `ace:dsn1wQaKsAhZN1mBPVBP` landed + derived, no log row, and the run's other
+  three fact tables were never loaded — a **mid-loop interruption**. That failure mode is why the state
+  table is now log-ahead with `started`/`completed` rows.)
+- Run the two interruption checks with it: **orphaned `started` rows** (the resume worklist) and
+  **bronze batches with no log entry** (the log-repair candidates) — both queries in §The state table.
 - `devices` doubling as the population check: any fact table's device count far under `dim_device`'s
   is the active-only trap (§C2).
