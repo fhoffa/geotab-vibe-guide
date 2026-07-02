@@ -11,6 +11,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 | **Using Claude** | [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md) |
 | **Using other AI tools** | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) |
 | **Want pre-built fleet analytics (KPIs, safety)** | [DATA_CONNECTOR.md](./DATA_CONNECTOR.md) |
+| **Want your fleet data in your own warehouse** | [DATA_WAREHOUSE_COMPARISON.md](./DATA_WAREHOUSE_COMPARISON.md) |
 | **Want automated monitoring/alerts** | [AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md) |
 | **At a hackathon** | [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md) |
 | **Teaching a workshop** | [slides/README.md](../slides/README.md) |
@@ -40,6 +41,10 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 - **[DATA_CONNECTOR.md](./DATA_CONNECTOR.md)** - Query pre-aggregated fleet KPIs, safety scores, and fault data via the OData Data Connector. Includes copy-paste prompts for AI tools.
 - **[FAULT_MONITORING.md](./FAULT_MONITORING.md)** - Understanding vehicle fault codes: DTC types, fault cycles, persistence, severity tiers, and maintenance prompts. Works with Data Connector, API, and Ace.
 - **[DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)** - Data Connector vs MyGeotab API vs Geotab Ace: benchmarks, tradeoffs, and when to use each.
+
+### Data Warehousing (Your Own Database)
+
+- **[DATA_WAREHOUSE_COMPARISON.md](./DATA_WAREHOUSE_COMPARISON.md)** - Replicate your fleet data into your own warehouse: the AI-driven [MotherDuck skill](../skills/geotab-motherduck-warehouse/SKILL.md) vs Geotab's official [MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter), compared honestly.
 
 ### Building Add-Ins
 

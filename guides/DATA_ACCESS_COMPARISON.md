@@ -213,3 +213,13 @@ The API itself scales well for targeted queries — fetching trips for a specifi
 **The practical takeaway:** If you're building something that works on a demo database using raw API calls and client-side aggregation, think about whether it will still work at production scale. For fleet-wide KPIs (distance, fuel, idle time, safety), the **OData Data Connector** was designed exactly for this — it gives you pre-aggregated daily/monthly tables that scale to any fleet size with the same query speed.
 
 Use the **API** when you need per-trip, per-event, or real-time data for specific vehicles. Use the **Data Connector** when you need fleet-wide aggregates. This distinction barely matters on a demo database — but it's the difference between a working app and an unusable one in production.
+
+---
+
+## A Fourth Option: Your Own Warehouse
+
+All three channels above *query* Geotab's servers on demand. If you instead want a **copy of the
+raw data in a database you control** — unlimited history, your own SQL and joins, dashboards that
+don't touch the API — that's replication, not querying. Two ways to do it (one AI-driven with zero
+infrastructure, one an official always-on service) are compared in
+[DATA_WAREHOUSE_COMPARISON.md](./DATA_WAREHOUSE_COMPARISON.md).

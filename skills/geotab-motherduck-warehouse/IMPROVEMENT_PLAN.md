@@ -26,6 +26,9 @@ exact. It also has a built-in "behind" signal: a feed page of ≥1,000 results m
    `CHANNELS_AND_FRESHNESS.md`): the adapter is the right tool for 24/7 sub-minute-freshness mirrors with
    real infra (self-hosted .NET service + Postgres/SQL Server); this skill is the zero-infra, MCP-only,
    agent-cadence analog. Users who outgrow the daily loop should know the graduation path exists.
+   *Partially done 2026-07-02:* the human-facing comparison now lives in
+   [`guides/DATA_WAREHOUSE_COMPARISON.md`](../../guides/DATA_WAREHOUSE_COMPARISON.md); what remains is a
+   one-line pointer to it from the skill itself so agents running the skill know the guide exists.
 2. **Acknowledge `GetFeed` explicitly and say why we don't use it**: the Geotab MCP server has **no
    `GetFeed` capability** — verified 2026-07-02 three ways against the live server: (a) the full tool
    list (20 tools: `Get`/`GetCountOf`/`GetAceResults`/`GetEntity`/`ListEntities`/`Add`/`Set`/`Remove` +
