@@ -19,7 +19,10 @@ Build and maintain a MotherDuck warehouse that mirrors a Geotab database, using 
 tool calls**. This is a **data-engineering** skill: tables, layers, incremental loads, dedup,
 watermarks, gap detection, backfill. (Analytics/"cool queries" come *after* the data is solid —
 see [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) for the gold layer idea, but
-keep analysis out of the ingestion path.)
+keep analysis out of the ingestion path.) For how this MCP-driven approach compares to Geotab's
+official self-hosted mirror (the [MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter))
+and when to graduate to it, see [`guides/DATA_WAREHOUSE_COMPARISON.md`](../../guides/DATA_WAREHOUSE_COMPARISON.md)
+and [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter.
 
 > Everything below was validated live against MotherDuck + Geotab Ace on `demo_fh4`
 > (a 26–50 vehicle Iberia demo fleet), **measured 2026-06-29**. Row counts, timings, and quirks are
@@ -234,10 +237,12 @@ Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 ## Bootstrap vs daily run vs the three backfills
 
 - **0 → warehouse (first time):** **isolate first** (§First run — create `geotab_<source>` + layer
-  schemas, never reuse another source's DB) → create bronze + silver tables → per fact
-  entity, run *bounded historical* Ace pulls (a day at a time) into **bronze**, then derive silver →
-  load dimensions via `Get` (no bronze). If a silver table already exists without a bronze under it,
-  reconstruct bronze from silver once (the brownfield bootstrap) so silver becomes rebuildable.
+  schemas, never reuse another source's DB) → **load dimensions via `Get` first** (no bronze —
+  `dim_device` is the exact roster that the fact loads' population check and `DeviceName`↔`DeviceId`
+  resolution need, so it must exist *before* the first fact lands) → create bronze + silver tables →
+  per fact entity, run *bounded historical* Ace pulls (a day at a time) into **bronze**, then derive
+  silver. If a silver table already exists without a bronze under it, reconstruct bronze from silver
+  once (the brownfield bootstrap) so silver becomes rebuildable.
   See [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §Brownfield.
 - **Daily update (steady state):** for each fact table run the 4-call loop above (watermark → Ace →
   append bronze → derive silver), then append a row to `warehouse_ingest_log`. Re-running is safe (the

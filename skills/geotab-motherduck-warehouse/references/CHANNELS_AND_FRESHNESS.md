@@ -146,3 +146,28 @@ prompt, and don't assume an attached SQL forces the source. This source-selectio
 full re-ask can replace good data with a differently-shaped answer — so every fact load is
 append-to-bronze + dedup, every backfill is anti-join, and every repair prefers re-deriving from bronze
 over re-asking Ace.
+
+## Relationship to the official MyGeotab API Adapter (and the `GetFeed` gap)
+
+Geotab publishes an official, production-grade mirror-builder: the
+[MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter) — a self-hosted .NET service
+that continuously replicates a MyGeotab database into SQL Server/PostgreSQL. It's the right tool for
+**24/7, sub-minute-freshness mirrors with real infrastructure**; this skill is the **zero-infra,
+MCP-only, agent-cadence** analog. Human-facing comparison:
+[`guides/DATA_WAREHOUSE_COMPARISON.md`](../../../guides/DATA_WAREHOUSE_COMPARISON.md).
+
+**Why this skill doesn't use `GetFeed`.** The adapter's incremental engine is the official
+[`GetFeed`](https://developers.geotab.com/myGeotab/apiReference/methods/GetFeed/) API: an exact
+version-token cursor per entity — no time-boundary math, no boundary dupes, resumable after restart.
+**The Geotab MCP server does not expose it** (verified 2026-07-02, three ways: the tool list has no
+feed tool; the `Get` tool's schema has no `fromVersion`/feed-token parameter and there's no generic
+method passthrough; the server's sole resource is `mygeotab://entities`). Watermarks + natural-key
+dedup are the MCP-compatible substitute — and the bronze layer is what makes the substitute safe
+(every pull is kept raw and replayable). If the MCP ever grows a `GetFeed` tool, adopt it as the
+**watermark replacement only** — bronze/silver and the dedup discipline stay exactly as they are
+(Ace non-determinism, not watermarking, is why they exist).
+
+One `GetFeed` behavior worth borrowing even without the API: the adapter treats a **full feed page as
+"I'm behind — poll again immediately"** and a partial page as "current — wait for the next interval."
+The same stop-condition applies to this skill's catch-up loops — see
+[`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §A.

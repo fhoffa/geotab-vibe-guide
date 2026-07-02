@@ -80,6 +80,15 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
 - **After downtime** (missed several days): identical loop — one Ace call with the wider
   `after <old watermark>` window. If that window is huge (days × big fleet), chunk it the same way as
   historical backfill (below) so no single CSV is unwieldy.
+- **"Am I caught up?" — the full-page rule.** When catching up in chunks (or paging `Get`), the signal
+  that you're still behind is a pull that comes back **full**: a `Get` page hitting `resultsLimit`, or a
+  chunk whose loaded `max(event_time)` lands right at your window's `hi` bound. Full → continue
+  **immediately** with the next chunk/page; partial (rows peter out before the bound / page under the
+  limit) → you're current, stop and let the normal cadence resume. (Same heuristic Geotab's official
+  API Adapter uses on `GetFeed` pages — see
+  [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter.) Don't judge
+  "caught up" by `max(event_time)` vs *now* alone mid-loop — an event-cadence table looks stale even
+  when fully caught up (§C2, quirk #16).
 - **Cost:** ~33–60 s of Ace time per fact table + a couple fast MotherDuck calls. Dimensions (via `Get`)
   are sub-second; refresh weekly, not daily. **Ordering:** load dimensions first, then facts.
 - **Freshness floor:** Ace lags ~1–2 min, so "caught up" means `max(event_time)` within ~2 min of now,
@@ -328,13 +337,53 @@ For that, the **authority is a fresh source pull**: re-run operation D (delete `
 current source) — or keep a small `trips_retired(TripId)` tombstone set and anti-join it on rebuild.
 Operation D against live source is always the source of truth; the bronze rebuild is the fast path.
 
-## Health check (run after any of these)
+## One writer at a time
+
+Two agent sessions running loads on the **same warehouse concurrently** are *mostly* harmless — bronze
+double-appends collapse in the silver dedup, and the watermark derive is idempotent — with one real
+hazard: **interleaved operation-D reconciles.** D's step 3 `DELETE`s against a truth set pulled moments
+earlier; a second session inserting new splits between one session's truth-pull and its DELETE can have
+its fresh rows wiped as "orphans." (Geotab's API Adapter guards the same risk with a machine-name check —
+one writer per adapter database.) Rule of thumb: **one writing session per warehouse at a time**, and
+never two D reconciles on the same table. Reads from other sessions are always fine.
+
+## Health check (run after any of these — one query answers "is every table fresh?")
+
+The first question every session asks is "what state is this warehouse in?" — answer it with **one
+query** instead of N ad-hoc ones. Per-table freshness from the *data*, last load from the *log*
+(validated 2026-07-02 on `geotab_Demo_fh_vegas4`; adjust table/column names to your warehouse):
 
 ```sql
-SELECT 'planet_gps_pings' AS tbl, count(*) n, count(DISTINCT DeviceId) devices,
-       min(GpsDateTime) earliest, max(GpsDateTime) latest
-FROM my_db.planet_gps_pings
-UNION ALL
-SELECT target_table, rows_loaded, NULL, watermark_from, watermark_to
-FROM my_db.warehouse_ingest_log ORDER BY tbl;
+WITH freshness AS (
+  SELECT 'silver.planet_gps_pings' AS tbl, count(*) AS n, count(DISTINCT DeviceId) AS devices,
+         max(GpsDateTime) AS latest_event, 'continuous' AS cadence
+  FROM silver.planet_gps_pings
+  UNION ALL SELECT 'silver.status_data', count(*), count(DISTINCT DeviceId), max(StatusDateTime), 'continuous' FROM silver.status_data
+  UNION ALL SELECT 'silver.trips', count(*), count(DISTINCT DeviceId), max(UTC_TripStartTimestamp), 'event' FROM silver.trips
+  UNION ALL SELECT 'silver.exception_events', count(*), count(DISTINCT DeviceId), max(UTC_ActiveFrom), 'event' FROM silver.exception_events
+),
+last_load AS (
+  SELECT target_table, max(loaded_at) AS last_loaded_at, arg_max(rows_loaded, loaded_at) AS last_rows_loaded
+  FROM silver.warehouse_ingest_log GROUP BY target_table
+)
+SELECT f.tbl, f.n AS row_count, f.devices, f.latest_event,
+       round(epoch(now() - f.latest_event) / 3600, 1) AS hours_behind_now,
+       f.cadence, l.last_loaded_at, l.last_rows_loaded
+FROM freshness f
+LEFT JOIN last_load l ON f.tbl LIKE '%' || l.target_table
+ORDER BY f.tbl;
 ```
+
+Worth creating once as **`main.warehouse_health`** (`CREATE OR REPLACE VIEW` — it's derived, cheap to
+rebuild, one `UNION ALL` branch per fact table added at bootstrap; the adapter's `OServiceTracking2` +
+stats views play the same role). Reading it:
+
+- **`cadence` tells you which staleness matters:** a `continuous` table hours behind means the loop
+  hasn't run (or quirk #20 clipped a pull); an `event` table hours behind may just mean nothing
+  happened — judge those by recent-window event counts (§C2, quirk #16), not `hours_behind_now`.
+- **`latest_event` newer than `last_loaded_at` explains itself** (the load happened, log says when);
+  `latest_event` advancing with **no matching log row is a red flag** — someone loaded without logging.
+  The validation run caught exactly that: GPS `latest_event` `2026-07-02 17:20` vs last logged load
+  `2026-06-30 16:04` — a real unlogged load, surfaced by the view on its first execution.
+- `devices` doubling as the population check: any fact table's device count far under `dim_device`'s
+  is the active-only trap (§C2).

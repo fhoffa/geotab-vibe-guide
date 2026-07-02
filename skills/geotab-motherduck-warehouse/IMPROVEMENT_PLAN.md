@@ -1,6 +1,26 @@
 # Improvement plan: lessons from the official MyGeotab API Adapter
 
-**Status: proposal — nothing below is implemented yet.** Source studied:
+**Status: IMPLEMENTED 2026-07-02** (same branch). What landed, by theme:
+
+- **Theme 1** ✅ — `guides/DATA_WAREHOUSE_COMPARISON.md` (human-facing comparison),
+  `CHANNELS_AND_FRESHNESS.md` §Relationship to the adapter (+ the three-way `GetFeed` verification,
+  ledger row 2026-07-02), SKILL.md intro pointer, `COST_AND_SIZING.md` adapter sizing corroboration.
+- **Theme 2** ✅ — `ENTITY_CATALOG.md` §Deletions (full-refresh-only visibility, subset caveat,
+  `activeTo` handling); SKILL.md bootstrap reordered dims-before-facts (now consistent with
+  `INCREMENTAL_BACKFILL.md` §A, which already said so).
+- **Theme 3** ✅ — `MEDALLION_LOADING.md` §Gold ASOF pattern, **validated live** (probe **P17**:
+  822,203 events, 100% matched, median gap 2 s, p95 23 s — ledger 2026-07-02).
+- **Theme 4** ✅ (validated subset) — catalog rows for `DriverChange`/`FuelUsed`/`Audit`/
+  `Controller`/`FailureMode` (all counted live 2026-07-02), the **Mutates?** column, the
+  `Audit`-not-`AuditLog` gotcha, DVIR/HOS/fuel-card/EV marked **empty on demos — unvalidated**
+  (revisit on a fleet that has them). `BinaryData`: excluded, media tools instead.
+- **Theme 5** ✅ — §A full-page stop-condition; `warehouse_health` query documented + **validated
+  read-only** (probe **P18** — it immediately surfaced a real unlogged GPS load on the vegas mirror);
+  one-writer-at-a-time caution. The view itself is *not created* on the live mirrors (that's a write;
+  create it at the next load session's bootstrap).
+- **Theme 6** ✅ — `COST_AND_SIZING.md` downsample-in-the-derive lever with the reversibility caveat.
+
+The original proposal follows for context. Source studied:
 [MyGeotab API Adapter README](https://github.com/Geotab/mygeotab-api-adapter/blob/master/MyGeotabAPIAdapter/README.md)
 (read 2026-07-02). The adapter is Geotab's official, production-grade .NET service that mirrors a
 MyGeotab database into SQL Server/PostgreSQL — i.e., the battle-tested daemon version of exactly what

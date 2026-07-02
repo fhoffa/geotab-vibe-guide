@@ -387,4 +387,40 @@ regardless of which Ace handed you.
 Once silver is trustworthy, build marts for analysis — daily distance per device, H3 hex density,
 idle hotspots, etc. Keep these **out of the ingestion path**; rebuild them from silver on a schedule.
 (`h3_latlng_to_cell`, `h3_cell_to_latlng`, `h3_h3_to_string` and the `spatial` functions are
-available.) Analytics recipes are deliberately not part of this engineering skill.
+available.) Analytics recipes are deliberately not part of this engineering skill — with one
+exception below, because it's an *enrichment of the mirror itself*.
+
+### Gold pattern: locating StatusData/FaultData events (`ASOF JOIN`)
+
+`StatusData` and `FaultData` rows carry **no coordinates** (verified 2026-07-02:
+`silver.status_data` on the live mirror has device/diagnostic/value/timestamps only). "Where did this
+fault/reading happen?" is answered by borrowing the position from the device's GPS stream. Geotab's
+official API Adapter dedicates two background services to this interpolation; in DuckDB it's **one
+`ASOF JOIN`** — nearest ping at-or-before the event, per device:
+
+```sql
+CREATE OR REPLACE TABLE gold.status_data_located AS
+SELECT ev.*, g.Latitude, g.Longitude, g.Speed AS gps_speed,
+       ev.StatusDateTime - g.GpsDateTime AS position_age
+FROM silver.status_data ev
+ASOF LEFT JOIN silver.planet_gps_pings g
+  ON ev.DeviceId = g.DeviceId AND ev.StatusDateTime >= g.GpsDateTime;
+```
+
+**Validated 2026-07-02 on `geotab_Demo_fh_vegas4`** (one full day, 2026-06-15: 822,203 status events
+vs 7.86M pings): **100% of events matched** a same-device prior ping, median event→ping gap **2 s**,
+p95 **23 s**, max ~21 min (a parked/offline device — its last known position, which is usually the
+right answer anyway). Ledger row + probe **P17** in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md).
+
+Rules that keep it honest:
+
+- **This is gold, not silver.** The joined position is *derived*, so it lives in a clearly-named gold
+  object rebuilt from silver on a schedule — never write inferred coordinates into the silver fact
+  (Non-negotiable #14 territory: silver mirrors the source, and the source has no coordinates here).
+- **Keep `position_age`** so consumers can filter to their own tolerance (e.g. `<= INTERVAL 5 MINUTE`
+  for "at this location" claims); an `ASOF LEFT JOIN` keeps unmatched events with NULL position.
+- **Late GPS is real** (it's what re-splits trips), so events near your load watermark may match a
+  stale ping now and a closer one after the next GPS load — rebuilding the mart each run after GPS
+  loads self-heals this (the adapter waits a configurable buffer, default 24 h, for the same reason).
+- Filter both sides to the window you need before joining if you don't want the full-history rebuild;
+  the day-sized validation ran in seconds on ~24M-row silver.

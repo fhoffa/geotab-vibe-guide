@@ -6,25 +6,52 @@ reference data). Pick the channel per entity.
 
 ## Channel by entity
 
-| Entity | Role | Channel | Natural key | Cadence |
-|--------|------|---------|-------------|---------|
-| `LogRecord` (GPS) | fact | **Ace** (bulk CSV) | `(DeviceId, GpsDateTime)` | daily |
-| `Trip` † | **mutable** fact | **Ace** | `(DeviceId, trip_start_utc)` | daily **+ re-split reconcile** |
-| `StatusData` (engine/sensor) | fact | **Ace** | `(DeviceId, DiagnosticId, status_datetime_utc)` | daily |
-| `ExceptionEvent` (safety) | fact | **Ace** | `(DeviceId, RuleId, active_from_utc)` | daily |
-| `FaultData` (DTCs) | fact | **Ace** or `Get` | `(DeviceId, DiagnosticId, dateTime)` | daily |
-| `FuelTransaction` / `FillUp` | fact | `Get` (sparse) | `(DeviceId, dateTime)` | daily/weekly |
-| `ChargeEvent` / `BatteryStateOfHealth` (EV) | fact | `Get` | `(DeviceId, startTime)` | daily |
-| `DeviceStatusInfo` | live snapshot | `Get` | `DeviceId` | on demand (don't historize) |
-| `Device` | **dimension** | **`Get`** | `id` | weekly |
-| `User` (incl. drivers) | dimension | `Get` (`{isDriver:true}` for drivers) | `id` | weekly |
-| `Zone` (geofences) | dimension | `Get` | `id` | weekly |
-| `Group` (hierarchy) | dimension | `Get` | `id` | weekly |
-| `Diagnostic` | dimension (decodes StatusData/Fault) | `Get` if small; **Ace bulk CSV if large** | `id` | monthly |
-| `Rule` | dimension (decodes ExceptionEvent) | `Get` | `id` | monthly |
-| `Driver`* | — | use `User` + `{isDriver:true}` | — | — |
+The **Mutates?** column says whether an already-loaded row can change in the source. It decides the
+maintenance you owe: `no` → plain append + dedup (backfills A/B/C suffice); `yes` → you also need a
+reconcile pass like operation D ([`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md)). We learned this
+per-entity the hard way with `Trip`; check it *before* adding a new fact, not after drift appears.
 
-\* There is no `Driver` typeName — drivers are `User`s. (Same gotcha as the rest of the Geotab API.)
+| Entity | Role | Channel | Natural key | Mutates? | Cadence |
+|--------|------|---------|-------------|----------|---------|
+| `LogRecord` (GPS) | fact | **Ace** (bulk CSV) | `(DeviceId, GpsDateTime)` | no | daily |
+| `Trip` † | **mutable** fact | **Ace** | `(DeviceId, trip_start_utc)` | **yes — re-splits** | daily **+ re-split reconcile** |
+| `StatusData` (engine/sensor) | fact | **Ace** | `(DeviceId, DiagnosticId, status_datetime_utc)` | no | daily |
+| `ExceptionEvent` (safety) | fact | **Ace** | `(DeviceId, RuleId, active_from_utc)` | no (append-only once fired) | daily |
+| `FaultData` (DTCs) | fact | **Ace** or `Get` | `(DeviceId, DiagnosticId, dateTime)` | dismissal fields only ‡ | daily |
+| `DriverChange` | fact (driver↔vehicle assignment) | `Get` (9,735 rows on `demo_fh4`, 2026-07-02) | `id` (or `(DeviceId, dateTime)`) | no | daily — **load it if you mirror trips** § |
+| `FuelUsed` (engine-computed fuel) | fact | `Get`; Ace if large (33,408 on `demo_fh4`, 2026-07-02) | `(DeviceId, dateTime)` | no | daily |
+| `FuelTransaction` / `FillUp` (fuel-card) | fact | `Get` (sparse; 0 on the demos) | `(DeviceId, dateTime)` | no | daily/weekly |
+| `ChargeEvent` / `BatteryStateOfHealth` (EV) | fact | `Get` (0 on the demos) | `(DeviceId, startTime)` | no | daily |
+| `Audit` (admin/audit trail) | fact | `Get` (35,902 on `demo_fh4`, 2026-07-02) | `id` | no | weekly, if needed |
+| `DeviceStatusInfo` | live snapshot | `Get` | `DeviceId` | n/a | on demand (don't historize) |
+| `Device` | **dimension** | **`Get`** | `id` | archived via `activeTo` | weekly |
+| `User` (incl. drivers) | dimension | `Get` (`{isDriver:true}` for drivers) | `id` | archived via `activeTo` | weekly |
+| `Zone` (geofences) | dimension | `Get` | `id` | edits + deletes | weekly |
+| `Group` (hierarchy) | dimension | `Get` | `id` | edits + deletes | weekly |
+| `Diagnostic` | dimension (decodes StatusData/Fault) | `Get` if small; **Ace bulk CSV if large** | `id` | rare | monthly |
+| `Controller` / `FailureMode` | dimensions (decode `FaultData` DTCs) | `Get` (594 / 283 on `demo_fh4`, 2026-07-02) | `id` | rare | monthly |
+| `Rule` | dimension (decodes ExceptionEvent) | `Get` | `id` | edits | monthly |
+| `Driver`* / `AuditLog`* | — | use `User` + `{isDriver:true}` / typeName is **`Audit`** | — | — | — |
+
+\* There is no `Driver` typeName — drivers are `User`s — and no `AuditLog` — the typeName is **`Audit`**
+(`GetCountOf AuditLog` → `Unsupported entity type`, verified 2026-07-02). Same gotcha family as the rest
+of the Geotab API.
+
+‡ `FaultData` rows are append-only as *events*, but gain `dismissDateTime`/`dismissUser` when a fault is
+dismissed (the MCP even has a `DismissFaults` tool). If your use case reads dismissal state, refresh a
+recent window instead of trusting frozen rows; the event itself never moves.
+
+§ **`DriverChange` earns its place twice**: it's the assignment history that gives trips their `driver`,
+*and* it's the primary trigger of trip re-splits — fresh `DriverChange` rows inside your trips lookback
+window are a cheap early signal that the re-split reconcile
+([`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D) will find drift.
+
+**Empty on the demo fleets (counts 0 on `demo_fh4` and `Demo_fh_vegas4`, 2026-07-02):** `DVIRLog`,
+`DutyStatusLog`, `FuelTransaction`, `ChargeEvent` — so their schemas/keys aren't validated here. If your
+fleet uses them, verify with `GetEntity` + a tiny `Get` first. **Caution:** per the official
+[MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter) docs, `DVIRLog` defects get
+*updated* with repair status — treat it as a **mutable** fact (needs a D-style refresh window), not
+append-only.
 
 † **`Trip` is a *derived, mutable* fact — its `TripId` is not stable.** Geotab recomputes trips when new
 evidence arrives (a `DriverChange` from the
@@ -138,6 +165,27 @@ on the 50-device `demo_fh4` fleet:
 (the demo reuses them) — so never key a device dimension on `vehicleIdentificationNumber`. Refresh
 slowly-changing dims with `CREATE OR REPLACE` or delete-then-insert keyed on `id` (**dims only — they're
 reproducible from `Get`; never `CREATE OR REPLACE` bronze or silver during a load**).
+
+### Deletions only show up in a FULL refresh — never go incremental-only on dims
+
+A deleted entity **never appears in an incremental pull** — there's no tombstone row to fetch. The only
+way to *see* a deletion is to re-pull the whole set and notice what's missing. (Geotab's own
+[API Adapter](https://github.com/Geotab/mygeotab-api-adapter) runs periodic full cache refreshes for
+exactly this reason, on top of its frequent incremental updates.) Consequences for this skill:
+
+- The delete-then-insert / `CREATE OR REPLACE` dim refresh above is **already delete-safe** — that's a
+  feature, not an accident. **Don't "optimize" a dimension to incremental updates** (`fromDate` on
+  changed rows); you'd keep ghost rows forever.
+- **The large-dim subset path is NOT delete-safe by itself.** If you loaded only the fact-referenced
+  subset of a big dim (e.g. the ~56 of 65,772 diagnostics `status_data` references), each refresh must
+  re-pull that *whole subset*, and a subset id that stops resolving via `Get` should be flagged, not
+  silently retained.
+- For `Device`/`User`, outright deletion is rare — Geotab *archives* (sets `activeTo`). Keep
+  `activeFrom`/`activeTo` in the dim so "gone" usually shows as an expiry you can query. A row present
+  in your dim but absent from a fresh full `Get` pull is a hard delete — surface it (or mark it
+  `_missing_since`), don't leave it looking current.
+- Facts are unaffected: history legitimately references entities that were later deleted/archived, so
+  fact rows keep old ids and the dim join simply goes NULL / expired. That's correct; don't "clean" it.
 
 ### Entities cover different device populations
 
