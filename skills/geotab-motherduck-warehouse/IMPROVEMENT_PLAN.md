@@ -26,11 +26,16 @@ exact. It also has a built-in "behind" signal: a feed page of ≥1,000 results m
    `CHANNELS_AND_FRESHNESS.md`): the adapter is the right tool for 24/7 sub-minute-freshness mirrors with
    real infra (self-hosted .NET service + Postgres/SQL Server); this skill is the zero-infra, MCP-only,
    agent-cadence analog. Users who outgrow the daily loop should know the graduation path exists.
-2. **Acknowledge `GetFeed` explicitly and say why we don't use it**: the Geotab MCP server exposes
-   `Get`/`GetCountOf`/`GetAceResults`/`GetEntity`/`ListEntities` — **no `GetFeed` tool** (verified against
-   the live tool list 2026-07-02). Watermarks + natural-key dedup are the MCP-compatible substitute for
-   the feed token. This preempts the obvious "why not the official feed API?" question, and defines what
-   to adopt if the MCP ever grows a `GetFeed` tool (it would replace the watermark, not bronze/silver).
+2. **Acknowledge `GetFeed` explicitly and say why we don't use it**: the Geotab MCP server has **no
+   `GetFeed` capability** — verified 2026-07-02 three ways against the live server: (a) the full tool
+   list (20 tools: `Get`/`GetCountOf`/`GetAceResults`/`GetEntity`/`ListEntities`/`Add`/`Set`/`Remove` +
+   media/EV/HOS helpers) contains no feed tool; (b) the `Get` tool's schema takes only
+   `database`/`typeName`/`search`/`propertySelector`/`resultsLimit`/`sort`/`server` — no
+   `fromVersion`/feed-token parameter, and no generic method passthrough exists that could reach
+   `GetFeed`; (c) the server's sole MCP resource is `mygeotab://entities` (entity schemas, not methods).
+   Watermarks + natural-key dedup are therefore the MCP-compatible substitute for the feed token. This
+   preempts the obvious "why not the official feed API?" question, and defines what to adopt if the MCP
+   ever grows a `GetFeed` tool (it would replace the watermark, not bronze/silver).
 3. `COST_AND_SIZING.md`: cite the adapter's sizing datapoint (~20,000 devices → ~40 GB PostgreSQL in
    7 days, per README) as external corroboration next to our measured numbers.
 
