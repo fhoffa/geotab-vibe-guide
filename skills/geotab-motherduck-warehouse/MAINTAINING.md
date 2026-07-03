@@ -55,8 +55,10 @@ last cleanup: `_source_db` has been dropped from every table; **`silver.status_d
 `status_data_dedup` *view* was removed); `gold.fleet_daily_operational_summary` reads `silver.status_data`;
 and `main.warehouse_meta` holds source identity. **On 2026-07-03 the vegas mirror's ingest log was
 consolidated into `main.warehouse_ingest_log` (rebuilt from bronze) and the legacy
-`silver.warehouse_ingest_log` mirror was dropped; `main.warehouse_health` (view) was created.** So
-`main` is the sole ingest log in both mirrors now. Don't reintroduce the removed objects.
+`silver.warehouse_ingest_log` mirror was dropped; `main.warehouse_health` (view) was created; and the
+vegas bronze provenance column `_source_object` was renamed to the canonical `_source_uri` on all four
+raw tables.** So `main` is the sole ingest log in both mirrors now, and both mirrors use the 4-col
+provenance names above. Don't reintroduce the removed objects.
 
 ## Before pushing
 

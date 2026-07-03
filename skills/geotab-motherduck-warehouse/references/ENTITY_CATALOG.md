@@ -200,11 +200,14 @@ necessarily a gap** — cross-check against `dim_device` and the entity's own na
 CREATE TABLE IF NOT EXISTS my_db.dim_device (
   id VARCHAR PRIMARY KEY, name VARCHAR, serialNumber VARCHAR,
   vehicleIdentificationNumber VARCHAR, licensePlate VARCHAR, deviceType VARCHAR, productId BIGINT,
+  activeFrom TIMESTAMP, activeTo TIMESTAMP,      -- archival window: §Deletions needs these
   _refreshed_at TIMESTAMP DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS my_db.dim_user (
   id VARCHAR PRIMARY KEY, name VARCHAR, firstName VARCHAR, lastName VARCHAR,
-  isDriver BOOLEAN, employeeNo VARCHAR, _refreshed_at TIMESTAMP DEFAULT now()
+  isDriver BOOLEAN, employeeNo VARCHAR,
+  activeFrom TIMESTAMP, activeTo TIMESTAMP,      -- archival window: §Deletions needs these
+  _refreshed_at TIMESTAMP DEFAULT now()
 );
 CREATE TABLE IF NOT EXISTS my_db.dim_zone (
   id VARCHAR PRIMARY KEY, name VARCHAR, comment VARCHAR, _refreshed_at TIMESTAMP DEFAULT now()
@@ -215,7 +218,10 @@ CREATE TABLE IF NOT EXISTS my_db.dim_diagnostic (
 ```
 
 Use `GetEntity(entity_type='Device')` to discover the full field list and required/optional flags
-before designing a wide dimension.
+before designing a wide dimension. **Include `activeFrom`/`activeTo` in the `propertySelector`** when
+loading `dim_device`/`dim_user` — they're what lets §Deletions distinguish an *archived* row (expiry
+you can query) from a *hard delete* (row missing from a fresh full pull); a dim without them makes
+archived entities look current forever.
 
 ## Minimal vs full mirror
 

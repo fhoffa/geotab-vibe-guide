@@ -155,14 +155,16 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   a sub-agent, **bound its runtime** (≈2 windows per sub-agent): a single sub-agent grinding ~10 sequential
   Ace calls hit an *unrelated* model-gateway `ConnectionRefused` at ~7.6 min; log-ahead makes that death
   clean (bronze + `started` rows persist, no orphaned completion), and the next sub-agent resumes.
-- **"Am I caught up?" — the full-page rule.** When catching up in chunks (or paging `Get`), the signal
-  that you're still behind is a pull that comes back **full**: a `Get` page hitting `resultsLimit`, or a
-  chunk whose loaded `max(event_time)` lands right at your window's `hi` bound. Full → continue
-  **immediately** with the next chunk/page; partial (rows peter out before the bound / page under the
-  limit) → you're current, stop and let the normal cadence resume. (Same heuristic Geotab's official
-  API Adapter uses on `GetFeed` pages — see
-  [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter.) Don't judge
-  "caught up" by `max(event_time)` vs *now* alone mid-loop — an event-cadence table looks stale even
+- **"Am I caught up?" — two different signals; don't apply the wrong one.** For **time-chunked**
+  catch-up (12 h / 1-day windows walking watermark → now), the only valid stop condition is **the
+  window cursor reaching your target (~now)**. A chunk that "comes back partial" does *not* mean
+  current: a sparse window legitimately ends early (no event happened near its `hi` bound) while later
+  windows still hold data — stopping there leaves a silent gap. Walk every window to the end. The
+  **row-count signal** belongs to **paging**: a `Get` page hitting `resultsLimit` means more pages —
+  keep paging immediately; a page under the limit genuinely ends the pagination (that's the heuristic
+  Geotab's official API Adapter uses on `GetFeed` pages — see
+  [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter). And don't
+  judge "caught up" by `max(event_time)` vs *now* alone — an event-cadence table looks stale even
   when fully caught up (§C2, quirk #16).
 - **Cost:** ~33–60 s of Ace time per fact table + a couple fast MotherDuck calls. Dimensions (via `Get`)
   are sub-second; refresh weekly, not daily. **Ordering:** load dimensions first, then facts.

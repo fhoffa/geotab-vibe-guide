@@ -169,5 +169,7 @@ dedup are the MCP-compatible substitute — and the bronze layer is what makes t
 
 One `GetFeed` behavior worth borrowing even without the API: the adapter treats a **full feed page as
 "I'm behind — poll again immediately"** and a partial page as "current — wait for the next interval."
-The same stop-condition applies to this skill's catch-up loops — see
+The same signal applies to this skill's `Get` **pagination** (a page hitting `resultsLimit` means more
+pages). It does **not** transfer to time-chunked Ace walks — a sparse window can end early while later
+windows still hold data, so those stop only when the window cursor reaches the target — see
 [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §A.

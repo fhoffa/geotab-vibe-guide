@@ -4,7 +4,7 @@ description: Replicate Geotab fleet data into a MotherDuck (DuckDB) warehouse an
 license: Apache-2.0
 metadata:
   author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
-  version: "1.0"
+  version: "1.1"
   channels: [MotherDuck MCP, Geotab MCP]
 ---
 
