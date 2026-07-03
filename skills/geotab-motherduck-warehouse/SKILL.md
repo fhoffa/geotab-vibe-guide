@@ -21,7 +21,7 @@ watermarks, gap detection, backfill. (Analytics/"cool queries" come *after* the 
 see [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) for the gold layer idea, but
 keep analysis out of the ingestion path.) For how this MCP-driven approach compares to Geotab's
 official self-hosted mirror (the [MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter))
-and when to graduate to it, see [`guides/DATA_WAREHOUSE_COMPARISON.md`](../../guides/DATA_WAREHOUSE_COMPARISON.md)
+and when to graduate to it, see [`guides/MOTHERDUCK_VS_API_ADAPTER.md`](../../guides/MOTHERDUCK_VS_API_ADAPTER.md)
 and [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter.
 
 > Everything below was validated live against MotherDuck + Geotab Ace on `demo_fh4`

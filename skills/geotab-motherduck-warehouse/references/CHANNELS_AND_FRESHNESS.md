@@ -154,7 +154,7 @@ Geotab publishes an official, production-grade mirror-builder: the
 that continuously replicates a MyGeotab database into SQL Server/PostgreSQL. It's the right tool for
 **24/7, sub-minute-freshness mirrors with real infrastructure**; this skill is the **zero-infra,
 MCP-only, agent-cadence** analog. Human-facing comparison:
-[`guides/DATA_WAREHOUSE_COMPARISON.md`](../../../guides/DATA_WAREHOUSE_COMPARISON.md).
+[`guides/MOTHERDUCK_VS_API_ADAPTER.md`](../../../guides/MOTHERDUCK_VS_API_ADAPTER.md).
 
 **Why this skill doesn't use `GetFeed`.** The adapter's incremental engine is the official
 [`GetFeed`](https://developers.geotab.com/myGeotab/apiReference/methods/GetFeed/) API: an exact
