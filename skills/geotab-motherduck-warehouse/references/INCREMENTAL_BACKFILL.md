@@ -419,7 +419,9 @@ never two D reconciles on the same table. Reads from other sessions are always f
 
 The first question every session asks is "what state is this warehouse in?" — answer it with **one
 query** instead of N ad-hoc ones. Per-table freshness from the *data*, last load from the *log*
-(validated 2026-07-02 on `geotab_Demo_fh_vegas4`; adjust table/column names to your warehouse):
+(validated 2026-07-02 on `geotab_Demo_fh_vegas4`; adjust table/column names to your warehouse — e.g.
+that mirror predates the layered-log convention and keeps its ingest log in `silver`, while the DDL
+above creates it in `main`):
 
 ```sql
 WITH freshness AS (
@@ -432,8 +434,10 @@ WITH freshness AS (
 ),
 last_load AS (
   SELECT target_table, max(loaded_at) AS last_loaded_at, arg_max(rows_loaded, loaded_at) AS last_rows_loaded
-  FROM silver.warehouse_ingest_log GROUP BY target_table
-)
+  FROM main.warehouse_ingest_log
+  WHERE coalesce(status, 'completed') = 'completed'   -- completions only: a 'started' orphan must NOT
+  GROUP BY target_table                                -- read as "last load" (it's the failure to surface);
+)                                                      -- legacy pre-status rows (NULL) count as completed
 SELECT f.tbl, f.n AS row_count, f.devices, f.latest_event,
        round(epoch(now() - f.latest_event) / 3600, 1) AS hours_behind_now,
        f.cadence, l.last_loaded_at, l.last_rows_loaded
