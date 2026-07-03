@@ -1,4 +1,4 @@
-# Your Fleet Data, Your Warehouse: MotherDuck Skill vs. MyGeotab API Adapter
+# Replicating Geotab Data into Your Own Warehouse: the MotherDuck Skill vs. the Official MyGeotab API Adapter
 
 > **What is this about?** Sometimes querying the Geotab API isn't enough — you want a *copy* of your
 > fleet data in your own database. Your own SQL, your own joins with business data, history kept as
