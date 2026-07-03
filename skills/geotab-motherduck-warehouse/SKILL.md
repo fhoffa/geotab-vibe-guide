@@ -64,43 +64,12 @@ bronze first; silver is derived from bronze** — never loaded straight from the
                                  FROM bronze_table WHERE event_time > <watermark>  (derive + idempotent dedup)
 ```
 
-Worked example we actually ran (GPS, bronze raw → silver). **The examples use the short `my_db.<table>`
-form for brevity; the live demo warehouse is now `geotab_demo_fh4` with `bronze`/`silver`/`gold` schemas
-(`my_db.bronze_gps_raw` → `geotab_demo_fh4.bronze.gps_raw`, `my_db.planet_gps_pings` →
-`geotab_demo_fh4.silver.planet_gps_pings`). For a new source, create your own `geotab_<source>` first
-(see "First run" below); never write to another source's database.**
-
-```sql
--- 1. Watermark (from silver — the source of truth for "what's already typed")
-SELECT max(GpsDateTime) FROM my_db.planet_gps_pings;          -- 2026-06-26 01:42:40.779
-```
-```
--- 2. Ace (new_chat=true, database=demo_fh4):
-"List every GPS position log recorded after 2026-06-26 01:42:40 UTC, across all devices.
- Return these exact columns: DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude,
- GpsDateTime, Speed. Use UTC timezone. Do not summarize or aggregate."
-   → ~40 s, response 166 KB (spilled to file), signed CSV URL inside, 157,419 rows.
-```
-```sql
--- 3. Land raw in bronze, append-only, lossless (no dedup, no watermark — keep everything)
-INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'ace:<chat-uuid>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
-FROM read_csv_auto('https://storage.googleapis.com/planet-user-results-prod-eu/<uuid>-000000000000.csv?X-Goog-...',
-                   all_varchar=true);
-   → 157,419 rows appended. bronze_gps_raw: 522,162 (bootstrap) → 679,581.
-```
-```sql
--- 4. Derive silver from bronze: type-cast, strip ' UTC', dedup on the NORMALIZED natural key
-INSERT INTO my_db.planet_gps_pings
-  (DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed)
-SELECT DISTINCT ON (DeviceId, replace(GpsDateTime,' UTC','')::TIMESTAMP)
-       DeviceId, DeviceName, DeviceTimeZoneId, Latitude::DOUBLE, Longitude::DOUBLE,
-       replace(GpsDateTime,' UTC','')::TIMESTAMP, Speed::BIGINT
-FROM my_db.bronze_gps_raw
-WHERE replace(GpsDateTime,' UTC','')::TIMESTAMP
-      > (SELECT coalesce(max(GpsDateTime), TIMESTAMP '1970-01-01') FROM my_db.planet_gps_pings);
-   → silver advances to 679,577 (boundary-second dupes collapse on the parsed key).
-```
+**Full worked SQL for every step** — bronze/silver DDL, the append, the typed/deduped derive, the
+watermark-vs-anti-join variants, and a full rebuild — lives in
+[`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md). (Its examples use the short
+`my_db.<table>` form; read it as `geotab_<source>.<layer>.<table>` — the live demo is `geotab_demo_fh4`
+with `bronze`/`silver`/`gold` schemas. For a new source, create your own `geotab_<source>` first — see
+"First run" — and never write to another source's database.)
 
 **Before deriving silver, inspect what came back** (shape + size) and decide: derive as-is, map
 columns by position, or re-ask Ace. Bronze append is unconditional (lossless); never derive silver
@@ -201,24 +170,14 @@ databases, so sharing tables silently collides (Non-negotiable #12). Do these st
    **writing** must be target-only.) **If the host blocks `list_databases`** (some MCP safety layers do —
    seen on ChatGPT), proceed scoped strictly to your fully-qualified `geotab_<source>.*` target, never
    reference another database name, and note the blocked check in the report.
-3. **Create an isolated namespace** (recommended: **database per source + schema per layer**):
-   ```sql
-   CREATE DATABASE IF NOT EXISTS geotab_<source>;
-   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.bronze;
-   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.silver;
-   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.gold;
-   CREATE TABLE IF NOT EXISTS geotab_<source>.main.warehouse_meta (
-     source_db VARCHAR, geotab_server VARCHAR, layout VARCHAR, note VARCHAR,
-     created_at TIMESTAMP DEFAULT now());
-   INSERT INTO geotab_<source>.main.warehouse_meta (source_db, geotab_server, layout, note)
-   VALUES ('<source>', '<server>', 'db-per-source + schema-per-layer', 'Geotab source identity');
-   ```
-   Use `geotab_<source>` (with `bronze`/`silver`/`gold` schemas) everywhere the examples say `my_db`, and
-   stamp `_batch_id` on every bronze insert (the source DB is recorded once at the database level in
-   `main.warehouse_meta` — see rule #12; no per-row `_source_db`). **`CREATE TABLE IF NOT EXISTS` only — never
-   `CREATE OR REPLACE` silver during bootstrap.** A partial-brownfield target is fine and resumable: a
-   dimension may already be populated while bronze/facts are empty — preserve the dim, create bronze,
-   continue the fact bootstrap.
+3. **Create an isolated namespace** (recommended: **database per source + schema per layer**) — the
+   `CREATE DATABASE`/`SCHEMA` + `main.warehouse_meta` DDL is in
+   [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate. Use `geotab_<source>` (with
+   `bronze`/`silver`/`gold` schemas) everywhere the examples say `my_db`, and stamp `_batch_id` on every
+   bronze insert (source DB recorded once at the DB level in `main.warehouse_meta` — rule #12; no per-row
+   `_source_db`). **`CREATE TABLE IF NOT EXISTS` only — never `CREATE OR REPLACE` silver during
+   bootstrap.** A partial-brownfield target is fine and resumable: a dimension may already be populated
+   while bronze/facts are empty — preserve the dim, create bronze, continue the fact bootstrap.
 4. **Gate before the first write:** the target database name must encode *this* source and must not be an
    existing other-source DB. `IF NOT EXISTS` keeps a re-run safe. Then proceed to the loop / backfill.
 

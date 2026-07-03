@@ -53,7 +53,10 @@ The Ace quirk catalog lives in [`references/ACE_TO_CSV.md`](references/ACE_TO_CS
 `geotab_demo_fh4` and `geotab_Demo_fh_vegas4` are the live mirrors the evidence was measured on. As of the
 last cleanup: `_source_db` has been dropped from every table; **`silver.status_data`** is canonical (the
 `status_data_dedup` *view* was removed); `gold.fleet_daily_operational_summary` reads `silver.status_data`;
-and `main.warehouse_meta` holds source identity. Don't reintroduce the removed objects.
+and `main.warehouse_meta` holds source identity. **On 2026-07-03 the vegas mirror's ingest log was
+consolidated into `main.warehouse_ingest_log` (rebuilt from bronze) and the legacy
+`silver.warehouse_ingest_log` mirror was dropped; `main.warehouse_health` (view) was created.** So
+`main` is the sole ingest log in both mirrors now. Don't reintroduce the removed objects.
 
 ## Before pushing
 

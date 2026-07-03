@@ -147,7 +147,14 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   bronze by `_batch_id` on replay.)
 - **After downtime** (missed several days): identical loop — one Ace call with the wider
   `after <old watermark>` window. If that window is huge (days × big fleet), chunk it the same way as
-  historical backfill (below) so no single CSV is unwieldy.
+  historical backfill (below) so no single CSV is unwieldy. **A too-big pull doesn't just make an
+  unwieldy CSV — it can *time out at the MCP layer* before Ace returns** (observed 2026-07-03: a ~1.9M-row
+  open-ended `StatusData` catch-up timed out twice; ~200K–400K-row windows returned fine). Size chunks to
+  the proven single-pull size for that entity (≈ what your daily volume × fan-out lands at — StatusData
+  chunked cleanly at **12 h ≈ 800K CSV rows incl. the #12 2× fan-out**). If you delegate the chunk loop to
+  a sub-agent, **bound its runtime** (≈2 windows per sub-agent): a single sub-agent grinding ~10 sequential
+  Ace calls hit an *unrelated* model-gateway `ConnectionRefused` at ~7.6 min; log-ahead makes that death
+  clean (bronze + `started` rows persist, no orphaned completion), and the next sub-agent resumes.
 - **"Am I caught up?" — the full-page rule.** When catching up in chunks (or paging `Get`), the signal
   that you're still behind is a pull that comes back **full**: a `Get` page hitting `resultsLimit`, or a
   chunk whose loaded `max(event_time)` lands right at your window's `hi` bound. Full → continue
@@ -420,8 +427,9 @@ never two D reconciles on the same table. Reads from other sessions are always f
 The first question every session asks is "what state is this warehouse in?" — answer it with **one
 query** instead of N ad-hoc ones. Per-table freshness from the *data*, last load from the *log*
 (validated 2026-07-02 on `geotab_Demo_fh_vegas4`; adjust table/column names to your warehouse — e.g.
-that mirror predates the layered-log convention and keeps its ingest log in `silver`, while the DDL
-above creates it in `main`):
+that mirror originally kept its ingest log in `silver` — predating the layered-log convention — but was
+**consolidated into `main` on 2026-07-03** (log rebuilt from bronze, silver mirror dropped), so both the
+DDL above and that warehouse now agree on `main`; adapt the schema name if yours still differs):
 
 ```sql
 WITH freshness AS (
