@@ -58,7 +58,6 @@ connector removes all of that for the common case:
 | **Hosting** | Run a server locally or in the cloud | Nothing to host — Geotab runs it |
 | **Auth** | Manage credentials in `.env` | Uses your existing MyGeotab login |
 | **Permissions** | You enforce them | Inherits your MyGeotab user permissions automatically |
-| **AI tools** | Whatever you wire up | ChatGPT, Claude, Copilot, and other MCP clients |
 
 Because it's built on the **open MCP standard**, you're not locked into one AI ecosystem — connect
 the fleet intelligence to whichever approved assistant your organization uses.
