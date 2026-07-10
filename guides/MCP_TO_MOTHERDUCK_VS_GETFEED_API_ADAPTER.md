@@ -59,6 +59,18 @@ What makes it more than a toy: the skill encodes **20+ documented quirks** of th
 defensive pattern for each — all measured on live databases, with the evidence logged. Your agent
 doesn't rediscover these the hard way.
 
+**See it run (a real, independent test):** someone replicated a multi-million-row fleet with the
+skill and shared the entire conversation —
+[read the transcript](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77). It's an honest
+look at the skill handling those quirks on live data: the ~2× row doubling collapsing in dedup,
+sharded exports, a requested column coming back renamed, a transient `invalid_value` cleared on
+retry, and a trip re-split reconcile that matched the skill's own worked example. It also surfaced a
+couple of rough edges — stale `started` log rows left by an earlier crashed session, and a long
+backfill that hit the AI tool's per-turn tool-call limit and needed a nudge to *continue*.
+**Those are known, and we're working on them** — tracked in the skill's
+[improvement plan](../skills/geotab-motherduck-warehouse/IMPROVEMENT_PLAN.md) and
+[evidence log](../skills/geotab-motherduck-warehouse/references/EVIDENCE_LOG.md).
+
 **Honest limits:** the warehouse is only as fresh as the last time an agent ran the update loop.
 It's ideal for analytics that tolerate "updated this morning," not for feeding a dispatch screen
 that needs this minute's positions. (For live views, query the API directly — see

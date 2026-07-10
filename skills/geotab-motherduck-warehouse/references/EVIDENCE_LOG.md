@@ -151,6 +151,13 @@ aware of and why*. The measurements behind each quirk live here (point-in-time; 
 
 | 2026-07-03 | Demo_fh_vegas4 | **bronze provenance drift fixed + concurrent-writer race observed** (2nd session, same day) | (a) Vegas bronze had **`_source_object`** where the convention says `_source_uri` (all 4 raw tables; demo_fh4 matched the convention) → `ALTER TABLE … RENAME COLUMN` ×4 at ~01:20 UTC — which is why the same-day log rebuild's `_source_uri` queries worked on vegas. (b) This session also created `main.warehouse_ingest_log` + migrated silver's 5 legacy rows (`batch_id`/`status` NULL) at ~01:15 — **those are the "5 rows, all batch_id NULL"** the rebuild session found and superseded minutes-to-hours later: a live two-writer race, **benign** because both designs are append-only/rebuild-from-bronze (the one-writer caution held: no D reconciles overlapped). (c) Geotab MCP went **403 `mcp_request_blocked` mid-session** (all tools; had worked ~1 h earlier) → P12 preflight caught it and the Ace-dependent loop was correctly **not** started (rule #13); MotherDuck-only hardening proceeded | MotherDuck; Geotab MCP introspection | drift check worth adding to brownfield checks: `list_columns` bronze for `_source_uri` before a provenance-joining query. Host-level MCP blocks can appear mid-session on any host — preflight per session, not per setup |
 
+| 2026-07-10 | independent (shared conv.) | **field test: quirk #6 doubling is per-table, not universal** | GPS/status/exceptions each ~2× (3,777,154→1,888,573; 11,956,284→5,978,125; 10,308→5,153); **trips did NOT double** — dedup collapsed all correctly | [shared conversation](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77) | reinforces #6 "not every batch"; **don't assume a fleet-wide halving** — the multiplier is per-table/per-pull |
+| 2026-07-10 | independent (shared conv.) | **field test: quirk #2 shards track export size, not row count** | 11.9M-row status → **8** shards; 3.7M-row GPS → **not** sharded | same conv. | shard count ≈ raw export bytes, not a fixed row threshold — reinforces #2 |
+| 2026-07-10 | independent (shared conv.) | **field test: quirk #7 column-name drift confirmed** | requested `DiagnosticId` for exception_events; Ace returned it as **`Diagnostic`** | same conv. | reinforces #7 — read the returned `columns` array and map by name; never assume requested==returned |
+| 2026-07-10 | independent (shared conv.) | **field test: quirk #17 reproduced** | a tightly-worded, column-bounded trips prompt failed `invalid_value`; the **identical request loosened to open-ended** succeeded immediately on retry | same conv. | reinforces #17 — transient; retry and prefer open-ended over bounded |
+| 2026-07-10 | independent (shared conv.) | **field test: P16 reconcile well-calibrated** | **50 orphans** (matches the skill's worked-example 50 exactly); missing 24 (vs 51 in the example — window/fleet dependent) | same conv. | reconcile logic reproduces on a different fleet; orphan count landing on 50 again is reassuring, not a fluke |
+| 2026-07-10 | independent (shared conv.) | **field test: 8 stale `started` rows + tool-call budget** | found **8** `warehouse_ingest_log` rows stuck at `status='started'` (2026-07-03, a prior crashed session); data itself re-verified fine. Separately, a long backfill **exhausted the host's per-turn tool-call limit** → operator said "continue" once, run resumed cleanly | same conv. | orphan-sweep guidance exists (INCREMENTAL_BACKFILL §state table) but wasn't found/applied → **discoverability + a stale-threshold→finalize-or-abandon branch** are IMPROVEMENT_PLAN follow-ups; the log-ahead design made the "continue" safe |
+
 _(append the next run's rows here)_
 
 ---
@@ -268,3 +275,41 @@ so this is **per-call non-determinism, not a per-database setting.**
 - "distinct GPS devices on 2026-06-28": both `SELECT COUNT(DISTINCT DeviceId) FROM GpsLogs WHERE DATE(UTC_GpsTimestamp) = '2026-06-28'` → **demo 49 / vegas 50** (fleet-size difference; both `GpsLogs`). (chats `89zah3zXjSzZoub0iAYD`, `HorGn9NEiJmO2wKm6bdn`.)
 
 **Takeaways (→ #20):** (1) **Never use Ace's `max(timestamp)` as a freshness/watermark oracle** — read true latest from the Get API / `DeviceStatusInfo`; the warehouse takes its watermark from `max(silver)`, not Ace. (2) On any **windowed export**, read the returned SQL and confirm the upper bound reaches *now* (`CURRENT_DATETIME()` / your explicit `hi`), not `CURRENT_DATE()`, or today's rows silently miss the CSV. (3) **Fingerprint:** a "latest" answer landing exactly on `YYYY-MM-DD 23:59:59.xxx` is almost certainly a `CURRENT_DATE()` clip, not a real reading. (4) The bronze-append + dedup + forward-catch-up design tolerates a one-off clipped pull (next run re-pulls), but a *persistently* clipped upper bound means today never lands until tomorrow — so the verify step must catch it.
+
+### Run 2026-07-10 (independent field test — public shared conversation)
+
+**What this is:** an independent operator replicated a multi-million-row fleet end-to-end with the
+skill and **shared the full conversation publicly:**
+[claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77).
+Not run by a maintainer, not on the reference mirrors — so it's outside-view corroboration that the
+documented quirks and recovery patterns hold on a different, larger fleet. Their notes, mapped to the
+catalog:
+
+1. **Doubling is per-table/per-pull, not universal (quirk #6).** GPS, status, and exceptions each came
+   back ~2× (3,777,154→1,888,573; 11,956,284→5,978,125; 10,308→5,153) and dedup collapsed them; **trips
+   did *not* double.** Confirms #6's "not every batch" — and warns against assuming a blanket "halve it."
+2. **Sharding tracks export size, not row count (quirk #2).** 11.9M-row status sharded into **8** files;
+   3.7M-row GPS did **not** shard. So "under N rows = single file" is the wrong mental model — it's bytes.
+3. **Column-name drift happened (quirk #7).** Requested `DiagnosticId` for exception_events; Ace returned
+   `Diagnostic`. Reinforces: read the response `columns` array and map by name, never assume the request
+   is echoed back.
+4. **`invalid_value` reproduced (quirk #17).** A tight, column-bounded trips prompt 400'd; the same ask
+   loosened to open-ended succeeded on immediate retry — a clean repro of the documented failure/retry.
+5. **Trip reconcile is well-calibrated (P16).** Their run found **50 orphans** — matching the skill's
+   worked example exactly (missing differed: 24 vs 51, which is window/fleet dependent). Independent
+   reproduction, not a fluke.
+6. **Two rough edges (→ IMPROVEMENT_PLAN follow-ups):**
+   - **8 stale `started` rows** from a prior crashed session (2026-07-03) sitting in
+     `warehouse_ingest_log`; the data itself re-verified fine. The orphan-sweep procedure exists
+     (INCREMENTAL_BACKFILL §The state table) but the tester didn't find/apply it → **discoverability**,
+     plus an explicit **stale-threshold → finalize-or-abandon** branch so verified-but-unlogged rows
+     don't just accumulate as noise.
+   - A long backfill **exhausted the host's per-turn tool-call budget**; the operator said "continue"
+     once and it resumed cleanly — the log-ahead + orphan-sweep design made that safe, but the skill
+     should set the expectation up front.
+   - Minor: `INSERT … SELECT *` into bronze fails (bronze has raw + provenance columns beyond any single
+     Ace pull) — **name columns on both sides**. Already the rule in MAINTAINING/MEDALLION; worth a
+     callout at the load step for copy-pasters.
+
+No new quirk numbers (all map to existing #6/#2/#7/#17 and P16). Follow-ups tracked in
+[`IMPROVEMENT_PLAN.md`](../IMPROVEMENT_PLAN.md) §Field-test follow-ups.
