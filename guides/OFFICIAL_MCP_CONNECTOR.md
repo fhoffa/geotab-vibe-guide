@@ -1,9 +1,12 @@
 # The Official Geotab MCP Connector
 
 > **New (June 2026):** Geotab now ships an **official MCP Connector** that plugs your live
-> MyGeotab data and Geotab Ace straight into ChatGPT, Claude, and Microsoft Copilot — no code, no
-> hosting, no MCP server to run yourself. If you just want to *talk to your fleet* from an AI tool
-> you already use, **this is the easiest path.**
+> MyGeotab data — both the fast direct API and Geotab Ace — straight into ChatGPT, Claude, and
+> Microsoft Copilot. No code, no hosting, no MCP server to run yourself. If you just want to *talk to
+> your fleet* from an AI tool you already use, **this is the easiest path.**
+>
+> ### 🎮 Want to feel it right now? [**Play with the free simulator →**](https://fhoffa.github.io/geotab-mcp-simulator/)
+> No account, no login, no fleet — a browser demo of the whole experience. ([details below](#try-it-first--no-account-needed))
 >
 > Official page: **[geotab.com/geotab-mcp-connector](https://www.geotab.com/geotab-mcp-connector/)**
 
@@ -22,12 +25,24 @@ chat window:
 You:    "Which vehicles in the Northwest fleet have open maintenance issues?"
 Claude: *queries your live MyGeotab data* "3 vehicles have open faults: ..."
 
-You:    "Create a rule that alerts me when any of them idles more than 15 minutes."
-Claude: *creates the rule in MyGeotab* "Done — rule 'Idle > 15 min' is now active."
+You:    "Create a geofence zone around our downtown depot and a rule that
+         alerts me when any of them idles more than 15 minutes there."
+Claude: *creates the zone and rule in MyGeotab* "Done — zone 'Downtown Depot'
+         and rule 'Idle > 15 min' are now active."
 ```
 
-Under the hood it exposes the same **Geotab Ace** agentic platform you may know from inside
-MyGeotab — but now reachable from the AI tools your team already lives in.
+It's **not just Ace.** Under the hood the connector reaches your fleet two ways:
+
+- **The direct MyGeotab API** — fast, structured reads (often sub-second) *and* **writes**. This is
+  what lets it *create things*: geofence zones, rules, alerts, groups, setting changes — not just
+  answer questions.
+- **Geotab Ace** — the agentic platform you may know from inside MyGeotab, for open-ended
+  natural-language analysis over your data.
+
+The AI picks the right one for what you're asking. So you get Ace's flexibility for exploration
+*and* the raw API's speed and write access for getting things done — all from the AI tools your team
+already lives in. (For how those channels differ on speed and flexibility, see
+[Data access: Data Connector vs API vs Ace](./DATA_ACCESS_COMPARISON.md).)
 
 ---
 
@@ -87,8 +102,8 @@ automatically. To check eligibility and get the connection details for your orga
 
 ### What you can do once connected
 
-- **Ask** — live questions about vehicles, trips, drivers, faults, idling, and more
-- **Act** — create rules and alerts, schedule maintenance, organize groups, change settings
+- **Ask** — live questions about vehicles, trips, drivers, faults, idling, and more (fast API reads or Ace analysis, whichever fits)
+- **Act (write-back)** — **create geofence zones**, rules and alerts, schedule maintenance, organize groups, change settings — real changes in MyGeotab, not just answers
 - **Build** — generate reports and dashboards without exporting files or switching apps
 
 All of it respects your existing MyGeotab permissions: a dispatcher sees only what they're allowed
@@ -107,7 +122,7 @@ hosted product doesn't do:
 | You want fleet Q&A + actions in ChatGPT/Claude/Copilot today | You need custom tools, frameworks, or analysis methods |
 | Zero setup and Geotab-managed hosting matter | You want local processing (e.g. DuckDB caching, offline work) |
 | Your team is on GO Plan + Unified Login | You want to combine Geotab with other data sources your way |
-| Standard Ace-powered capabilities are enough | You need multi-account queries or bespoke write logic |
+| The built-in API + Ace capabilities are enough | You need multi-account queries or bespoke write logic |
 
 The two can **coexist** — an unofficial MCP for specialized tooling alongside the official connector
 for everyday questions. See [**CUSTOM_MCP_GUIDE.md**](./CUSTOM_MCP_GUIDE.md) for the build-your-own path.
