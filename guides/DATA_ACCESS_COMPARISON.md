@@ -222,4 +222,4 @@ All three channels above *query* Geotab's servers on demand. If you instead want
 raw data in a database you control** — unlimited history, your own SQL and joins, dashboards that
 don't touch the API — that's replication, not querying. Two ways to do it (one AI-driven with zero
 infrastructure, one an official always-on service) are compared in
-[MOTHERDUCK_VS_API_ADAPTER.md](./MOTHERDUCK_VS_API_ADAPTER.md).
+[MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md](./MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md).

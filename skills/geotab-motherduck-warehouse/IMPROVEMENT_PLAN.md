@@ -2,7 +2,7 @@
 
 **Status: IMPLEMENTED 2026-07-02** (same branch). What landed, by theme:
 
-- **Theme 1** ✅ — `guides/MOTHERDUCK_VS_API_ADAPTER.md` (human-facing comparison),
+- **Theme 1** ✅ — `guides/MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md` (human-facing comparison),
   `CHANNELS_AND_FRESHNESS.md` §Relationship to the adapter (+ the three-way `GetFeed` verification,
   ledger row 2026-07-02), SKILL.md intro pointer, `COST_AND_SIZING.md` adapter sizing corroboration.
 - **Theme 2** ✅ — `ENTITY_CATALOG.md` §Deletions (full-refresh-only visibility, subset caveat,
@@ -47,7 +47,7 @@ exact. It also has a built-in "behind" signal: a feed page of ≥1,000 results m
    real infra (self-hosted .NET service + Postgres/SQL Server); this skill is the zero-infra, MCP-only,
    agent-cadence analog. Users who outgrow the daily loop should know the graduation path exists.
    *Partially done 2026-07-02:* the human-facing comparison now lives in
-   [`guides/MOTHERDUCK_VS_API_ADAPTER.md`](../../guides/MOTHERDUCK_VS_API_ADAPTER.md); what remains is a
+   [`guides/MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md`](../../guides/MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md); what remains is a
    one-line pointer to it from the skill itself so agents running the skill know the guide exists.
 2. **Acknowledge `GetFeed` explicitly and say why we don't use it**: the Geotab MCP server has **no
    `GetFeed` capability** — verified 2026-07-02 three ways against the live server: (a) the full tool

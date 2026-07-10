@@ -11,7 +11,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 | **Using Claude** | [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md) |
 | **Using other AI tools** | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) |
 | **Want pre-built fleet analytics (KPIs, safety)** | [DATA_CONNECTOR.md](./DATA_CONNECTOR.md) |
-| **Want your fleet data in your own warehouse** | [MOTHERDUCK_VS_API_ADAPTER.md](./MOTHERDUCK_VS_API_ADAPTER.md) |
+| **Want your fleet data in your own warehouse** | [MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md](./MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md) |
 | **Want automated monitoring/alerts** | [AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md) |
 | **At a hackathon** | [HACKATHON_IDEAS.md](./HACKATHON_IDEAS.md) |
 | **Teaching a workshop** | [slides/README.md](../slides/README.md) |
@@ -44,7 +44,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 ### Data Warehousing (Your Own Database)
 
-- **[MOTHERDUCK_VS_API_ADAPTER.md](./MOTHERDUCK_VS_API_ADAPTER.md)** - Replicate your fleet data into your own warehouse: the AI-driven [MotherDuck skill](../skills/geotab-motherduck-warehouse/SKILL.md) vs Geotab's official [MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter), compared honestly.
+- **[MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md](./MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md)** - Replicate your fleet data into your own warehouse: the AI-driven [MotherDuck skill](../skills/geotab-motherduck-warehouse/SKILL.md) vs Geotab's official [MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter), compared honestly.
 
 ### Building Add-Ins
 
