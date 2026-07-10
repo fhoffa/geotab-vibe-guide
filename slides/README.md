@@ -389,12 +389,12 @@ Setup (advanced):
 
 **Facilitator Notes:**
 - "MCP is for developers who want Claude to have direct fleet access"
-- "Build your own now - official Geotab MCP coming later"
+- "Geotab's official MCP Connector is live now (zero-code) — building your own is for going beyond it"
 - Show 30-second clip from demo video if time permits
 - "This is advanced - great hackathon project for experienced developers"
 - Don't demo live unless pre-configured - just show the concept
 
-> **Full guide:** [CUSTOM_MCP_GUIDE.md](../guides/CUSTOM_MCP_GUIDE.md)
+> **Official connector:** [OFFICIAL_MCP_CONNECTOR.md](../guides/OFFICIAL_MCP_CONNECTOR.md) · **Build your own:** [CUSTOM_MCP_GUIDE.md](../guides/CUSTOM_MCP_GUIDE.md)
 
 ---
 

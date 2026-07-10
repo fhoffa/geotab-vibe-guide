@@ -611,12 +611,12 @@ using GPT-4."
 ### Idea 8.3: Fleet MCP Server - Conversational Fleet Control
 **Concept:** Build a Model Context Protocol (MCP) server that lets AI assistants interact with Geotab fleets conversationally, with write-back capabilities.
 
-> **Start here:** [MCP Server Guide](./CUSTOM_MCP_GUIDE.md)
+> **Preferred for standard use:** the [official Geotab MCP Connector](./OFFICIAL_MCP_CONNECTOR.md) (live since June 2026). This idea is about building your **own** unofficial one for capabilities it doesn't cover — [MCP Server Guide](./CUSTOM_MCP_GUIDE.md).
 >
 > [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG)
 
 **Why Build Your Own MCP?**
-- Official Geotab MCP is coming, but you can start today
+- The official connector handles standard fleet Q&A — build your own for what it can't do
 - Custom MCP can include features official won't have
 - Great way to learn MCP architecture
 - Tailored to your specific workflow needs
@@ -898,7 +898,7 @@ for each city boundary."
 
 | MCP Option | What It Has | What It Lacks |
 |------------|-------------|---------------|
-| **Official (coming)** | API + Ace, read/write, cloud-hosted | Local processing, custom tools/skills |
+| **[Official Connector](./OFFICIAL_MCP_CONNECTOR.md)** (available now) | API + Ace, read/write, cloud-hosted, zero-code | Local processing, custom tools/skills |
 | **Felipe's demo** | Ace queries, DuckDB caching | Direct API calls (you can add!) |
 | **Your hackathon project** | Whatever you build! | Nothing - sky's the limit |
 

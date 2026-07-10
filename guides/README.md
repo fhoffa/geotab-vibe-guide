@@ -10,6 +10,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 | **New to coding/APIs** | [BEGINNER_GUIDE.md](./BEGINNER_GUIDE.md) |
 | **Using Claude** | [INSTANT_START_WITH_CLAUDE.md](./INSTANT_START_WITH_CLAUDE.md) |
 | **Using other AI tools** | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) |
+| **Talk to your fleet in ChatGPT/Claude/Copilot (no setup)** 🆕 | [OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md) |
 | **Want pre-built fleet analytics (KPIs, safety)** | [DATA_CONNECTOR.md](./DATA_CONNECTOR.md) |
 | **Want your fleet data in your own warehouse** | [MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md](./MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md) |
 | **Want automated monitoring/alerts** | [AGENTIC_OVERVIEW.md](./AGENTIC_OVERVIEW.md) |
@@ -35,6 +36,11 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 - **[API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md)** - Complete guide for any AI coding tool (ChatGPT, Copilot, Cursor, etc.).
 - **[GEOTAB_API_REFERENCE.md](./GEOTAB_API_REFERENCE.md)** - Quick reference card for authentication and common API patterns.
 - **[DEMO_DATABASE_REFERENCE.md](./DEMO_DATABASE_REFERENCE.md)** - Complete entity schemas and sample data from demo databases.
+
+### Conversational AI (MCP)
+
+- **[OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md)** 🆕 - Geotab's official MCP Connector: live fleet data and Geotab Ace inside ChatGPT, Claude, and Copilot with zero setup. Includes a link to a no-setup [simulator](https://fhoffa.github.io/geotab-mcp-simulator/) to try it first.
+- **[CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)** - Build your own MCP server when you need custom tools, local processing, or multi-account queries the official connector doesn't cover.
 
 ### Data Connector (OData Analytics)
 
@@ -69,7 +75,6 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 ### Advanced Topics
 
-- **[CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)** - Build an MCP server for conversational fleet access via Claude Desktop.
 - **[ADVANCED_INTEGRATIONS.md](./ADVANCED_INTEGRATIONS.md)** - Voice interfaces, AI integrations, and automation patterns.
 - **[CREATING_AGENT_SKILLS.md](./CREATING_AGENT_SKILLS.md)** - Package your knowledge as reusable AI skills.
 - **[ANTIGRAVITY_QUICKSTART.md](./ANTIGRAVITY_QUICKSTART.md)** - Build dashboards using Google Antigravity IDE.

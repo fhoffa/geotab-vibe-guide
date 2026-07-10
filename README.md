@@ -46,6 +46,9 @@
 
 This repository is a "Vibe Coding" starter kit. You don't need to be an expert coder. You just need to know how to ask the right questions.
 
+> [!TIP]
+> **🆕 New: the official Geotab MCP Connector.** Geotab now lets you plug your live fleet data and Geotab Ace straight into **ChatGPT, Claude, or Copilot** — no code, no hosting. Ask questions and take action in plain English. → [**Official MCP Connector guide**](./guides/OFFICIAL_MCP_CONNECTOR.md) · [**Try the simulator (no setup)**](https://fhoffa.github.io/geotab-mcp-simulator/)
+
 ## Before You Start
 
 1. **Get credentials:** [Create a free demo database](https://my.geotab.com/registration.html) (takes 2 minutes)
@@ -105,6 +108,17 @@ Then use [**CLAUDE PROMPTS**](./guides/CLAUDE_PROMPTS.md) for ready-made prompts
 [**N8N QUICKSTART**](./guides/AGENTIC_QUICKSTART_N8N.md) - Build your first fleet monitoring agent in 30 minutes using n8n's visual workflow builder.
 
 Examples: Speeding alerts to Slack, maintenance ticket creation, geofence notifications, AI-powered safety coaching.
+
+---
+
+### Path G: Talk to Your Fleet in ChatGPT, Claude, or Copilot 🆕
+**Want live fleet answers and actions inside the AI tool you already use — no code required?**
+
+[**OFFICIAL MCP CONNECTOR**](./guides/OFFICIAL_MCP_CONNECTOR.md) - Geotab's new official MCP Connector brings your MyGeotab data and Geotab Ace into ChatGPT, Claude, and Copilot. No code, no hosting — just a one-time connection (needs an eligible GO Plan on Unified Login).
+
+[**TRY THE SIMULATOR**](https://fhoffa.github.io/geotab-mcp-simulator/) - Preview the experience in your browser, no account needed.
+
+Want more than the hosted connector offers? [**BUILD YOUR OWN MCP**](./guides/CUSTOM_MCP_GUIDE.md).
 
 ---
 

@@ -1,6 +1,15 @@
-# Build Your Own Custom MCP Server
+# Build Your Own (Unofficial) MCP Server
 
 **Turn Claude into a conversational fleet management assistant.**
+
+> [!IMPORTANT]
+> **The [official Geotab MCP Connector](./OFFICIAL_MCP_CONNECTOR.md) is the preferred path.** It's
+> hosted by Geotab, needs zero setup, and works in ChatGPT, Claude, and Copilot out of the box —
+> [start there](./OFFICIAL_MCP_CONNECTOR.md).
+>
+> But MCP is an **open standard**, so *anyone can build their own* — and that's what this guide is
+> for. Roll your own **unofficial** MCP server when you need custom tools, local processing, or
+> multi-account queries the hosted connector doesn't cover. The two happily coexist.
 
 This guide shows you how to set up and extend a custom MCP (Model Context Protocol) server for Geotab, **starting from Felipe Hoffa's reference implementation**.
 
@@ -38,16 +47,19 @@ Claude: *queries your actual fleet data* "Your fleet averaged 8.2 MPG last week.
 
 | MCP Option | Capabilities | Limitations |
 |------------|--------------|-------------|
-| **Official Geotab (coming)** | API + Ace, read/write, cloud-hosted | No local processing, standard tools only |
+| **[Official Geotab Connector](./OFFICIAL_MCP_CONNECTOR.md)** (available now) | API + Ace, read/write, cloud-hosted, zero setup | No local processing, standard tools only |
 | **Felipe's demo** | Ace queries, DuckDB caching | Ace-only (no direct API calls yet) |
 | **Your custom MCP** | Whatever you need | You build it |
+
+> The official connector is the easiest path for most people — see
+> [OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md). The reasons below are for when you need
+> more than it offers.
 
 ### Reasons to Build Custom
 
 | Reason | Details |
 |--------|---------|
-| **Available Now** | Official Geotab MCP is coming, but you can start today |
-| **Local Processing** | DuckDB caching, offline analysis - official is cloud-only |
+| **Local Processing** | DuckDB caching, offline analysis - the official connector is cloud-only |
 | **Custom Tools** | Build specialized skills, frameworks, analysis methods |
 | **Direct API + Ace** | Felipe's demo is Ace-only - add direct API for real-time data |
 | **Composability** | Design tools that work with other MCPs (Maps, Slack, Calendar) |
@@ -422,7 +434,7 @@ Once you have the basic MCP server running:
 
 ---
 
-**Note:** Geotab is developing an official MCP implementation. Building your own now lets you start immediately and creates capabilities the official version may not include. Your custom MCP can coexist with the official one when it launches.
+**Note:** Geotab now offers an [official MCP Connector](./OFFICIAL_MCP_CONNECTOR.md) (launched June 2026). Building your own creates capabilities the official version doesn't include — and your custom MCP can coexist with the official one.
 
 ## Other Data Channels
 
