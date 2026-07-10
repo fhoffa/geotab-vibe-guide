@@ -57,7 +57,7 @@ connector removes all of that for the common case:
 | **Setup** | Clone a repo, install Python/uv, edit config files | One-click, zero coding |
 | **Hosting** | Run a server locally or in the cloud | Nothing to host — Geotab runs it |
 | **Auth** | Manage credentials in `.env` | Uses your existing MyGeotab login |
-| **Permissions** | You enforce them | Inherits your MyGeotab user permissions automatically |
+| **Permissions** | Inherited from the MyGeotab user — the API/Ace scope to whoever authenticated (same either way) | Inherited from the MyGeotab user — same, automatically |
 
 Because it's built on the **open MCP standard**, you're not locked into one AI ecosystem — connect
 the fleet intelligence to whichever approved assistant your organization uses.
