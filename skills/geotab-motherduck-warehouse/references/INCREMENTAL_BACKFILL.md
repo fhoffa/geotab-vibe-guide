@@ -97,13 +97,20 @@ sweep in a terminal state, so the next session's worklist is clean:
   query below is exactly this). Idempotent — safe if silver is in fact already correct.
 - **Batch present in bronze, silver missing/partial** → the load died between append and derive: re-run
   the silver derive (it's idempotent) and append the `completed` row. No re-pull — bronze has the data.
-- **Batch absent from bronze** → it died before landing. If it's *recent*, re-ask Ace for the *same
-  window* (the `started` row preserved it; the stored `gs://` path can't be re-downloaded — the signature
-  wasn't kept — but the window makes the re-ask exact), then continue the loop normally. If it's **old
-  (e.g. days) and superseded** — a later forward run already covered that window, so re-asking would only
-  re-land data you have — **append an `abandoned` row** (`backfill_kind='abandoned_orphan'`, a one-line
-  note) so it stops re-surfacing as a worklist item every session. Confirm the window is actually covered
-  (its `[watermark_from, …]` sits below the table's current `max(event_time)`) before abandoning.
+- **Batch absent from bronze** → it died before landing. **Default: re-ask Ace for the *same window*** (the
+  `started` row preserved it; the stored `gs://` path can't be re-downloaded — the signature wasn't kept —
+  but the window makes the re-ask exact), then continue the loop. This is the safe branch — take it whenever
+  in doubt, even for old orphans; re-asking a window you already have is harmless (bronze append + silver
+  dedup collapse it).
+  - **Only** append an `abandoned` row (`backfill_kind='abandoned_orphan'`, note the covering evidence) when
+    you can **prove the window already landed by another path** — otherwise you'd hide a real ingest gap and
+    make it look resolved. Age is *not* proof, and neither is `max(event_time)` sitting above `watermark_from`
+    (a later run can advance the max while leaving this window a hole). Acceptable proof is one of: (a) a
+    later **`completed`** log row for the same table whose `[watermark_from, watermark_to]` **spans** this
+    orphan's window; or (b) a **gap-scan** showing silver has continuous data across the orphan's window with
+    no hole (e.g. no day/hour bucket in `[watermark_from, watermark_to)` has zero rows). If neither holds,
+    it's a genuine gap — recover it with a **historical backfill (§B)** for that window (or a
+    reconciliation §C), don't abandon it.
 
 **Self-healing: the log is *reconstructible from bronze*, so a hole is never permanent.** Bronze's
 provenance columns carry everything a completion row needs. Find batches the log missed, then rebuild

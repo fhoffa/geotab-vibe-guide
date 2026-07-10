@@ -35,9 +35,11 @@ reconcile — all reproduced on a different fleet). What landed for the genuine 
    `INCREMENTAL_BACKFILL.md` §The state table resume section to (a) say **sweep at the start of *every*
    session** (not just after a known crash) and (b) give an explicit **finalize-or-abandon** decision per
    orphan: bronze-present+silver-present → append `completed` (log-repair); bronze-present+silver-missing →
-   re-derive + `completed`; bronze-absent+recent → re-ask; bronze-absent+old+superseded → append
-   `abandoned` so it stops re-surfacing. Worklist query broadened to treat `completed` **or** `abandoned`
-   as terminal, with an `age` column to drive the abandon call. Mirrored in SKILL.md rule #11.
+   re-derive + `completed`; bronze-absent → **re-ask the saved window (safe default)**, and only append
+   `abandoned` with **proof the window already landed** (a later `completed` row spanning it, or a gap-scan
+   showing no hole) — age/`max(event_time)` alone is *not* proof, else a real gap gets buried (Codex P2);
+   an unprovable gap goes to §B historical backfill instead. Worklist query broadened to treat `completed`
+   **or** `abandoned` as terminal, with an `age` column. Mirrored in SKILL.md rule #11.
 2. **Tool-call-budget expectation (long runs need "continue").** ✅ New §A bullet: big backfills can
    exceed a host's per-turn tool-call cap; you just say **continue**, and it's *safe by construction*
    (append-only bronze + log-ahead + orphan sweep). Chunk windows so pauses land on clean boundaries.
