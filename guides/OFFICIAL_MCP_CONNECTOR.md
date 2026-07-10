@@ -5,7 +5,7 @@
 > Microsoft Copilot. No code, no hosting, no MCP server to run yourself. If you just want to *talk to
 > your fleet* from an AI tool you already use, **this is the easiest path.**
 >
-> ### 🎮 Want to feel it right now? [**Play with the free simulator →**](https://fhoffa.github.io/geotab-mcp-simulator/)
+> ### 🎮 See it in action first — [**try the free simulator →**](https://fhoffa.github.io/geotab-mcp-simulator/)
 > No account, no login, no fleet — a browser demo of the whole experience. ([details below](#try-it-first--no-account-needed))
 >
 > Official page: **[geotab.com/geotab-mcp-connector](https://www.geotab.com/geotab-mcp-connector/)**
