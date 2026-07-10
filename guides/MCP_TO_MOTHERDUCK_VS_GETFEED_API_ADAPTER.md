@@ -152,6 +152,33 @@ if daily fleet KPIs are all you need, it's less work than either option here. Se
 [DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) for how it stacks up against the raw API
 and Ace for *querying* (rather than replicating) your data.
 
+## Coming Soon: Cloud Data Share (a push, not a pull)
+
+Both options above *pull* data into your warehouse — the skill on watermarks, the adapter on
+`GetFeed`. Geotab's upcoming **Cloud Data Share (CDS)** flips that around: instead of you polling,
+Geotab **pushes** a low-latency stream of telematics events straight into your own cloud pipeline.
+Where the adapter is a service *you* run to fetch data, CDS is Geotab streaming it *to you* — no
+polling infrastructure to build or maintain.
+
+What's known so far:
+
+- **Streaming, not batch.** A continuous event stream (Phase 1 covers GPS/`LogRecord`,
+  `StatusData`, `FaultData`, and `Device`) delivered ~1–2 seconds after the data reaches Geotab's
+  infrastructure — far fresher than the skill's per-run watermarks, and in the adapter's real-time
+  ballpark.
+- **Delivers to your cloud's stream, then your warehouse.** Sinks are **AWS Kinesis, GCP Pub/Sub,
+  Azure Event Hubs, or Confluent Kafka** — you land those into whatever warehouse you like (direct
+  BigQuery and S3 sinks are on the roadmap). It's an *ingestion* path, complementary to a warehouse,
+  not a warehouse itself.
+- **Configure-and-go.** Self-service setup through a MyGeotab add-in, no rate limits, at-least-once
+  delivery (dedupe on `deviceId + dateTime`). Aimed at larger fleets — 100+ devices — and today it
+  forward-fills only (no historical backfill yet).
+
+**Status: not yet generally available** (announced at Geotab Connect 2026; access is via Geotab
+onboarding). Until CDS is GA, the MotherDuck skill and the API Adapter above remain the two shipping
+ways to build your own copy — but if you're weighing a *streaming* pipeline at fleet scale, keep CDS
+on your radar and ask your Geotab account manager.
+
 ## Try It: Copy-Paste Prompt
 
 With the Geotab and MotherDuck MCP servers connected in Claude (and this repo's skills available),
