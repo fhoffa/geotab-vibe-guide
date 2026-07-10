@@ -431,16 +431,16 @@ One conversation. External data + fleet write operations. No dashboard clicked, 
 
 ---
 
-## Beta and Setup
+## Setup
 
-**The official Geotab MCP is coming. Talk to Geotab at this event to get on the early access list — this is the CTA for today.**
+**The official Geotab MCP Connector is live (since June 2026) — the CTA for today is: get connected.** See [guides/OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md). It's included at no extra cost with an eligible GO Plan on Unified Login; check eligibility in MyGeotab or ask your Partner Account Manager.
 
-The official MCP gives you all 20 tools (full read + write), handles authentication through the server so your password never touches Claude, and is built and supported by Geotab.
+The official Connector brings full read + write and Geotab Ace into ChatGPT/Claude/Copilot, handles authentication so your password never touches the AI tool, and is built and supported by Geotab.
 
-**While you wait for official beta access — preview with this today:**  
-[github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) — ACE-only, read-only, 15-minute setup. Build the habit of asking your fleet questions through Claude before the full MCP arrives.
+**Want to preview the experience with no account or setup?**  
+[fhoffa.github.io/geotab-mcp-simulator](https://fhoffa.github.io/geotab-mcp-simulator/) — a playable simulator grounded in demo-fleet data. Great for the room before anyone connects a real fleet.
 
-**For building your own MCP server:** [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)
+**For building your own (unofficial) MCP server:** [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)
 
 ---
 
@@ -454,8 +454,8 @@ The official MCP gives you all 20 tools (full read + write), handles authenticat
 ### 2. Try the Gem
 [Geotab Add-In Architect Gem](https://gemini.google.com/gem/1Y6IvbBj4ALgS9G3SgGodepM2dfArInrO) — describe a fleet problem. A working MyGeotab Add-In in 10 minutes. Free, no code, no hosting. Then iterate — one prompt is the start, not the end.
 
-### 3. Sign up for MCP beta
-Talk to Geotab at this event. When the official MCP opens, you'll be among the first to connect your AI assistant to your live fleet.
+### 3. Connect the official MCP Connector
+It's live now and included with an eligible GO Plan on Unified Login — connect your AI assistant to your live fleet. See [OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md), or [try the simulator](https://fhoffa.github.io/geotab-mcp-simulator/) first.
 
 ### 4. Explore this repo
 [github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide) — all guides, all prompts, all skills, links to all hackathon videos.
@@ -483,7 +483,8 @@ There's no announced next hackathon. Don't wait for one. The prize money was the
 | Gem user guide | [guides/GOOGLE_GEM_USER_GUIDE.md](./GOOGLE_GEM_USER_GUIDE.md) |
 | Gem → Claude Code bridge | [guides/GEM_TO_CLAUDE_CODE.md](./GEM_TO_CLAUDE_CODE.md) |
 | Vibe guide repo | [github.com/fhoffa/geotab-vibe-guide](https://github.com/fhoffa/geotab-vibe-guide) |
-| Official Geotab MCP (coming — sign up at event) | Talk to Geotab at Connect Europe 2026 |
+| Official Geotab MCP Connector (live now) | [guides/OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md) · [geotab.com/geotab-mcp-connector](https://www.geotab.com/geotab-mcp-connector/) |
+| MCP simulator (try with no setup) | [fhoffa.github.io/geotab-mcp-simulator](https://fhoffa.github.io/geotab-mcp-simulator/) |
 | ACE-only MCP preview (works today) | [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo) |
 | Custom MCP server guide | [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) |
 | ACE vs API comparison | [guides/DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md) |
@@ -515,7 +516,7 @@ But the more important question: the fleet data you query — driver names, loca
 Yes, verified. Auth comes from the MyGeotab session automatically. The async polling pattern is the critical part — the Gem handles it if you ask explicitly.
 
 **Can I build my own MCP server for Geotab?**  
-Yes. [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) covers the community approach (works now). The official Geotab MCP is the better long-term path — sign up for beta access at this event. For a quick ACE-only preview: [github.com/fhoffa/geotab-ace-mcp-demo](https://github.com/fhoffa/geotab-ace-mcp-demo).
+Yes — MCP is an open standard, so anyone can. [guides/CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) covers the unofficial DIY approach. For most people the [official Geotab MCP Connector](./OFFICIAL_MCP_CONNECTOR.md) (live now, zero-code) is the better path; build your own for what it doesn't cover. Preview either with the [simulator](https://fhoffa.github.io/geotab-mcp-simulator/).
 
 **How do I teach my AI tool about our internal systems?**  
 Same approach as this repo's skills: write a SKILL.md with your domain knowledge (API patterns, naming conventions, gotchas), commit it to GitHub, load it into your AI tool. Format: [agentskills.io](https://agentskills.io).

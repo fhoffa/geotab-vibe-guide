@@ -112,9 +112,9 @@ Examples: Speeding alerts to Slack, maintenance ticket creation, geofence notifi
 ---
 
 ### Path G: Talk to Your Fleet in ChatGPT, Claude, or Copilot 🆕
-**Want live fleet answers and actions inside the AI tool you already use — with zero setup?**
+**Want live fleet answers and actions inside the AI tool you already use — no code required?**
 
-[**OFFICIAL MCP CONNECTOR**](./guides/OFFICIAL_MCP_CONNECTOR.md) - Geotab's new official MCP Connector brings your MyGeotab data and Geotab Ace into ChatGPT, Claude, and Copilot. No code, no hosting.
+[**OFFICIAL MCP CONNECTOR**](./guides/OFFICIAL_MCP_CONNECTOR.md) - Geotab's new official MCP Connector brings your MyGeotab data and Geotab Ace into ChatGPT, Claude, and Copilot. No code, no hosting — just a one-time connection (needs an eligible GO Plan on Unified Login).
 
 [**TRY THE SIMULATOR**](https://fhoffa.github.io/geotab-mcp-simulator/) - Preview the experience in your browser, no account needed.
 

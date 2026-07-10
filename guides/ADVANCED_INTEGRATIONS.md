@@ -8,7 +8,9 @@ Beyond traditional REST API integrations, there are exciting new ways to work wi
 
 **MCP servers** enable AI assistants like Claude to interact with your fleet data conversationally, without writing explicit API calls. Instead of coding requests, you can simply ask questions in natural language.
 
-> **Full Guide:** [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)
+> **Preferred path:** Geotab now ships an [official MCP Connector](./OFFICIAL_MCP_CONNECTOR.md) (live since June 2026) — hosted, zero-code, works in ChatGPT/Claude/Copilot. Build your own (below) only when you need custom tools or local processing it doesn't cover.
+>
+> **Build-your-own guide:** [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md)
 >
 > [![Geotab Ace MCP Demo](https://img.youtube.com/vi/-eID1rXS1p8/mqdefault.jpg)](https://www.youtube.com/watch?v=-eID1rXS1p8)
 
@@ -27,7 +29,6 @@ This experimental server bridges Claude Desktop with Geotab's ACE AI service, pr
 
 | Reason | Details |
 |--------|---------|
-| **Available Now** | Official Geotab MCP is coming, but you can start today |
 | **More Powerful** | Custom MCP can include write operations, custom tools |
 | **Tailored** | Add integrations specific to your workflow (Slack, email, etc.) |
 | **Learning** | Great way to understand MCP architecture |
