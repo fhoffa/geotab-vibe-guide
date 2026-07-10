@@ -223,3 +223,9 @@ raw data in a database you control** — unlimited history, your own SQL and joi
 don't touch the API — that's replication, not querying. Two ways to do it (one AI-driven with zero
 infrastructure, one an official always-on service) are compared in
 [MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md](./MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md).
+
+A third, **upcoming** path is Geotab's **Cloud Data Share (CDS)** — instead of you pulling, Geotab
+*pushes* a low-latency telematics stream into your own cloud sink (AWS Kinesis, GCP Pub/Sub, Azure
+Event Hubs, or Confluent Kafka) for you to land in your warehouse. It's **not yet generally
+available**; see the [warehouse comparison](./MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md#coming-soon-cloud-data-share-a-push-not-a-pull)
+for what's known so far.
