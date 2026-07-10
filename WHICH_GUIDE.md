@@ -19,7 +19,8 @@ Quick navigation to the right resource for your needs.
 | Need project ideas | [HACKATHON_IDEAS.md](./guides/HACKATHON_IDEAS.md) | 20+ hackathon projects |
 | **Fleet analytics via Data Connector** | [DATA_CONNECTOR.md](./guides/DATA_CONNECTOR.md) | **Pre-built KPIs, safety scores, faults via the Data Connector** |
 | Advanced integrations | [ADVANCED_INTEGRATIONS.md](./guides/ADVANCED_INTEGRATIONS.md) | MCP servers, voice interfaces, AI content generation |
-| **Building MCP server** | [CUSTOM_MCP_GUIDE.md](./guides/CUSTOM_MCP_GUIDE.md) | **Conversational fleet access via Claude Desktop** |
+| **Fleet chat in ChatGPT/Claude/Copilot (no setup)** 🆕 | [OFFICIAL_MCP_CONNECTOR.md](./guides/OFFICIAL_MCP_CONNECTOR.md) | **Official Geotab MCP Connector — zero-code live fleet Q&A + actions** |
+| **Building your own MCP server** | [CUSTOM_MCP_GUIDE.md](./guides/CUSTOM_MCP_GUIDE.md) | **Custom tools, local processing, multi-account — beyond the official connector** |
 | Writing prompts | [CLAUDE_PROMPTS.md](./guides/CLAUDE_PROMPTS.md) | AI prompt templates |
 
 ## For AI Coding Tools
