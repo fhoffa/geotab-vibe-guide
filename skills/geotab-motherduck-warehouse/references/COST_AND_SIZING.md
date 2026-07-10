@@ -72,6 +72,13 @@ fleet. And that 1.7 GiB includes some `historical_bytes` retention churn from a 
 (the migrated demo similarly drifted 35 → 57 MiB after its CTAS reorg) — steady-state is somewhat lower.
 If you don't need engine/sensor data, **skip `status_data`** and you're back to the ~0.033 GB/veh-yr row.
 
+External corroboration: Geotab's official
+[API Adapter](https://github.com/Geotab/mygeotab-api-adapter) README warns that ~20,000 devices can grow
+a PostgreSQL database to ~40 GB **in 7 days** without a retention strategy — ≈ 0.10 GB/veh-yr,
+same order as our measured figures (theirs is typed Postgres for a production diagnostic mix; ours adds
+the `all_varchar` bronze on a chatty demo fleet). The lesson transfers: **StatusData retention policy is
+the sizing decision** at any scale, on any stack.
+
 ## How much fits in the free 10 GB?
 
 | Mirror / keeping | 10 GB holds | In practice |
@@ -205,6 +212,15 @@ at ~30% of full-raw). Shrink the bronze window to ~7 days and you're essentially
   so it's not for persistent layers either.)
 - **Right-size history.** Cap retention to what the use case needs; storage is linear in
   vehicle-*years*, so 1 yr vs 5 yr is a 5× swing.
+- **Downsample StatusData in silver/gold — never at ingest.** If per-second engine readings are more
+  than the use case needs, keep bronze raw and make **silver (or a gold mart) keep e.g. one reading per
+  device+diagnostic per minute** (`DISTINCT ON (DeviceId, DiagnosticId, time_bucket(INTERVAL 1 MINUTE,
+  ts))` or `arg_max` per bucket) — StatusData is the 12× multiplier, so a 60:1 thinning moves an
+  operational mirror most of the way back to GPS-only costs. Geotab's official API Adapter offers the
+  same lever (minimum-interval sampling) but applies it **at ingest and warns it can never backfill
+  what it discarded**; sampling in the derive keeps the choice reversible… *while bronze is retained* —
+  once the bronze pruning window passes, the thinning is permanent for pruned history too, so pick the
+  interval before pruning catches up to it.
 - **Don't historize live snapshots.** `DeviceStatusInfo` is a snapshot, not an event stream — persisting
   it manufactures storage. See [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
 - **Compute hygiene.** Build gold marts on a schedule, not per-dashboard-load; let Ducklings cool down;

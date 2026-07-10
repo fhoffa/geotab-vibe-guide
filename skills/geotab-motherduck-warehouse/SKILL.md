@@ -4,7 +4,7 @@ description: Replicate Geotab fleet data into a MotherDuck (DuckDB) warehouse an
 license: Apache-2.0
 metadata:
   author: Felipe Hoffa (https://www.linkedin.com/in/hoffa/)
-  version: "1.0"
+  version: "1.1"
   channels: [MotherDuck MCP, Geotab MCP]
 ---
 
@@ -19,7 +19,10 @@ Build and maintain a MotherDuck warehouse that mirrors a Geotab database, using 
 tool calls**. This is a **data-engineering** skill: tables, layers, incremental loads, dedup,
 watermarks, gap detection, backfill. (Analytics/"cool queries" come *after* the data is solid —
 see [`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) for the gold layer idea, but
-keep analysis out of the ingestion path.)
+keep analysis out of the ingestion path.) For how this MCP-driven approach compares to Geotab's
+official self-hosted mirror (the [MyGeotab API Adapter](https://github.com/Geotab/mygeotab-api-adapter))
+and when to graduate to it, see [`guides/MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md`](../../guides/MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md)
+and [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter.
 
 > Everything below was validated live against MotherDuck + Geotab Ace on `demo_fh4`
 > (a 26–50 vehicle Iberia demo fleet), **measured 2026-06-29**. Row counts, timings, and quirks are
@@ -61,43 +64,12 @@ bronze first; silver is derived from bronze** — never loaded straight from the
                                  FROM bronze_table WHERE event_time > <watermark>  (derive + idempotent dedup)
 ```
 
-Worked example we actually ran (GPS, bronze raw → silver). **The examples use the short `my_db.<table>`
-form for brevity; the live demo warehouse is now `geotab_demo_fh4` with `bronze`/`silver`/`gold` schemas
-(`my_db.bronze_gps_raw` → `geotab_demo_fh4.bronze.gps_raw`, `my_db.planet_gps_pings` →
-`geotab_demo_fh4.silver.planet_gps_pings`). For a new source, create your own `geotab_<source>` first
-(see "First run" below); never write to another source's database.**
-
-```sql
--- 1. Watermark (from silver — the source of truth for "what's already typed")
-SELECT max(GpsDateTime) FROM my_db.planet_gps_pings;          -- 2026-06-26 01:42:40.779
-```
-```
--- 2. Ace (new_chat=true, database=demo_fh4):
-"List every GPS position log recorded after 2026-06-26 01:42:40 UTC, across all devices.
- Return these exact columns: DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude,
- GpsDateTime, Speed. Use UTC timezone. Do not summarize or aggregate."
-   → ~40 s, response 166 KB (spilled to file), signed CSV URL inside, 157,419 rows.
-```
-```sql
--- 3. Land raw in bronze, append-only, lossless (no dedup, no watermark — keep everything)
-INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'ace:<chat-uuid>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
-FROM read_csv_auto('https://storage.googleapis.com/planet-user-results-prod-eu/<uuid>-000000000000.csv?X-Goog-...',
-                   all_varchar=true);
-   → 157,419 rows appended. bronze_gps_raw: 522,162 (bootstrap) → 679,581.
-```
-```sql
--- 4. Derive silver from bronze: type-cast, strip ' UTC', dedup on the NORMALIZED natural key
-INSERT INTO my_db.planet_gps_pings
-  (DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed)
-SELECT DISTINCT ON (DeviceId, replace(GpsDateTime,' UTC','')::TIMESTAMP)
-       DeviceId, DeviceName, DeviceTimeZoneId, Latitude::DOUBLE, Longitude::DOUBLE,
-       replace(GpsDateTime,' UTC','')::TIMESTAMP, Speed::BIGINT
-FROM my_db.bronze_gps_raw
-WHERE replace(GpsDateTime,' UTC','')::TIMESTAMP
-      > (SELECT coalesce(max(GpsDateTime), TIMESTAMP '1970-01-01') FROM my_db.planet_gps_pings);
-   → silver advances to 679,577 (boundary-second dupes collapse on the parsed key).
-```
+**Full worked SQL for every step** — bronze/silver DDL, the append, the typed/deduped derive, the
+watermark-vs-anti-join variants, and a full rebuild — lives in
+[`references/MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md). (Its examples use the short
+`my_db.<table>` form; read it as `geotab_<source>.<layer>.<table>` — the live demo is `geotab_demo_fh4`
+with `bronze`/`silver`/`gold` schemas. For a new source, create your own `geotab_<source>` first — see
+"First run" — and never write to another source's database.)
 
 **Before deriving silver, inspect what came back** (shape + size) and decide: derive as-is, map
 columns by position, or re-ask Ace. Bronze append is unconditional (lossless); never derive silver
@@ -198,24 +170,14 @@ databases, so sharing tables silently collides (Non-negotiable #12). Do these st
    **writing** must be target-only.) **If the host blocks `list_databases`** (some MCP safety layers do —
    seen on ChatGPT), proceed scoped strictly to your fully-qualified `geotab_<source>.*` target, never
    reference another database name, and note the blocked check in the report.
-3. **Create an isolated namespace** (recommended: **database per source + schema per layer**):
-   ```sql
-   CREATE DATABASE IF NOT EXISTS geotab_<source>;
-   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.bronze;
-   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.silver;
-   CREATE SCHEMA   IF NOT EXISTS geotab_<source>.gold;
-   CREATE TABLE IF NOT EXISTS geotab_<source>.main.warehouse_meta (
-     source_db VARCHAR, geotab_server VARCHAR, layout VARCHAR, note VARCHAR,
-     created_at TIMESTAMP DEFAULT now());
-   INSERT INTO geotab_<source>.main.warehouse_meta (source_db, geotab_server, layout, note)
-   VALUES ('<source>', '<server>', 'db-per-source + schema-per-layer', 'Geotab source identity');
-   ```
-   Use `geotab_<source>` (with `bronze`/`silver`/`gold` schemas) everywhere the examples say `my_db`, and
-   stamp `_batch_id` on every bronze insert (the source DB is recorded once at the database level in
-   `main.warehouse_meta` — see rule #12; no per-row `_source_db`). **`CREATE TABLE IF NOT EXISTS` only — never
-   `CREATE OR REPLACE` silver during bootstrap.** A partial-brownfield target is fine and resumable: a
-   dimension may already be populated while bronze/facts are empty — preserve the dim, create bronze,
-   continue the fact bootstrap.
+3. **Create an isolated namespace** (recommended: **database per source + schema per layer**) — the
+   `CREATE DATABASE`/`SCHEMA` + `main.warehouse_meta` DDL is in
+   [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate. Use `geotab_<source>` (with
+   `bronze`/`silver`/`gold` schemas) everywhere the examples say `my_db`, and stamp `_batch_id` on every
+   bronze insert (source DB recorded once at the DB level in `main.warehouse_meta` — rule #12; no per-row
+   `_source_db`). **`CREATE TABLE IF NOT EXISTS` only — never `CREATE OR REPLACE` silver during
+   bootstrap.** A partial-brownfield target is fine and resumable: a dimension may already be populated
+   while bronze/facts are empty — preserve the dim, create bronze, continue the fact bootstrap.
 4. **Gate before the first write:** the target database name must encode *this* source and must not be an
    existing other-source DB. `IF NOT EXISTS` keeps a re-run safe. Then proceed to the loop / backfill.
 
@@ -234,13 +196,16 @@ Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 ## Bootstrap vs daily run vs the three backfills
 
 - **0 → warehouse (first time):** **isolate first** (§First run — create `geotab_<source>` + layer
-  schemas, never reuse another source's DB) → create bronze + silver tables → per fact
-  entity, run *bounded historical* Ace pulls (a day at a time) into **bronze**, then derive silver →
-  load dimensions via `Get` (no bronze). If a silver table already exists without a bronze under it,
-  reconstruct bronze from silver once (the brownfield bootstrap) so silver becomes rebuildable.
+  schemas, never reuse another source's DB) → **load dimensions via `Get` first** (no bronze —
+  `dim_device` is the exact roster that the fact loads' population check and `DeviceName`↔`DeviceId`
+  resolution need, so it must exist *before* the first fact lands) → create bronze + silver tables →
+  per fact entity, run *bounded historical* Ace pulls (a day at a time) into **bronze**, then derive
+  silver. If a silver table already exists without a bronze under it, reconstruct bronze from silver
+  once (the brownfield bootstrap) so silver becomes rebuildable.
   See [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §Brownfield.
 - **Daily update (steady state):** for each fact table run the 4-call loop above (watermark → Ace →
-  append bronze → derive silver), then append a row to `warehouse_ingest_log`. Re-running is safe (the
+  append bronze → derive silver), bracketed by the two `warehouse_ingest_log` rows — `started` right
+  after Ace returns, `completed` after the verify (rule #11). Re-running is safe (the
   `> watermark` derive is idempotent). The user can ask you to "run the warehouse update" on a schedule.
   **Trips need one extra step:** `Trip` is a *derived, mutable* fact — Geotab re-splits trips (a
   `DriverChange`, or late GPS, changes a trip's `TripId` and stop time even for trips that start *before*
@@ -282,7 +247,7 @@ Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
 8. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead: drop everything from `?` and rewrite the host, `https://storage.googleapis.com/<bucket>/<object>?X-Goog-…` → `gs://<bucket>/<object>`. (The bucket region varies by DB — `…-prod-us`, `…-prod-eu`, … — so match by shape, not a fixed host.)
 9. **Read Ace's generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (suffix, dupes, nulls, schema drift) → **fix in the derive**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
 10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, reconciliation). Reconcile **dimensions** with `GetCountOf` (exact); reconcile **fact windows** with a bounded `Get` read of the same window — **`GetCountOf` ignores date/device filters for facts** and returns the whole-table count. To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — Ace can answer the same question from a different source table across runs (a "distinct devices" ask resolved to `GpsLogs`=49 vs `Trip`=47), so a full re-ask can replace good data with a differently-shaped answer.
-11. **Writes can drop mid-call** — keep them idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying.
+11. **Writes can drop mid-call — and whole runs can die mid-loop.** Keep writes idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying. **Log ahead, not just after:** write a `started` row to `warehouse_ingest_log` the moment Ace returns (persisting the window + `gs://` path), and a `completed` row only after the verify — so an interruption leaves a *visible orphan* to resume from instead of a silent hole (observed 2026-07-02: an interrupted run left 522K GPS rows loaded but unlogged, and the loop's other tables never ran). On session start, sweep for orphaned `started` rows and bronze batches missing from the log ([`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) §state table).
 12. **One MotherDuck database per Geotab source + a schema per medallion layer** (`geotab_<source>.bronze.*` / `.silver.*` / `.gold.*`). Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so two sources in the *same* tables **collide** in silver/dims (append+dedup, not overwrite — worse). Database-level isolation is also where MotherDuck scopes Sharing, retention, access, and cost. **On a new source, `list_databases` FIRST and create a fresh `geotab_<source>`; never write into a database that already holds another source.** **Provenance: keep per-row `_batch_id`; record the source identity once at the DB level** in a `main.warehouse_meta` table (+ optional `COMMENT ON TABLE`, `warehouse_ingest_log`) — **no per-row `_source_db`** (constant in this layout). **Don't use `COMMENT ON DATABASE` — it's *not implemented* in MotherDuck** (verified 2026-06-30: "Not implemented Error: Adding comments to databases is not implemented"); `COMMENT ON TABLE`/`COLUMN` do work. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate, [`SKILL.md`](SKILL.md) §First run.)
 13. **Preflight the connectors before any DDL/write.** Confirm MotherDuck, Geotab `Get`, **and** Geotab `GetAceResults` (Ace) are callable *now* — verify Ace with a tiny call, not just `Get`. **On ChatGPT, use both servers in the same mode** (both official connectors or both developer-mode) — a mixed setup dropped the Geotab connector mid-session (2026-06-29), leaving an empty-bronze warehouse. If Ace is unavailable, fix the setup and **stop before creating tables** — bulk facts need it. Bootstrap is resumable (`IF NOT EXISTS`), so a clean stop is safe to continue later.
 14. **Mirror real source data only — never fabricate, synthesize, or infer rows/tables.** Every table must trace to a Geotab pull (Ace or `Get`). Don't invent dimensions or "demo" layers (observed: an agent created `dim_driver` / `trip_driver_assignment` / `operator_*` "synthetic assignments" that didn't exist in the source — they had to be removed). If the source has no drivers, the mirror has no drivers. Need a derived/illustrative table? Put it in **`gold`**, clearly named, built **only** from real silver — never seeded with made-up values. When asked for something the source doesn't contain, say so; don't fill the gap with synthetic data.
