@@ -2,6 +2,8 @@
 
 > **Three ways to get fleet data, three different tradeoffs.** This guide compares the OData Data Connector, the MyGeotab API, and Geotab Ace using identical questions against the same fleet. Use it to pick the right channel for your project.
 
+> **Want streaming instead of on-demand queries?** All three channels below *query* Geotab on request. For a continuous push-based stream (Geotab's upcoming **Cloud Data Share**) or a replicated warehouse you control, see [A Fourth Option: Your Own Warehouse](#a-fourth-option-your-own-warehouse).
+
 ## The Short Version
 
 | | OData Data Connector | MyGeotab API | Geotab Ace |
