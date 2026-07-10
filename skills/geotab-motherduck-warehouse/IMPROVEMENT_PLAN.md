@@ -22,40 +22,25 @@
 
 ---
 
-## Field-test follow-ups (2026-07-10, independent run) — IMPLEMENTED 2026-07-10
+## Field-test follow-ups (2026-07-10 documented run) — IMPLEMENTED 2026-07-10
 
-Source: an independent operator replicated a large fleet and shared the full conversation publicly —
-[claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77)
-(recorded in [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) §3 Run 2026-07-10 + §2 ledger).
-Most of it **confirmed** existing docs (quirk #6 doubling, #2 sharding, #7 column drift, #17 retry, P16
-reconcile — all reproduced on a different fleet). What landed for the genuine gaps:
+A full run of the skill on a large fleet ([shared conversation](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77))
+mostly **confirmed** existing docs (quirks #6/#2/#7/#17, P16 reconcile — reproduced on a larger fleet) and
+exposed four small gaps, all since fixed. The findings are recorded in
+[`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) (§3 Run 2026-07-10 + §2 ledger); the changes
+live in the skill docs. What landed, in one line each:
 
-1. **Stale `started` rows on startup — discoverability + a finalize/abandon branch.** ✅ Added
-   `'abandoned'` as a third `status` value in the `warehouse_ingest_log` DDL comment; rewrote
-   `INCREMENTAL_BACKFILL.md` §The state table resume section to (a) say **sweep at the start of *every*
-   session** (not just after a known crash) and (b) give an explicit **finalize-or-abandon** decision per
-   orphan: bronze-present+silver-present → append `completed` (log-repair); bronze-present+silver-missing →
-   re-derive + `completed`; bronze-absent → **re-ask the saved window (safe default)**, and only append
-   `abandoned` with **proof the window already landed** (a later `completed` row spanning it, or a gap-scan
-   showing no hole) — age/`max(event_time)` alone is *not* proof, else a real gap gets buried (Codex P2);
-   an unprovable gap goes to §B historical backfill instead. Worklist query broadened to treat `completed`
-   **or** `abandoned` as terminal, with an `age` column. Mirrored in SKILL.md rule #11.
-2. **Tool-call-budget expectation (long runs need "continue").** ✅ New §A bullet: big backfills can
-   exceed a host's per-turn tool-call cap; you just say **continue**, and it's *safe by construction*
-   (append-only bronze + log-ahead + orphan sweep). Chunk windows so pauses land on clean boundaries.
-   One-line mirror in SKILL.md rule #11.
-3. **`INSERT … SELECT *` into bronze — callout at the load step.** ✅ `MEDALLION_LOADING.md` bronze-append
-   note now warns that `SELECT *` only holds while the pull's columns line up, and to **name columns on
-   both sides** (or `INSERT … BY NAME`) when Ace returns a narrower/renamed set (#7/#8) or the table has
-   drifted; cross-links the existing §"Column mismatch" guidance.
-4. **Catalog wording nudges (no renumber).** ✅ `ACE_TO_CSV.md` #2 now says shard count tracks **export
-   byte-size, not a row threshold** (11.9M status → 8 files, 3.7M GPS → 1); #6 now says the doubling is
-   **per-table/per-pull, not a fleet-wide constant** (GPS/status/exceptions doubled, trips didn't — don't
-   "halve it"). `SKILL.md` mirror edited in the same pass.
+1. **Stale `started` rows** — every-session orphan sweep with an explicit finalize-or-abandon decision
+   (`abandoned` only with proof the window already landed, never on age — Codex P2). `INCREMENTAL_BACKFILL.md`
+   §The state table + SKILL.md rule #11.
+2. **Tool-call budget** — long backfills can pause on a host's per-turn cap; say *continue*, safe by
+   construction. `INCREMENTAL_BACKFILL.md` §A + SKILL.md rule #11.
+3. **`INSERT … SELECT *` into bronze** — name columns on both sides when a pull is narrower/renamed/drifted.
+   `MEDALLION_LOADING.md` bronze-append note.
+4. **Catalog nudges** — #2 shards by byte-size not row count; #6 doubling is per-table, not fleet-wide.
+   `ACE_TO_CSV.md` + `SKILL.md` mirror.
 
-All doc-only; measurements are the tester's, logged as a dated run in EVIDENCE_LOG. No quirk renumbering
-(clarifications + ops guidance, not new quirks); `ACE_TO_CSV.md` and the `SKILL.md` mirror edited together
-per `MAINTAINING.md`.
+All doc-only, no renumbering. (Detail intentionally kept in EVIDENCE_LOG + the skill docs, not duplicated here.)
 
 ---
 
