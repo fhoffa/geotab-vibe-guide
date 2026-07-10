@@ -20,6 +20,30 @@
   create it at the next load session's bootstrap).
 - **Theme 6** ✅ — `COST_AND_SIZING.md` downsample-in-the-derive lever with the reversibility caveat.
 
+---
+
+## Field-test follow-ups (2026-07-10 documented run) — IMPLEMENTED 2026-07-10
+
+A full run of the skill on a large fleet ([shared conversation](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77))
+mostly **confirmed** existing docs (quirks #6/#2/#7/#17, P16 reconcile — reproduced on a larger fleet) and
+exposed four small gaps, all since fixed. The findings are recorded in
+[`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) (§3 Run 2026-07-10 + §2 ledger); the changes
+live in the skill docs. What landed, in one line each:
+
+1. **Stale `started` rows** — every-session orphan sweep with an explicit finalize-or-abandon decision
+   (`abandoned` only with proof the window already landed, never on age — Codex P2). `INCREMENTAL_BACKFILL.md`
+   §The state table + SKILL.md rule #11.
+2. **Tool-call budget** — long backfills can pause on a host's per-turn cap; say *continue*, safe by
+   construction. `INCREMENTAL_BACKFILL.md` §A + SKILL.md rule #11.
+3. **`INSERT … SELECT *` into bronze** — name columns on both sides when a pull is narrower/renamed/drifted.
+   `MEDALLION_LOADING.md` bronze-append note.
+4. **Catalog nudges** — #2 shards by byte-size not row count; #6 doubling is per-table, not fleet-wide.
+   `ACE_TO_CSV.md` + `SKILL.md` mirror.
+
+All doc-only, no renumbering. (Detail intentionally kept in EVIDENCE_LOG + the skill docs, not duplicated here.)
+
+---
+
 The original proposal follows for context. Source studied:
 [MyGeotab API Adapter README](https://github.com/Geotab/mygeotab-api-adapter/blob/master/MyGeotabAPIAdapter/README.md)
 (read 2026-07-02). The adapter is Geotab's official, production-grade .NET service that mirrors a

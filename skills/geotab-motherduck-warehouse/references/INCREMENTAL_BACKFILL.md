@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS my_db.warehouse_ingest_log (
   run_id          UUID      DEFAULT uuid(),
   target_table    VARCHAR   NOT NULL,
   batch_id        VARCHAR,                 -- ties the log row to bronze._batch_id
-  status          VARCHAR,                 -- 'started' | 'completed'  (two rows per load; append-only)
+  status          VARCHAR,                 -- 'started' | 'completed' | 'abandoned'  (append-only; resolve an orphan by appending a terminal row, never UPDATE)
   source_db       VARCHAR   NOT NULL,
   source_channel  VARCHAR   NOT NULL,      -- 'ace_csv' | 'direct_get' | 'bootstrap_from_silver'
   backfill_kind   VARCHAR,                 -- 'forward' | 'historical' | 'reconcile' (which of the 3)
@@ -71,23 +71,46 @@ VALUES
 there is: the window and the `gs://` path. Both rows are plain `INSERT`s — append-only, no `UPDATE`, so
 restrictive hosts and dropped connections can't half-write a state transition.)
 
-**Resuming: an orphaned `started` row is the worklist.** On session start (or in the health check):
+**Resuming: an orphaned `started` row is the worklist. Sweep it at the start of *every* session** — not
+just after a known crash. Stale `started` rows accumulate silently otherwise (field test 2026-07-10: 8
+rows left by a prior crashed session, still sitting there; the data was actually fine). A terminal row
+(`completed` or `abandoned`) is what clears an orphan from this list — the log is append-only, so you
+**resolve by appending, never `UPDATE`.**
 
 ```sql
-SELECT s.target_table, s.batch_id, s.watermark_from, s.source_uri, s.loaded_at
+-- Orphans = 'started' with no later terminal row (completed OR abandoned) for the same batch/table
+SELECT s.target_table, s.batch_id, s.watermark_from, s.source_uri, s.loaded_at,
+       now() - s.loaded_at AS age                       -- age drives the abandon decision below
 FROM my_db.warehouse_ingest_log s
-LEFT JOIN my_db.warehouse_ingest_log c
-  ON c.batch_id = s.batch_id AND c.target_table = s.target_table AND c.status = 'completed'
-WHERE s.status = 'started' AND c.batch_id IS NULL
+LEFT JOIN my_db.warehouse_ingest_log t
+  ON t.batch_id = s.batch_id AND t.target_table = s.target_table
+     AND t.status IN ('completed', 'abandoned')
+WHERE s.status = 'started' AND t.batch_id IS NULL
 ORDER BY s.loaded_at;
 ```
 
-For each orphan, check bronze for that `batch_id`:
-- **Batch present in bronze** → the load died between append and log: re-run the silver derive (it's
-  idempotent) and write the `completed` row. No re-pull needed — bronze has the data.
-- **Batch absent from bronze** → it died before landing: re-ask Ace for the *same window* (the
-  `started` row preserved it; the stored `gs://` path can't be re-downloaded — the signature wasn't
-  kept — but the window makes the re-ask exact), then continue the loop normally.
+For each orphan, check bronze for that `batch_id` and finalize it — an orphan should always end the
+sweep in a terminal state, so the next session's worklist is clean:
+- **Batch present in bronze, silver already has it** (the common case a routine crash leaves — bronze +
+  silver landed, only the `completed` row was lost): nothing to reload. **Finalize** by appending the
+  `completed` row, reconstructing `watermark_to`/`rows_loaded` from bronze provenance (the log-repair
+  query below is exactly this). Idempotent — safe if silver is in fact already correct.
+- **Batch present in bronze, silver missing/partial** → the load died between append and derive: re-run
+  the silver derive (it's idempotent) and append the `completed` row. No re-pull — bronze has the data.
+- **Batch absent from bronze** → it died before landing. **Default: re-ask Ace for the *same window*** (the
+  `started` row preserved it; the stored `gs://` path can't be re-downloaded — the signature wasn't kept —
+  but the window makes the re-ask exact), then continue the loop. This is the safe branch — take it whenever
+  in doubt, even for old orphans; re-asking a window you already have is harmless (bronze append + silver
+  dedup collapse it).
+  - **Only** append an `abandoned` row (`backfill_kind='abandoned_orphan'`, note the covering evidence) when
+    you can **prove the window already landed by another path** — otherwise you'd hide a real ingest gap and
+    make it look resolved. Age is *not* proof, and neither is `max(event_time)` sitting above `watermark_from`
+    (a later run can advance the max while leaving this window a hole). Acceptable proof is one of: (a) a
+    later **`completed`** log row for the same table whose `[watermark_from, watermark_to]` **spans** this
+    orphan's window; or (b) a **gap-scan** showing silver has continuous data across the orphan's window with
+    no hole (e.g. no day/hour bucket in `[watermark_from, watermark_to)` has zero rows). If neither holds,
+    it's a genuine gap — recover it with a **historical backfill (§B)** for that window (or a
+    reconciliation §C), don't abandon it.
 
 **Self-healing: the log is *reconstructible from bronze*, so a hole is never permanent.** Bronze's
 provenance columns carry everything a completion row needs. Find batches the log missed, then rebuild
@@ -155,6 +178,15 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   a sub-agent, **bound its runtime** (≈2 windows per sub-agent): a single sub-agent grinding ~10 sequential
   Ace calls hit an *unrelated* model-gateway `ConnectionRefused` at ~7.6 min; log-ahead makes that death
   clean (bronze + `started` rows persist, no orphaned completion), and the next sub-agent resumes.
+- **Expect long backfills to exceed the host's per-turn tool-call budget — and know that's fine.** A big
+  first-time or after-downtime catch-up is dozens of MCP calls; many AI clients cap tool calls per turn,
+  so the run pauses partway and you simply tell it to **continue** (observed 2026-07-10: a large backfill
+  hit the limit once and resumed on "continue"). This is *safe by construction*: bronze is append-only,
+  every window is bracketed by log-ahead `started`/`completed` rows, and the orphan sweep above recovers
+  anything caught mid-window — so a pause between turns can't corrupt or duplicate the mirror. To make the
+  pauses land on clean boundaries, keep windows chunked (above) and let each finish its
+  `land → derive → completed` before the next; if you expect to babysit less, delegate bounded chunks to
+  sub-agents (≈2 windows each) so one turn's budget covers a whole sub-agent.
 - **"Am I caught up?" — two different signals; don't apply the wrong one.** For **time-chunked**
   catch-up (12 h / 1-day windows walking watermark → now), the only valid stop condition is **the
   window cursor reaching your target (~now)**. A chunk that "comes back partial" does *not* mean

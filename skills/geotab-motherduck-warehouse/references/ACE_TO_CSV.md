@@ -214,16 +214,21 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
 
 - **#2 — A signed CSV URL is *always* returned; it *shards* only for large exports** (size-dependent).
   The URL is always there (even 3 rows); a 23.15M-row pull returned **10** shard URLs, small pulls return
-  one. **When sharded, load every shard URL** or your counts are silently short. (`preview_array` carries
-  small results inline.)
+  one. **When sharded, load every shard URL** or your counts are silently short. **Shard count tracks the
+  export's *byte size*, not a row threshold** — an 11.9M-row status pull sharded into 8 files while a
+  3.7M-row GPS pull stayed single-file (field test 2026-07-10), so don't reason "under N rows ⇒ one file";
+  always harvest *all* URLs from the response. (`preview_array` carries small results inline.)
 - **#6 — Duplicate rows — two effects, so dedup every load.** (a) *Boundary second — ~always, tiny:* the
   "after `HH:MM:SS.mmm`" lower bound is honored only to the **second**, so the boundary second re-appears
   (a handful of rows — P11: 679,581→679,577 = 4). (b) *Full ~2× duplication — intermittent:* **some**
   exports return every row ~2× (GPS backfill windows: 3.53M→1.76M, etc.) but **not** others (the 23M
   StatusData export had 605 dupes; the GPS bootstrap had 4) — you **can't predict which**. The usual cause
   is the **`LatestVehicleMetadata` fan-out in #12** (a `DeviceName` join on `DeviceId` alone × a device
-  with multiple metadata rows). So **dedup on the parsed natural key every load** (`DISTINCT ON` / anti-join
-  on `replace(ts,' UTC','')::TIMESTAMP`); bronze keeps dupes (append-only), silver collapses them. *(P11; ev #6.)*
+  with multiple metadata rows). **The multiplier is per-table/per-pull, not a fleet-wide constant** — in one
+  field-test run (2026-07-10) GPS, status, and exceptions each came back ~2× while **trips didn't double at
+  all**, so never hard-code "halve it." So **dedup on the parsed natural key every load** (`DISTINCT ON` /
+  anti-join on `replace(ts,' UTC','')::TIMESTAMP`); bronze keeps dupes (append-only), silver collapses them,
+  and the count is whatever survives dedup — never a fixed fraction of the CSV. *(P11; ev #6.)*
 - **#11 — *By default, on metric/KPI-flavored asks*, the engine is pre-aggregated and active-filtered, so
   counts/distances ≠ raw.** Triggered by aggregate questions ("distance", "counts"): it favors daily
   rollups (`VehicleKPI_Daily`), inclusive **device-local** dates, and `IsTracked = TRUE`. **Avoid it by
