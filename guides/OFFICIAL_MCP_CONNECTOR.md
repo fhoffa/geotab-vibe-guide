@@ -79,6 +79,21 @@ install, no login, no fleet to connect.
 >
 > Source: [github.com/fhoffa/geotab-mcp-simulator](https://github.com/fhoffa/geotab-mcp-simulator)
 
+### Interesting paths to try
+
+Each link jumps straight to a scripted scenario — a good tour of what "ask + act" actually looks
+like:
+
+| Scenario | What it shows |
+|---|---|
+| [**Create a zone + enforcement rule →**](https://fhoffa.github.io/geotab-mcp-simulator/?n=ep3-action) | Write-back in action: the AI builds a geofence zone *and* a rule from a plain-English request |
+| [**Set up an idling alert →**](https://fhoffa.github.io/geotab-mcp-simulator/?n=ep-ops-idle-alert) | Find the worst idlers, then create the alert rule to stop it — read then write |
+| [**Riskiest drivers this week →**](https://fhoffa.github.io/geotab-mcp-simulator/?n=ep-safety-risk) | A weighted safety scorecard ranking drivers |
+| [**Top 3 safety risks + fixes (agentic) →**](https://fhoffa.github.io/geotab-mcp-simulator/?n=ep-agentic-safety) | Multi-step reasoning that surfaces risks *and* recommends fixes |
+| [**Fault codes triaged by severity →**](https://fhoffa.github.io/geotab-mcp-simulator/?n=ep-maint-severity) | Maintenance triage into red / amber / informational |
+| [**Board snapshot across both fleets →**](https://fhoffa.github.io/geotab-mcp-simulator/?n=ep-exec) | An executive summary grounded in live MCP calls |
+| [**Build your own data warehouse →**](https://fhoffa.github.io/geotab-mcp-simulator/?n=warehouse-intro) | The MCP-driven [MotherDuck warehouse](./MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md) path, walked through conversationally |
+
 ---
 
 ## Getting the real connector

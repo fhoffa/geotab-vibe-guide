@@ -534,3 +534,19 @@ To keep it current: when your API or system changes, update the SKILL.md, commit
 Private repos work fine for internal skills. Team members with repo access can clone it and load locally in Claude Code, or load from the raw URL if your GitHub organization allows it.
 
 One person writes the skill once. Every AI user in your organization benefits. That's the leverage.
+
+---
+
+## Changelog
+
+This companion doc was written for the **Connect Europe 2026 (Barcelona, May 2026)** session, but
+it's kept current as the ecosystem evolves — the guidance below reflects the latest state, not just
+what was true on stage. Notable updates since the event:
+
+- **2026-07 — Official Geotab MCP Connector is live.** At the event the official MCP was still
+  upcoming, and the CTA was to sign up for early access. It launched **June 2026**, so the *Setup*
+  section, the take-home list, the resources table, and the FAQ now point to the
+  [official MCP Connector](./OFFICIAL_MCP_CONNECTOR.md) (live, zero-code, included with an eligible
+  GO Plan on Unified Login) as the preferred path, with the [MCP simulator](https://fhoffa.github.io/geotab-mcp-simulator/)
+  for a no-setup preview. Building your own MCP is reframed as the *unofficial* route for
+  capabilities the connector doesn't cover.
