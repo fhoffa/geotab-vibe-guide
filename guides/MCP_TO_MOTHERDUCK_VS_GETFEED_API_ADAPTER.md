@@ -67,9 +67,10 @@ sharded exports, a requested column coming back renamed, a transient `invalid_va
 retry, and a trip re-split reconcile that matched the skill's own worked example. It also surfaced a
 couple of rough edges — stale `started` log rows left by an earlier crashed session, and a long
 backfill that hit the AI tool's per-turn tool-call limit and needed a nudge to *continue*.
-**Those are known, and we're working on them** — tracked in the skill's
-[improvement plan](../skills/geotab-motherduck-warehouse/IMPROVEMENT_PLAN.md) and
-[evidence log](../skills/geotab-motherduck-warehouse/references/EVIDENCE_LOG.md).
+**Both are now addressed in the skill's guidance** (a start-of-session sweep that finalizes or
+abandons stale rows, and an explicit "expect to say *continue*, resuming is safe by design") —
+see the [improvement plan](../skills/geotab-motherduck-warehouse/IMPROVEMENT_PLAN.md) and
+[evidence log](../skills/geotab-motherduck-warehouse/references/EVIDENCE_LOG.md) for the full record.
 
 **Honest limits:** the warehouse is only as fresh as the last time an agent ran the update loop.
 It's ideal for analytics that tolerate "updated this morning," not for feeding a dispatch screen

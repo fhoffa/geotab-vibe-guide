@@ -179,7 +179,17 @@ FROM read_csv_auto('<signed url>', all_varchar=true);
 ```
 
 > The append stamps **4 provenance values** (`_batch_id`, `_loaded_at`, `_source_channel`, `_source_uri`)
-> to match the 4 provenance columns in the bronze DDL above. **Brownfield note:** an *earlier* version of
+> to match the 4 provenance columns in the bronze DDL above.
+>
+> **`SELECT *` only works while the pull's columns line up with the bronze table's non-provenance
+> columns.** The bronze table has *more* columns than any single Ace pull returns (raw + the 4 provenance),
+> and Ace can hand back a **narrower or renamed** set than last time (quirks #7/#8) — either drifts the
+> positional `SELECT *, …4 values` into a column-count/position mismatch. When the shapes don't match,
+> **name the columns explicitly on both sides** (or use `INSERT INTO <bronze> BY NAME SELECT … , <provenance>`
+> when names match but order differs) rather than trusting `*`. See §"Column mismatch? Fix it in the derive"
+> below for the same principle on the silver side.
+>
+> **Brownfield note:** an *earlier* version of
 > this guide also added a per-row `_source_db` column; that's been removed (one database per source already
 > records identity — see §isolate). If you have a pre-existing bronze table from that version, the `SELECT
 > *, …4 values` here will hit a column-count mismatch — drop the stale column once and the append matches:

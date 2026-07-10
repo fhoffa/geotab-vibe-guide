@@ -22,42 +22,38 @@
 
 ---
 
-## Field-test follow-ups (2026-07-10, independent run) — OPEN
+## Field-test follow-ups (2026-07-10, independent run) — IMPLEMENTED 2026-07-10
 
 Source: an independent operator replicated a large fleet and shared the full conversation publicly —
 [claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77)
 (recorded in [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) §3 Run 2026-07-10 + §2 ledger).
 Most of it **confirmed** existing docs (quirk #6 doubling, #2 sharding, #7 column drift, #17 retry, P16
-reconcile — all reproduced on a different fleet). These are the genuine gaps it exposed. The guide
-[`MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md`](../../guides/MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md)
-links the transcript and says these are being worked on, so keep this list honest.
+reconcile — all reproduced on a different fleet). What landed for the genuine gaps:
 
-1. **Stale `started` rows on startup — discoverability + a finalize/abandon branch.** The tester found 8
-   `warehouse_ingest_log` rows stuck at `status='started'` from a prior crashed session and had no
-   obvious cue what to do; the data was actually fine. The orphan-sweep worklist *does* exist
-   (`INCREMENTAL_BACKFILL.md` §The state table / §A resume), so this is (a) **discoverability** — surface
-   "on session start, sweep orphaned `started` rows" more prominently (SKILL.md rule + health check), and
-   (b) a missing **explicit branch**: for an orphan whose bronze batch verifies complete, *finalize* it
-   (`completed` from bronze provenance — the log-repair query already does this); for one older than a
-   threshold with no usable bronze, mark it **abandoned** so it stops accumulating as noise instead of
-   forcing a re-ask each session.
-2. **Set the tool-call-budget expectation (long runs need "continue").** A large backfill exhausted the
-   host's per-turn tool-call limit; the operator said "continue" once and it resumed cleanly. Add a short
-   note (SKILL.md ops / `INCREMENTAL_BACKFILL.md` §A) that big first-time backfills can hit a host's
-   per-turn limit, that the **log-ahead + orphan-sweep design makes resuming safe**, and that chunking into
-   shorter windows/turns (already the §A "chunk if huge" guidance) keeps each turn under budget.
-3. **`INSERT … SELECT *` into bronze fails — call it out at the load step.** Bronze carries raw + 4
-   provenance columns, more than any single Ace pull returns, so `SELECT *` mismatches. This is already the
-   rule in `MAINTAINING.md` / `MEDALLION_LOADING.md`, but add a one-line **"name columns on both sides"**
-   reminder right at the copy-pasteable load step where people hit it.
-4. **Wording nudges in the catalog (no renumber).** Make two already-true points harder to misread:
-   #6 — doubling is **per-table/per-pull, not a fleet-wide constant** (trips didn't double; don't "always
-   halve"); #2 — shard count tracks **export byte-size, not a row-count threshold**. Small edits to the
-   `ACE_TO_CSV.md` one-liners (+ `SKILL.md` mirror), evidence already logged.
+1. **Stale `started` rows on startup — discoverability + a finalize/abandon branch.** ✅ Added
+   `'abandoned'` as a third `status` value in the `warehouse_ingest_log` DDL comment; rewrote
+   `INCREMENTAL_BACKFILL.md` §The state table resume section to (a) say **sweep at the start of *every*
+   session** (not just after a known crash) and (b) give an explicit **finalize-or-abandon** decision per
+   orphan: bronze-present+silver-present → append `completed` (log-repair); bronze-present+silver-missing →
+   re-derive + `completed`; bronze-absent+recent → re-ask; bronze-absent+old+superseded → append
+   `abandoned` so it stops re-surfacing. Worklist query broadened to treat `completed` **or** `abandoned`
+   as terminal, with an `age` column to drive the abandon call. Mirrored in SKILL.md rule #11.
+2. **Tool-call-budget expectation (long runs need "continue").** ✅ New §A bullet: big backfills can
+   exceed a host's per-turn tool-call cap; you just say **continue**, and it's *safe by construction*
+   (append-only bronze + log-ahead + orphan sweep). Chunk windows so pauses land on clean boundaries.
+   One-line mirror in SKILL.md rule #11.
+3. **`INSERT … SELECT *` into bronze — callout at the load step.** ✅ `MEDALLION_LOADING.md` bronze-append
+   note now warns that `SELECT *` only holds while the pull's columns line up, and to **name columns on
+   both sides** (or `INSERT … BY NAME`) when Ace returns a narrower/renamed set (#7/#8) or the table has
+   drifted; cross-links the existing §"Column mismatch" guidance.
+4. **Catalog wording nudges (no renumber).** ✅ `ACE_TO_CSV.md` #2 now says shard count tracks **export
+   byte-size, not a row threshold** (11.9M status → 8 files, 3.7M GPS → 1); #6 now says the doubling is
+   **per-table/per-pull, not a fleet-wide constant** (GPS/status/exceptions doubled, trips didn't — don't
+   "halve it"). `SKILL.md` mirror edited in the same pass.
 
-Sizing: all doc-only, no live validation needed (the measurements are the tester's, logged as a dated
-run). One small PR. Per `MAINTAINING.md`: edit `ACE_TO_CSV.md` and the `SKILL.md` mirror together for #4;
-no quirk renumbering (these are clarifications + ops guidance, not new quirks).
+All doc-only; measurements are the tester's, logged as a dated run in EVIDENCE_LOG. No quirk renumbering
+(clarifications + ops guidance, not new quirks); `ACE_TO_CSV.md` and the `SKILL.md` mirror edited together
+per `MAINTAINING.md`.
 
 ---
 
