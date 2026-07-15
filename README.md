@@ -7,7 +7,7 @@
 >
 > **New to the Geotab API?** Watch the kickoff webinar with Felipe and Aaron: [YouTube](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) | [LinkedIn](https://www.linkedin.com/posts/hoffa_from-idea-to-25k-kickstarting-the-geotab-activity-7429763308112732161-vzZA) — jump to [live data demo](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=17), [building an add-in with Gem](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=155), [Claude + API](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=1360), or [winning strategy](https://www.youtube.com/watch?v=Zuazi88lBeg&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG&t=2030)
 >
-> **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) with Mahin Sheth — Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos. [Vibe Coding an Intelligent Geofencing App](https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — hackathon participant Veronica builds a geofencing app from scratch. [LP Papillon builds "Last Week in Fleet"](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — Attrix (Geotab reseller since 2015) uses LLMs to scaffold add-ins and builds a native-looking weekly fleet summary across productivity, safety, compliance, and sustainability. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
+> **More videos:** [Google AI Tools Deep Dive](https://www.youtube.com/watch?v=avEXlVw2lU8&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) with Mahin Sheth — Gemini Canvas, AI Studio, Firebase Studio, and Antigravity demos. [Vibe Coding an Intelligent Geofencing App](https://www.youtube.com/watch?v=SS3Y9UBDfoA&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — hackathon participant Veronica builds a geofencing app from scratch. [LP Papillon builds "Last Week in Fleet"](https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG) — Attrix (Geotab reseller since 2015) uses LLMs to scaffold add-ins and builds a native-looking weekly fleet summary across productivity, safety, compliance, and sustainability. [Geotab MCP Connector Demo](https://www.youtube.com/watch?v=7uMXqWfxlC0) — Felipe Hoffa shows how the official MCP connector links ChatGPT, Claude, and Copilot to live MyGeotab fleet data. [Full playlist](https://www.youtube.com/playlist?list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG).
 
 ## 📺 Featured Videos
 
@@ -38,6 +38,14 @@
         <img src="https://img.youtube.com/vi/EiZsIof1Scw/mqdefault.jpg" alt="LP Papillon: Last Week in Fleet" width="320"/>
       </a><br>
       <b><a href="https://www.youtube.com/watch?v=EiZsIof1Scw&list=PLG1fouPFF9lydA6SmkGlZbhDJyaI4MsBG">LP Papillon: Last Week in Fleet</a></b>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=7uMXqWfxlC0">
+        <img src="https://img.youtube.com/vi/7uMXqWfxlC0/mqdefault.jpg" alt="Geotab MCP Connector Demo" width="320"/>
+      </a><br>
+      <b><a href="https://www.youtube.com/watch?v=7uMXqWfxlC0">Geotab MCP Connector Demo</a></b>
     </td>
   </tr>
 </table>
