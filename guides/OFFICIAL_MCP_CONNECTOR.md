@@ -11,7 +11,7 @@
 > ### 🎬 Watch the demo
 > [![Geotab MCP Connector Demo](https://img.youtube.com/vi/7uMXqWfxlC0/mqdefault.jpg)](https://www.youtube.com/watch?v=7uMXqWfxlC0)
 > **[Geotab MCP Connector Demo on YouTube →](https://www.youtube.com/watch?v=7uMXqWfxlC0)**
-> Felipe Hoffa shows the connector investigating fleet issues, automating alerts, and coordinating actions across tools like Gmail and calendars.
+> Watch the connector investigating fleet issues, automating alerts, and coordinating actions across tools like Gmail and calendars.
 >
 > Official page: **[geotab.com/geotab-mcp-connector](https://www.geotab.com/geotab-mcp-connector/)**
 
@@ -168,7 +168,7 @@ maintain a data warehouse** for you.
 
 ## Resources
 
-- **Video walkthrough:** Felipe Hoffa demos the connector — investigating fleet issues, automating alerts, and coordinating actions across tools like Gmail and calendars — [YouTube](https://www.youtube.com/watch?v=7uMXqWfxlC0)
+- **Video walkthrough:** Demos the connector — investigating fleet issues, automating alerts, and coordinating actions across tools like Gmail and calendars — [YouTube](https://www.youtube.com/watch?v=7uMXqWfxlC0)
 - **Official connector page:** [geotab.com/geotab-mcp-connector](https://www.geotab.com/geotab-mcp-connector/)
 - **Try it live (simulator):** [fhoffa.github.io/geotab-mcp-simulator](https://fhoffa.github.io/geotab-mcp-simulator/)
 - **Simulator source:** [github.com/fhoffa/geotab-mcp-simulator](https://github.com/fhoffa/geotab-mcp-simulator)
