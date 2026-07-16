@@ -8,6 +8,9 @@
 > ### 🎮 See it in action first — [**try the free simulator →**](https://fhoffa.github.io/geotab-mcp-simulator/)
 > No account, no login, no fleet — a browser demo of the whole experience. ([details below](#try-it-first--no-account-needed))
 >
+> ### 🎬 Watch the demo — [**Geotab MCP Connector Demo on YouTube →**](https://www.youtube.com/watch?v=7uMXqWfxlC0)
+> Felipe Hoffa shows the connector investigating fleet issues, automating alerts, and coordinating actions across tools like Gmail and calendars.
+>
 > Official page: **[geotab.com/geotab-mcp-connector](https://www.geotab.com/geotab-mcp-connector/)**
 
 ---
