@@ -1,0 +1,14 @@
+{
+  "name": "Vehiculos Mas Lentos v0.4",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "0.4",
+  "items": [
+    {
+      "url": "https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehiculos-mas-lentos.html",
+      "path": "ActivityLink",
+      "menuName": {
+        "en": "Vehículos Más Lentos"
+      }
+    }
+  ]
+}

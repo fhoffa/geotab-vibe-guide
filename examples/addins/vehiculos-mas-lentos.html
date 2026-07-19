@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Vehículos Más Lentos</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #000000;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h2 {
+      text-align: center;
+      font-weight: normal;
+      margin-bottom: 20px;
+      font-size: 22px;
+    }
+    .table-wrap {
+      overflow-x: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      border: 1px solid #cbd5e1;
+      font-size: 15px;
+    }
+    thead {
+      background: #cbd5e1;
+      border-bottom: 2px solid #94a3b8;
+    }
+    th, td {
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+    }
+    th {
+      font-weight: bold;
+    }
+    th.num, td.num {
+      text-align: right;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    a {
+      color: #000000;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .status-moving {
+      color: #16a34a;
+    }
+    .status-stopped {
+      color: #64748b;
+    }
+    .status-no-signal {
+      color: #dc2626;
+    }
+    .error-msg {
+      padding: 20px;
+      text-align: center;
+      color: #ef4444;
+    }
+    .empty-msg {
+      padding: 20px;
+      text-align: center;
+      color: #64748b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Vehículos Más Lentos</h2>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Vehículo</th>
+            <th class="num">Velocidad (km/h)</th>
+            <th>Estado</th>
+            <th class="num">Fallas (Últimas 24h)</th>
+          </tr>
+        </thead>
+        <tbody id="table-body">
+          <tr>
+            <td colspan="4" class="empty-msg">Cargando datos de la flota...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    geotab.addin.vehiculos_mas_lentos = function () {
+      return {
+        initialize: function (api, state, callback) {
+          var tbody = document.getElementById("table-body");
+
+          var yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+
+          api.multiCall(
+            [
+              ["Get", { typeName: "Device" }],
+              ["Get", { typeName: "DeviceStatusInfo" }],
+              ["Get", { typeName: "FaultData", search: { fromDate: yesterday.toISOString() } }]
+            ],
+            function (results) {
+              var devices = results[0] || [];
+              var statuses = results[1] || [];
+              var faults = results[2] || [];
+
+              // Index statuses by device id
+              var statusMap = {};
+              for (var i = 0; i < statuses.length; i++) {
+                if (statuses[i].device) {
+                  statusMap[statuses[i].device.id] = statuses[i];
+                }
+              }
+
+              // Count faults per device in last 24h
+              var faultMap = {};
+              for (var j = 0; j < faults.length; j++) {
+                if (faults[j].device) {
+                  var dId = faults[j].device.id;
+                  faultMap[dId] = (faultMap[dId] || 0) + 1;
+                }
+              }
+
+              // Build rows
+              var rows = [];
+              for (var k = 0; k < devices.length; k++) {
+                var dev = devices[k];
+                var info = statusMap[dev.id];
+                var speed = (info && info.speed != null) ? info.speed : 0;
+                var estado, estadoClass;
+                if (!info) {
+                  estado = "Sin Telemetría";
+                  estadoClass = "status-no-signal";
+                } else if (speed > 0.5) {
+                  estado = "En Movimiento";
+                  estadoClass = "status-moving";
+                } else {
+                  estado = "Detenido";
+                  estadoClass = "status-stopped";
+                }
+                rows.push({
+                  id: dev.id,
+                  name: dev.name || dev.id,
+                  speed: speed,
+                  estado: estado,
+                  estadoClass: estadoClass,
+                  faults: faultMap[dev.id] || 0
+                });
+              }
+
+              // Sort ascending by speed (slowest first)
+              rows.sort(function (a, b) { return a.speed - b.speed; });
+
+              tbody.innerHTML = "";
+              if (rows.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='4' class='empty-msg'>No se encontraron vehículos en el sistema.</td></tr>";
+                return;
+              }
+
+              for (var m = 0; m < rows.length; m++) {
+                var item = rows[m];
+                var tr = document.createElement("tr");
+
+                var tdName = document.createElement("td");
+                var a = document.createElement("a");
+                a.textContent = item.name;
+                a.href = "#";
+                (function (id) {
+                  a.onclick = function (e) {
+                    e.preventDefault();
+                    window.parent.location.hash = "device,id:" + id;
+                  };
+                })(item.id);
+                tdName.appendChild(a);
+
+                var tdSpeed = document.createElement("td");
+                tdSpeed.className = "num";
+                tdSpeed.textContent = item.speed.toFixed(1);
+
+                var tdEstado = document.createElement("td");
+                tdEstado.className = item.estadoClass;
+                tdEstado.textContent = item.estado;
+
+                var tdFaults = document.createElement("td");
+                tdFaults.className = "num";
+                tdFaults.textContent = item.faults;
+
+                tr.appendChild(tdName);
+                tr.appendChild(tdSpeed);
+                tr.appendChild(tdEstado);
+                tr.appendChild(tdFaults);
+                tbody.appendChild(tr);
+              }
+            },
+            function (err) {
+              tbody.innerHTML = "<tr><td colspan='4' class='error-msg'>Error cargando datos: " + err + "</td></tr>";
+            }
+          );
+
+          callback();
+        },
+        focus: function (api, state) {},
+        blur: function (api, state) {}
+      };
+    };
+  </script>
+</body>
+</html>
