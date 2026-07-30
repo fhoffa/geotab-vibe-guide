@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<!-- Part of Geotab Vibe Guide: https://github.com/fhoffa/geotab-vibe-guide -->
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Universal Add-In Container</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { height: 100%; }
+    body { font-family: Arial, sans-serif; height: 100%; min-height: 100vh; display: flex; flex-direction: column; overflow: hidden; background: #111; }
+
+    /* ── Top bar ── */
+    #topbar { background: #1a5276; color: white; padding: 8px 12px; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    #topbar strong { white-space: nowrap; font-size: 13px; }
+    #preset-select { padding: 5px 6px; border-radius: 4px; border: none; font-size: 12px; max-width: 180px; }
+    #url-input { flex: 1; padding: 6px 10px; border-radius: 4px; border: none; font-size: 13px; min-width: 0; }
+    #load-btn { padding: 6px 14px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; white-space: nowrap; }
+    #load-btn:hover { background: #1e8449; }
+    #rate-warning { background: #c0392b; color: white; padding: 3px 12px; font-size: 11px; display: none; flex-shrink: 0; }
+
+    /* ── Main split ── */
+    #main { display: flex; flex: 1; overflow: hidden; min-height: 0; }
+
+    /* ── Monitor panel ── */
+    #monitor { width: 300px; min-width: 160px; max-width: 600px; background: #1e2a35; color: #e0e0e0; display: flex; flex-direction: column; flex-shrink: 0; min-height: 0; overflow: hidden; }
+    #monitor-tabs { display: flex; background: #152029; flex-shrink: 0; }
+    .mon-tab { flex: 1; padding: 8px 2px; text-align: center; cursor: pointer; font-size: 11px; color: #888; border-bottom: 2px solid transparent; user-select: none; }
+    .mon-tab.active { color: #fff; border-bottom-color: #27ae60; }
+    .mon-tab:hover:not(.active) { color: #ccc; }
+    #monitor-content { flex: 1; min-height: 0; overflow-y: auto; padding: 8px; font-size: 11px; font-family: monospace; }
+
+    /* Timeline */
+    .tl-entry { padding: 2px 0; border-bottom: 1px solid #253545; line-height: 1.5; }
+    .tl-time { color: #666; }
+    .tl-method { color: #27ae60; }
+    .tl-type { color: #5dade2; }
+    .tl-count { color: #f39c12; }
+    .tl-ms { color: #95a5a6; }
+    .tl-blocked { color: #e74c3c; font-weight: bold; }
+    .tl-rate { color: #e74c3c; font-weight: bold; }
+    .tl-err { color: #e67e22; }
+
+    /* Stats */
+    .stats-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+    .stats-table th { background: #152029; padding: 4px; text-align: left; position: sticky; top: 0; }
+    .stats-table td { padding: 3px 4px; border-bottom: 1px solid #253545; }
+    .c-ok { color: #27ae60; }
+    .c-blk { color: #e74c3c; }
+    .c-err { color: #e67e22; }
+
+    /* Block panel */
+    .block-section { margin-bottom: 14px; }
+    .block-section h4 { color: #888; font-size: 10px; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 1px; }
+    .block-row { display: flex; align-items: center; justify-content: space-between; padding: 3px 0; }
+    .block-label { font-size: 11px; }
+    .toggle { position: relative; display: inline-block; width: 34px; height: 18px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background: #444; border-radius: 18px; transition: .25s; }
+    .slider:before { position: absolute; content: ""; height: 12px; width: 12px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: .25s; }
+    input:checked + .slider { background: #e74c3c; }
+    input:checked + .slider:before { transform: translateX(16px); }
+    .clear-btn { font-size: 11px; padding: 4px 8px; background: #444; color: white; border: none; border-radius: 3px; cursor: pointer; margin-top: 6px; }
+    .clear-btn:hover { background: #555; }
+
+    /* Info panel */
+    #info-panel { font-size: 11px; line-height: 1.6; }
+    #info-panel h4 { color: #27ae60; margin: 10px 0 3px; }
+    #info-panel p, #info-panel li { color: #bbb; margin-bottom: 4px; }
+    #info-panel ul { padding-left: 14px; margin-bottom: 6px; }
+    #info-panel code { background: #152029; padding: 1px 4px; border-radius: 2px; color: #f39c12; font-size: 10px; }
+    .cap-table { width: 100%; border-collapse: collapse; font-size: 10px; margin: 6px 0; }
+    .cap-table th { background: #152029; padding: 4px; text-align: left; }
+    .cap-table td { padding: 3px 4px; border-bottom: 1px solid #253545; }
+    .cap-can { color: #27ae60; }
+    .cap-cant { color: #e74c3c; }
+
+    /* Resize handle */
+    #resize { width: 4px; background: #111; cursor: col-resize; flex-shrink: 0; transition: background .2s; }
+    #resize:hover { background: #27ae60; }
+
+    /* Frame area */
+    #frame-area { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    #frame-status { padding: 5px 10px; background: #f0f0f0; border-bottom: 1px solid #ddd; font-size: 11px; color: #555; display: flex; align-items: center; gap: 6px; flex-shrink: 0; min-height: 28px; }
+    #status-dot { width: 8px; height: 8px; border-radius: 50%; background: #bbb; flex-shrink: 0; }
+    #status-dot.ok { background: #27ae60; }
+    #status-dot.warn { background: #f39c12; }
+    #status-dot.err { background: #e74c3c; }
+    #status-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    #security-badges { display: flex; gap: 4px; flex-shrink: 0; flex-wrap: wrap; }
+    .badge { padding: 1px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; white-space: nowrap; }
+    .badge-ok { background: #d5f5e3; color: #1e8449; }
+    .badge-warn { background: #fef9e7; color: #b7950b; border: 1px solid #f39c12; }
+    .badge-bad { background: #fdedec; color: #c0392b; }
+
+    #cors-instructions { padding: 14px 16px; background: #fff; border-bottom: 1px solid #ddd; display: none; font-size: 12px; }
+    #cors-instructions h3 { color: #e74c3c; margin-bottom: 6px; font-size: 13px; }
+    #cors-instructions p { margin-bottom: 6px; color: #333; }
+    #cors-instructions pre { background: #f4f4f4; padding: 8px; border-radius: 4px; font-size: 11px; overflow-x: auto; margin: 4px 0 8px; }
+    #cors-instructions code { background: #e8f4f8; padding: 1px 4px; border-radius: 2px; font-size: 11px; }
+
+    #addin-frame { flex: 1; border: none; width: 100%; background: white; }
+  </style>
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div id="topbar">
+    <strong>Universal Container</strong>
+    <span id="page-loaded" title="Page load time — if this doesn't change after a deploy, MyGeotab cached the old version. Add ?v=2 (then ?v=3…) to the URL in the config JSON to bust the cache."
+      style="font-size:10px; color:#7fb3d3; white-space:nowrap; cursor:help;"></span>
+    <select id="preset-select" title="Load a preset Add-In" onchange="loadPreset(this.value)">
+      <option value="">— presets —</option>
+      <optgroup label="This Repo — CORS ✅ bridge auto-injects">
+        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/simple-test.html">Simple Test</option>
+        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/minimal-test.html">Minimal Test</option>
+        <option value="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/vehicle-dashboard-map.html">Vehicle Dashboard Map</option>
+      </optgroup>
+      <optgroup label="Geotab SDK Samples (jsDelivr CDN) — CORS ✅ bridge auto-injects">
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-heatmap/dist/heatmap.html">Heat Map</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-trips-timeline/dist/tripsTimeline.html">Trips Timeline</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-import-kml-zones/dist/importKmlZones.html">Import KML Zones</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-start-stop/dist/startStop.html">Start-Stop</option>
+        <option value="https://cdn.jsdelivr.net/gh/Geotab/sdk-addin-samples@master/addin-iox-output/dist/ioxOutput.html">IOX Output</option>
+      </optgroup>
+    </select>
+    <input id="url-input" type="url" placeholder="https://…/addin.html"
+      onkeydown="if(event.key==='Enter') loadUrl()" />
+    <button id="load-btn" onclick="loadUrl()">Load</button>
+  </div>
+
+  <div id="rate-warning">⚠ Rate limit — 20 calls/s exceeded, request blocked</div>
+
+  <!-- Main split layout -->
+  <div id="main">
+
+    <!-- Monitor panel -->
+    <div id="monitor">
+      <div id="monitor-tabs">
+        <div class="mon-tab active" id="tab-timeline" onclick="showTab('timeline')">Timeline</div>
+        <div class="mon-tab" id="tab-stats" onclick="showTab('stats')">Stats</div>
+        <div class="mon-tab" id="tab-block" onclick="showTab('block')">Block</div>
+        <div class="mon-tab" id="tab-info" onclick="showTab('info')">Info</div>
+      </div>
+      <div id="monitor-content">
+
+        <!-- Timeline panel -->
+        <div id="panel-timeline">
+          <div style="color:#555; padding:4px 0; font-size:10px;">Load an Add-In to see API calls…</div>
+        </div>
+
+        <!-- Stats panel -->
+        <div id="panel-stats" style="display:none;">
+          <table class="stats-table">
+            <thead>
+              <tr><th>TypeName</th><th>Method</th><th class="c-ok">OK</th><th class="c-blk">Blk</th><th class="c-err">Err</th></tr>
+            </thead>
+            <tbody id="stats-body"></tbody>
+          </table>
+          <div id="stats-empty" style="color:#555; padding:8px 0; font-size:10px;">No API calls yet.</div>
+        </div>
+
+        <!-- Block panel -->
+        <div id="panel-block" style="display:none;">
+          <div class="block-section">
+            <h4>By TypeName</h4>
+            <div id="block-typenames">
+              <div style="color:#555; font-size:10px;">TypeNames appear after the first call.</div>
+            </div>
+          </div>
+          <div class="block-section">
+            <h4>By Method</h4>
+            <div id="block-methods"></div>
+          </div>
+          <button class="clear-btn" onclick="clearBlocks()">Clear all blocks</button>
+        </div>
+
+        <!-- Info panel -->
+        <div id="panel-info" style="display:none;">
+          <div id="info-panel">
+            <h4>What this container does</h4>
+            <p>Loads any Geotab Add-In in an iframe, proxies all <code>api.call()</code> requests through the postMessage bridge, and gives you real-time visibility and control over every Geotab API call.</p>
+
+            <h4>How the bridge works</h4>
+            <ul>
+              <li><strong>CORS available:</strong> fetches the HTML, scans for risky patterns, injects <code>geotab-bridge.js</code>, loads via <code>srcdoc</code>. Bridge activates automatically.</li>
+              <li><strong>No CORS:</strong> loads the URL directly. Bridge activates only if the Add-In already includes <code>geotab-bridge.js</code>.</li>
+            </ul>
+
+            <h4>Security checks on every call</h4>
+            <ul>
+              <li>Origin validated against iframe's <code>contentWindow</code></li>
+              <li>Sliding-window rate limit (20 calls/s)</li>
+              <li>TypeName and Method block lists applied instantly</li>
+            </ul>
+
+            <h4>Capabilities</h4>
+            <table class="cap-table">
+              <thead><tr><th class="cap-can">Client-only CAN do</th><th class="cap-cant">Client-only CANNOT do</th></tr></thead>
+              <tbody>
+                <tr><td class="cap-can">Intercept all Geotab API calls</td><td class="cap-cant">Read cross-origin iframe DOM/scripts</td></tr>
+                <tr><td class="cap-can">Block by method or TypeName</td><td class="cap-cant">Intercept eval() in cross-origin frames</td></tr>
+                <tr><td class="cap-can">Rate limit at 20 calls/s</td><td class="cap-cant">Intercept fetch() to 3rd-party servers</td></tr>
+                <tr><td class="cap-can">Static code scan (if CORS)</td><td class="cap-cant">Detect runtime-injected scripts</td></tr>
+                <tr><td class="cap-can">iframe sandbox restrictions</td><td class="cap-cant">Detect obfuscated code</td></tr>
+              </tbody>
+            </table>
+
+            <h4>What a server-side proxy adds</h4>
+            <p>A proxy closes all the "cannot do" gaps: it sees the raw HTTP traffic, can cache responses, enforce per-user quotas, log to a database, redact sensitive fields, and bridge to non-Geotab APIs without exposing credentials to the browser.</p>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Resize handle -->
+    <div id="resize"></div>
+
+    <!-- Frame area -->
+    <div id="frame-area">
+      <div id="frame-status">
+        <div id="status-dot"></div>
+        <span id="status-text">No Add-In loaded</span>
+        <div id="security-badges"></div>
+      </div>
+      <div id="cors-instructions">
+        <h3>CORS not available — bridge cannot be auto-injected</h3>
+        <p>The Add-In loaded directly in the iframe. The bridge works only if the Add-In already includes <code>geotab-bridge.js</code>.</p>
+        <p><strong>Option A — add the bridge script to your Add-In's HTML:</strong></p>
+        <pre>&lt;script src="https://fhoffa.github.io/geotab-vibe-guide/examples/addins/geotab-bridge.js"&gt;&lt;/script&gt;</pre>
+        <p><strong>Option B — serve with CORS headers so this container can inject it automatically:</strong></p>
+        <pre>nginx:   add_header Access-Control-Allow-Origin *;
+Apache:  Header set Access-Control-Allow-Origin "*"
+Express: app.use(require('cors')())</pre>
+      </div>
+      <iframe id="addin-frame"
+        sandbox="allow-scripts allow-forms allow-popups allow-modals"
+        allow="geolocation"></iframe>
+    </div>
+
+  </div>
+
+  <script>
+    // ============================================
+    // STATE
+    // ============================================
+    // Show page load time in topbar so stale MyGeotab cache is easy to spot
+    document.getElementById('page-loaded').textContent =
+      'loaded ' + new Date().toLocaleTimeString();
+
+    var geotabApi = null;
+    var geotabSession = null;  // { credentials, server } — passed to inner Add-Ins via geotab-init
+    var activeTab = 'timeline';
+
+    // Rate limiting: sliding window. 50/s allows normal dashboard startup
+    // bursts while still blocking runaway loops.
+    var RATE_LIMIT = 50;
+    var callTimestamps = [];
+
+    // Block lists
+    var blockedTypeNames = {};
+    var blockedMethods   = {};
+
+    // Known values for the Block panel
+    var knownTypeNames = new Set();
+    var knownMethods   = new Set([
+      'Get', 'Add', 'Set', 'Remove', 'GetCountOf',
+      'GetAceResults', 'Authenticate', 'ExecuteMultiCall'
+    ]);
+
+    // Stats: key = "TypeName|Method" → { typeName, method, ok, blocked, err }
+    var stats = {};
+
+    // Timeline (max 200 entries, newest first)
+    var timeline = [];
+
+    // Inline bridge — embedded directly into srcdoc so there is no external
+    // dependency and no race condition with script loading order.
+    var BRIDGE_CODE = [
+      '(function(){',
+      '  var pending={},factories={},initialized=false,session=null;',
+      '  var fakeState={translate:function(s){return s;},device:{},user:{}};',
+      '  var api={',
+      '    call:function(method,params,success,error){',
+      '      if(typeof params==="function"){error=success;success=params;params={};}',
+      '      var id=(Math.random()*1e9|0)+"-"+Date.now();',
+      '      pending[id]={s:success||function(){},e:error||function(){}};',
+      '      var sp;try{sp=JSON.parse(JSON.stringify(params||{}));}catch(e){sp={};}',
+      '      window.parent.postMessage({type:"geotab-call",id:id,method:method,params:sp},"*");',
+      '    },',
+      '    getSession:function(cb){',
+      '      if(cb) cb(session&&session.credentials, session&&session.server);',
+      '    }',
+      '  };',
+      '  function initAddin(name,factory){',
+      '    try{var inst=factory();',
+      '      if(inst&&inst.initialize)inst.initialize(api,fakeState,function(){});',
+      '    }catch(e){console.error("[bridge] addin init error",name,e);}',
+      '  }',
+      '  window.geotab={addin:new Proxy({},{',
+      '    set:function(t,n,v){t[n]=v;factories[n]=v;if(initialized)initAddin(n,v);return true;},',
+      '    get:function(t,n){return t[n];}',
+      '  })};',
+      '  window.addEventListener("message",function(ev){',
+      '    var d=ev.data;if(!d||typeof d!=="object")return;',
+      '    if(d.type==="geotab-init"){',
+      '      if(d.session)session=d.session;',
+      '      initialized=true;',
+      '      Object.keys(factories).forEach(function(n){initAddin(n,factories[n]);});return;}',
+      '    var p=pending[d.id];if(!p)return;',
+      '    if(d.type==="geotab-result"){try{p.s(d.result);}catch(e){}delete pending[d.id];}',
+      '    if(d.type==="geotab-error"){try{p.e(d.error);}catch(e){}delete pending[d.id];}',
+      '  });',
+      '  window.parent.postMessage({type:"geotab-ready"},"*");',
+      '})();'
+    ].join('\n');
+
+    // ============================================
+    // TAB SWITCHING
+    // ============================================
+    function showTab(name) {
+      activeTab = name;
+      ['timeline', 'stats', 'block', 'info'].forEach(function(t) {
+        document.getElementById('panel-' + t).style.display = (t === name) ? '' : 'none';
+        document.getElementById('tab-' + t).classList.toggle('active', t === name);
+      });
+      if (name === 'timeline') renderTimeline();
+      else if (name === 'stats') renderStats();
+      else if (name === 'block') renderBlockPanel();
+    }
+
+    // ============================================
+    // TIMELINE
+    // ============================================
+    function addTimelineEntry(method, typeName, count, ms, blocked, isRateLimit, isErr) {
+      var ts = new Date().toTimeString().slice(0, 8);
+      timeline.unshift({ ts: ts, method: method, typeName: typeName,
+                         count: count, ms: ms, blocked: blocked,
+                         isRateLimit: isRateLimit, isErr: isErr });
+      if (timeline.length > 200) timeline.pop();
+      if (activeTab === 'timeline') renderTimeline();
+    }
+
+    function renderTimeline() {
+      var html = timeline.map(function(e) {
+        if (e.isRateLimit) {
+          return '<div class="tl-entry"><span class="tl-time">' + e.ts + '</span> <span class="tl-rate">RATE LIMIT</span> <span class="tl-type">' + esc(e.typeName || '') + '</span></div>';
+        }
+        var cStr = e.count !== null ? ' <span class="tl-count">[' + e.count + ']</span>' : '';
+        var mStr = e.ms !== null ? ' <span class="tl-ms">' + e.ms + 'ms</span>' : '';
+        var bStr = e.blocked ? ' <span class="tl-blocked">BLOCKED</span>' : '';
+        var eStr = e.isErr ? ' <span class="tl-err">ERR</span>' : '';
+        return '<div class="tl-entry"><span class="tl-time">' + e.ts + '</span>'
+          + ' <span class="tl-method">' + esc(e.method) + '</span>'
+          + ' <span class="tl-type">' + esc(e.typeName || '') + '</span>'
+          + cStr + mStr + bStr + eStr + '</div>';
+      }).join('');
+      document.getElementById('panel-timeline').innerHTML =
+        html || '<div style="color:#555; font-size:10px; padding:4px 0;">No calls yet.</div>';
+    }
+
+    // ============================================
+    // STATS
+    // ============================================
+    function recordStat(method, typeName, outcome) {
+      var key = (typeName || '-') + '|' + method;
+      if (!stats[key]) stats[key] = { typeName: typeName || '-', method: method, ok: 0, blocked: 0, err: 0 };
+      stats[key][outcome]++;
+      if (activeTab === 'stats') renderStats();
+    }
+
+    function renderStats() {
+      var keys = Object.keys(stats);
+      var empty = document.getElementById('stats-empty');
+      if (empty) empty.style.display = keys.length ? 'none' : '';
+      document.getElementById('stats-body').innerHTML = keys.sort().map(function(k) {
+        var s = stats[k];
+        return '<tr><td>' + esc(s.typeName) + '</td><td>' + esc(s.method) + '</td>'
+          + '<td class="c-ok">' + s.ok + '</td>'
+          + '<td class="c-blk">' + s.blocked + '</td>'
+          + '<td class="c-err">' + s.err + '</td></tr>';
+      }).join('');
+    }
+
+    // ============================================
+    // BLOCK PANEL
+    // ============================================
+    function renderBlockPanel() {
+      // TypeNames (discovered dynamically)
+      var tnHtml = '';
+      knownTypeNames.forEach(function(tn) {
+        tnHtml += makeToggleRow(tn, !!blockedTypeNames[tn], 'tn');
+      });
+      document.getElementById('block-typenames').innerHTML =
+        tnHtml || '<div style="color:#555; font-size:10px;">TypeNames appear after the first call.</div>';
+
+      // Methods (seeded + discovered)
+      var mHtml = '';
+      knownMethods.forEach(function(m) {
+        mHtml += makeToggleRow(m, !!blockedMethods[m], 'method');
+      });
+      document.getElementById('block-methods').innerHTML = mHtml;
+    }
+
+    function makeToggleRow(label, isBlocked, kind) {
+      var id = 'tog-' + kind + '-' + label.replace(/\W/g, '_');
+      return '<div class="block-row">'
+        + '<span class="block-label">' + esc(label) + '</span>'
+        + '<label class="toggle"><input type="checkbox" id="' + id + '"'
+        + (isBlocked ? ' checked' : '')
+        + ' onchange="setBlock(\'' + kind + '\',\'' + label.replace(/'/g, "\\'") + '\',this.checked)">'
+        + '<span class="slider"></span></label></div>';
+    }
+
+    function setBlock(kind, label, blocked) {
+      if (kind === 'tn') blockedTypeNames[label] = blocked;
+      else blockedMethods[label] = blocked;
+    }
+
+    function clearBlocks() {
+      blockedTypeNames = {};
+      blockedMethods   = {};
+      renderBlockPanel();
+    }
+
+    // ============================================
+    // RATE LIMITING
+    // ============================================
+    function checkRateLimit() {
+      var now = Date.now();
+      callTimestamps = callTimestamps.filter(function(t) { return now - t < 1000; });
+      if (callTimestamps.length >= RATE_LIMIT) return false;
+      callTimestamps.push(now);
+      return true;
+    }
+
+    // ============================================
+    // POSTMESSAGE SECURITY LAYER
+    // ============================================
+    window.addEventListener('message', function(event) {
+      var frame = document.getElementById('addin-frame');
+      if (!frame || !frame.contentWindow) return;
+
+      // Validate source: must be our iframe, not any other window
+      if (event.source !== frame.contentWindow) return;
+
+      var data = event.data;
+      if (!data || typeof data !== 'object') return;
+
+      // Bridge handshake: inner page signals ready, container replies with session
+      if (data.type === 'geotab-ready') {
+        frame.contentWindow.postMessage({ type: 'geotab-init', session: geotabSession }, '*');
+        return;
+      }
+
+      if (data.type !== 'geotab-call') return;
+
+      var id       = data.id;
+      var method   = data.method || 'Get';
+      var params   = data.params || {};
+      var typeName = params.typeName || null;
+
+      // Track for Block panel
+      var newTn = typeName && !knownTypeNames.has(typeName);
+      if (typeName) knownTypeNames.add(typeName);
+      knownMethods.add(method);
+      if (newTn && activeTab === 'block') renderBlockPanel();
+
+      // Rate limit
+      if (!checkRateLimit()) {
+        document.getElementById('rate-warning').style.display = '';
+        setTimeout(function() { document.getElementById('rate-warning').style.display = 'none'; }, 2500);
+        addTimelineEntry(method, typeName, null, null, false, true, false);
+        recordStat(method, typeName, 'blocked');
+        frame.contentWindow.postMessage(
+          { type: 'geotab-error', id: id, error: 'Rate limit exceeded (20 calls/s)' }, '*');
+        return;
+      }
+
+      // Block list
+      if (blockedTypeNames[typeName] || blockedMethods[method]) {
+        addTimelineEntry(method, typeName, null, null, true, false, false);
+        recordStat(method, typeName, 'blocked');
+        frame.contentWindow.postMessage(
+          { type: 'geotab-error', id: id, error: 'Blocked by container policy' }, '*');
+        return;
+      }
+
+      // Forward to real Geotab API
+      if (!geotabApi) {
+        frame.contentWindow.postMessage(
+          { type: 'geotab-error', id: id, error: 'Geotab API not initialized' }, '*');
+        return;
+      }
+
+      var t0 = Date.now();
+      geotabApi.call(method, params,
+        function(result) {
+          var ms = Date.now() - t0;
+          var count = Array.isArray(result) ? result.length
+                    : (result !== null && result !== undefined ? 1 : 0);
+          addTimelineEntry(method, typeName, count, ms, false, false, false);
+          recordStat(method, typeName, 'ok');
+          var safe; try { safe = JSON.parse(JSON.stringify(result)); } catch(e) { safe = null; }
+          frame.contentWindow.postMessage({ type: 'geotab-result', id: id, result: safe }, '*');
+        },
+        function(error) {
+          var ms = Date.now() - t0;
+          addTimelineEntry(method, typeName, null, ms, false, false, true);
+          recordStat(method, typeName, 'err');
+          var msg = typeof error === 'string' ? error
+                  : (error && error.message ? error.message : JSON.stringify(error));
+          frame.contentWindow.postMessage({ type: 'geotab-error', id: id, error: msg }, '*');
+        }
+      );
+    });
+
+    // ============================================
+    // STATIC CODE SCAN
+    // ============================================
+    var RISKY_PATTERNS = [
+      { re: /\beval\s*\(/,                              label: 'eval()' },
+      { re: /document\.cookie/,                         label: 'document.cookie' },
+      { re: /localStorage/,                             label: 'localStorage' },
+      { re: /sessionStorage/,                           label: 'sessionStorage' },
+      { re: /new\s+XMLHttpRequest|fetch\s*\(/,          label: 'direct fetch/XHR' },
+      { re: /password\s*[:=]|secret\s*[:=]|apikey\s*[:=]/i, label: 'hardcoded credential' }
+    ];
+
+    function scanCode(html) {
+      return RISKY_PATTERNS.filter(function(p) { return p.re.test(html); })
+                           .map(function(p) { return p.label; });
+    }
+
+    // ============================================
+    // BRIDGE INJECTION (CORS path)
+    // ============================================
+    function injectBridge(html, baseUrl) {
+      // Add <base> so relative assets resolve correctly from srcdoc.
+      // Embed bridge inline so there is no external request and no load-order race.
+      var base   = '<base href="' + baseUrl + '">';
+      var script = '<script>' + BRIDGE_CODE + '<\/script>';
+      var inject = base + '\n' + script;
+
+      if (/<head[^>]*>/i.test(html)) {
+        return html.replace(/(<head[^>]*>)/i, '$1\n' + inject);
+      }
+      if (/<body[^>]*>/i.test(html)) {
+        return html.replace(/(<body[^>]*>)/i, '$1\n' + inject);
+      }
+      return inject + '\n' + html;
+    }
+
+    // ============================================
+    // LOAD URL
+    // ============================================
+    function loadPreset(url) {
+      if (!url) return;
+      document.getElementById('url-input').value = url;
+      document.getElementById('preset-select').value = '';
+      loadUrl();
+    }
+
+    function loadUrl() {
+      var url = (document.getElementById('url-input').value || '').trim();
+      if (!url) return;
+
+      var frame     = document.getElementById('addin-frame');
+      var dot       = document.getElementById('status-dot');
+      var statusTxt = document.getElementById('status-text');
+      var badges    = document.getElementById('security-badges');
+      var corsDiv   = document.getElementById('cors-instructions');
+
+      dot.className = '';
+      statusTxt.textContent = 'Loading…';
+      badges.innerHTML = '';
+      corsDiv.style.display = 'none';
+
+      // Clear stats / timeline for the new load
+      stats = {};
+      timeline = [];
+      if (activeTab === 'timeline') renderTimeline();
+      if (activeTab === 'stats') renderStats();
+
+      // Try CORS fetch first
+      fetch(url, { mode: 'cors' })
+        .then(function(resp) {
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
+          return resp.text();
+        })
+        .then(function(html) {
+          var findings = scanCode(html);
+
+          // Build badge set
+          var badgeHtml = '';
+          if (findings.length === 0) {
+            badgeHtml += '<span class="badge badge-ok">clean scan</span>';
+          } else {
+            badgeHtml += '<span class="badge badge-warn">scan: ' + findings.join(', ') + '</span>';
+          }
+          badgeHtml += '<span class="badge badge-ok">bridge injected</span>';
+          badges.innerHTML = badgeHtml;
+
+          // Inject bridge and load via srcdoc
+          frame.srcdoc = injectBridge(html, url);
+
+          dot.className = 'ok';
+          statusTxt.textContent = 'Bridge active (CORS) — ' + url;
+        })
+        .catch(function() {
+          // CORS blocked — load directly, show instructions
+          corsDiv.style.display = '';
+
+          // Clear srcdoc, set src
+          frame.removeAttribute('srcdoc');
+          frame.src = url;
+
+          badges.innerHTML = '<span class="badge badge-warn">no auto-inject (no CORS)</span>';
+          dot.className = 'warn';
+          statusTxt.textContent = 'Direct load — include geotab-bridge.js for bridge support — ' + url;
+        });
+    }
+
+    // ============================================
+    // DRAG-TO-RESIZE MONITOR PANEL
+    // ============================================
+    (function() {
+      var handle  = document.getElementById('resize');
+      var monitor = document.getElementById('monitor');
+      var drag = false, startX, startW;
+
+      handle.addEventListener('mousedown', function(e) {
+        drag = true; startX = e.clientX; startW = monitor.offsetWidth;
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      });
+      document.addEventListener('mousemove', function(e) {
+        if (!drag) return;
+        var w = Math.max(160, Math.min(600, startW + e.clientX - startX));
+        monitor.style.width = w + 'px';
+      });
+      document.addEventListener('mouseup', function() {
+        drag = false;
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      });
+    })();
+
+    // ============================================
+    // UTILITY
+    // ============================================
+    function esc(s) {
+      return String(s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+    }
+
+    // ============================================
+    // GEOTAB ADD-IN REGISTRATION
+    // ============================================
+    geotab.addin['universal-container'] = function() {
+      return {
+        initialize: function(api, state, callback) {
+          geotabApi = api;
+          api.getSession(function(credentials, server) {
+            geotabSession = { credentials: credentials, server: server };
+          });
+          renderBlockPanel();
+          callback();
+        },
+        focus: function() {},
+        blur: function() {}
+      };
+    };
+  </script>
+</body>
+</html>
