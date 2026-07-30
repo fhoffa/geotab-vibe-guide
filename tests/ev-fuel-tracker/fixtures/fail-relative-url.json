@@ -1,0 +1,11 @@
+{
+  "_comment": "Should fail: items url is relative, not an absolute GitHub Pages URL",
+  "name": "EV Mix and Fuel Tracker v0.2",
+  "supportEmail": "https://github.com/fhoffa/geotab-vibe-guide",
+  "version": "0.2",
+  "items": [{
+    "url": "ev_tracker_v2.html",
+    "path": "ActivityLink",
+    "menuName": { "en": "EV & Fuel Tracker v0.2" }
+  }]
+}

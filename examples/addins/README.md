@@ -78,6 +78,32 @@ Side-by-side comparison of Ace natural language queries vs direct API calls.
 
 **Type:** External hosted
 
+### ev-fuel-tracker/ (EV Mix and Fuel Tracker v0.2)
+
+Live fleet health dashboard that classifies every vehicle as EV or Gas/ICE and surfaces any vehicle below 20% fuel or battery.
+
+**Features:**
+- Summary cards: total fleet, EV count, Gas count with percentages
+- Animated fleet-mix progress bar (EV vs Gas split)
+- Alert table: vehicles below 20% with live speed and clickable device links
+- Built-in debug panel with copy-to-clipboard for AI analysis
+
+**Files:**
+- `ev_tracker_v2.html` — readable source HTML for development/review
+- `ev-fuel-tracker-config.json` — **paste-ready embedded config** (no hosting needed)
+- `README.md` — detailed documentation
+
+**Type:** Embedded (no hosting required)
+
+**Try it:**
+1. Copy entire contents of `ev-fuel-tracker/ev-fuel-tracker-config.json`
+2. In MyGeotab, click your user profile icon → Administration → System → System Settings → Add-Ins
+3. Enable "Allow unverified Add-Ins" → Yes
+4. Click "New Add-In" → "Configuration" tab
+5. Paste and save, then hard-refresh
+
+See `ev-fuel-tracker/README.md` for full details and extension ideas.
+
 ### embedded-* (No Hosting Required!)
 Embedded add-in with everything in the JSON configuration.
 
