@@ -69,6 +69,22 @@ Dashboard with vehicle list, map navigation, and Ace AI integration.
 
 **Type:** Both external hosted and embedded versions available
 
+### fleet-map-speed-emoji.* (Fleet Speed Map)
+Live Leaflet map showing every vehicle as an emoji "speed animal" based on its
+current speed, plus a synced vehicle list and counter.
+
+**Features:**
+- Speed-based emoji markers: 🦥 stopped, 🐢 slow, 🐇 moderate, 🐎 fast, 🐆 very fast, ❓ no GPS
+- Vehicle list synced with the map (click a name to fly to its marker or open its popup)
+- Markers and popups refresh in place as new position/speed data loads
+- Debug panel with log toggle and copy data
+
+**Files:**
+- `fleet-map-speed-emoji.html` - Main HTML page
+- `fleet-map-speed-emoji-config.json` - Embedded config (no hosting needed)
+
+**Type:** Both external hosted and embedded versions available
+
 ### ace-api-comparison.* (Ace vs Direct API)
 Side-by-side comparison of Ace natural language queries vs direct API calls.
 

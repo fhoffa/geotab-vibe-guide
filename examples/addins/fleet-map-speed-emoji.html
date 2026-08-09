@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset='utf-8'>
+  <title>Fleet Speed Map</title>
+  <script src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'></script>
+  <script>
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+  </script>
+</head>
+<body style='margin:0;padding:20px;font-family:Arial,sans-serif;background:#f4f6f9;box-sizing:border-box;'>
+
+  <div style='display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;'>
+    <h1 style='color:#1e293b;margin:0;font-size:24px;'>Fleet Speed Map</h1>
+    <div style='background:#ffffff;padding:10px 20px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);display:flex;align-items:center;gap:15px;'>
+      <span style='font-size:14px;color:#64748b;'>Total Vehicles:</span>
+      <span id='count' style='font-size:24px;font-weight:bold;color:#2563eb;'>Loading...</span>
+    </div>
+  </div>
+
+  <div style='background:#ffffff;padding:8px 15px;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:20px;font-size:13px;color:#475569;display:flex;gap:18px;flex-wrap:wrap;'>
+    <span>🦥 Stopped</span>
+    <span>🐢 0-30 km/h</span>
+    <span>🐇 30-70 km/h</span>
+    <span>🐎 70-100 km/h</span>
+    <span>🐆 100+ km/h</span>
+    <span>❓ No GPS</span>
+  </div>
+
+  <div style='display:grid;grid-template-columns:2fr 1fr;gap:20px;height:calc(100vh - 190px);min-height:500px;'>
+    <div id='map' style='width:100%;height:100%;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.1);background:#e2e8f0;min-height:400px;'></div>
+    <div style='background:#ffffff;border-radius:8px;padding:15px;box-shadow:0 1px 3px rgba(0,0,0,0.1);overflow-y:auto;'>
+      <h2 style='font-size:16px;margin-top:0;color:#334155;'>Vehicles</h2>
+      <div id='vehicle-list' style='color:#64748b;'>Loading...</div>
+    </div>
+  </div>
+
+  <div id='debug-toggle' style='position:fixed;bottom:0;left:0;right:0;text-align:center;'>
+    <button onclick="var d=document.getElementById('debug-log');d.style.display=d.style.display==='none'?'block':'none';" style='background:#e74c3c;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;'>Toggle Debug Log</button>
+    <button onclick='copyDebugData()' style='background:#f39c12;color:#fff;border:none;padding:4px 16px;cursor:pointer;font-size:12px;border-radius:4px 4px 0 0;margin-left:4px;'>Copy Debug Data</button>
+    <pre id='debug-log' style='display:none;background:#1e1e1e;color:#0f0;padding:10px;margin:0;max-height:200px;overflow-y:auto;text-align:left;font-size:11px;'></pre>
+  </div>
+
+  <script>
+    var _debugData = {};
+
+    function debugLog(msg) {
+      var el = document.getElementById('debug-log');
+      if (el) {
+        el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n';
+      }
+    }
+
+    function debugSample(key, arr) {
+      _debugData[key] = { total: arr.length, sample: arr.slice(0, 10) };
+    }
+
+    function copyDebugData() {
+      var t = document.createElement('textarea');
+      t.value = JSON.stringify(_debugData, null, 2);
+      document.body.appendChild(t);
+      t.select();
+      document.execCommand('copy');
+      document.body.removeChild(t);
+      alert('Debug data copied to clipboard!');
+    }
+
+    // "Speed animal" thresholds (km/h) used for the map emoji markers.
+    function speedEmoji(hasGps, speedKmh) {
+      if (!hasGps) return '❓';
+      if (speedKmh <= 0) return '🦥';
+      if (speedKmh <= 30) return '🐢';
+      if (speedKmh <= 70) return '🐇';
+      if (speedKmh <= 100) return '🐎';
+      return '🐆';
+    }
+
+    function emojiIcon(emoji) {
+      return L.divIcon({
+        className: '',
+        html: '<div style="font-size:26px;line-height:26px;text-align:center;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.45));">' + emoji + '</div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15]
+      });
+    }
+
+    function hasGps(lat, lng) {
+      return typeof lat === 'number' && typeof lng === 'number';
+    }
+
+    function buildPopup(device, speed, gpsOk) {
+      var wrap = document.createElement('div');
+      var title = document.createElement('b');
+      title.textContent = device.name || 'Vehicle';
+      wrap.appendChild(title);
+      wrap.appendChild(document.createElement('br'));
+      wrap.appendChild(document.createTextNode('Speed: ' + (gpsOk ? speed + ' km/h' : 'unknown')));
+      wrap.appendChild(document.createElement('br'));
+      var link = document.createElement('a');
+      link.href = '#';
+      link.textContent = 'View Details';
+      link.onclick = function (e) {
+        e.preventDefault();
+        window.parent.location.hash = 'device,id:' + device.id;
+      };
+      wrap.appendChild(link);
+      return wrap;
+    }
+
+    geotab.addin['fleet-speed-map-v03'] = function () {
+      var map = null;
+      var markers = {};
+
+      function initMap() {
+        if (!map && typeof L !== 'undefined') {
+          map = L.map('map').setView([39.8283, -98.5795], 4);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: 'OpenStreetMap'
+          }).addTo(map);
+        }
+      }
+
+      function loadData(api) {
+        initMap();
+        api.multiCall([
+          ['Get', { typeName: 'Device' }],
+          ['Get', { typeName: 'DeviceStatusInfo' }]
+        ], function (results) {
+          var devices = results[0] || [];
+          var statuses = results[1] || [];
+          document.getElementById('count').textContent = devices.length;
+          debugLog('Loaded ' + devices.length + ' devices and ' + statuses.length + ' status records');
+          debugSample('devices', devices);
+          debugSample('statuses', statuses);
+
+          var statusMap = {};
+          statuses.forEach(function (s) {
+            if (s.device && s.device.id) {
+              statusMap[s.device.id] = s;
+            }
+          });
+
+          var listContainer = document.getElementById('vehicle-list');
+          listContainer.innerHTML = '';
+          if (devices.length === 0) {
+            listContainer.innerHTML = '<div style="color:#94a3b8;">No vehicles found.</div>';
+            return;
+          }
+
+          var bounds = [];
+          var seenIds = {};
+
+          devices.forEach(function (device) {
+            var s = statusMap[device.id];
+            var lat = s ? s.latitude : null;
+            var lng = s ? s.longitude : null;
+            var gpsOk = hasGps(lat, lng);
+            var speed = s ? Math.round(s.speed || 0) : 0;
+            var emoji = speedEmoji(gpsOk, speed);
+            seenIds[device.id] = true;
+
+            var item = document.createElement('div');
+            item.style.cssText = 'padding:8px 0;border-bottom:1px solid #f1f5f9;display:flex;justify-content:space-between;align-items:center;';
+
+            var link = document.createElement('a');
+            link.textContent = device.name || 'Unnamed Vehicle';
+            link.href = '#';
+            link.style.cssText = 'color:#2563eb;cursor:pointer;text-decoration:none;font-weight:500;';
+            link.onclick = function (e) {
+              e.preventDefault();
+              if (gpsOk && map) {
+                map.setView([lat, lng], 14);
+                if (markers[device.id]) {
+                  markers[device.id].openPopup();
+                }
+              } else {
+                window.parent.location.hash = 'device,id:' + device.id;
+              }
+            };
+            item.appendChild(link);
+
+            var badge = document.createElement('span');
+            badge.style.cssText = 'font-size:12px;color:#64748b;background:#f1f5f9;padding:2px 6px;border-radius:4px;';
+            badge.textContent = emoji + ' ' + (gpsOk ? speed + ' km/h' : 'No GPS');
+            item.appendChild(badge);
+
+            listContainer.appendChild(item);
+
+            if (gpsOk && map) {
+              bounds.push([lat, lng]);
+              var icon = emojiIcon(emoji);
+              var popup = buildPopup(device, speed, gpsOk);
+              if (!markers[device.id]) {
+                markers[device.id] = L.marker([lat, lng], { icon: icon }).addTo(map).bindPopup(popup);
+              } else {
+                markers[device.id].setLatLng([lat, lng]).setIcon(icon).setPopupContent(popup);
+              }
+            }
+          });
+
+          // Remove markers for devices that no longer report a position.
+          Object.keys(markers).forEach(function (id) {
+            if (!seenIds[id]) {
+              map.removeLayer(markers[id]);
+              delete markers[id];
+            }
+          });
+
+          if (bounds.length > 0 && map) {
+            map.fitBounds(bounds, { padding: [30, 30] });
+          }
+        }, function (err) {
+          document.getElementById('count').textContent = 'Error';
+          document.getElementById('vehicle-list').innerHTML = '<div style="color:#ef4444;">Error loading fleet data</div>';
+          debugLog('ERROR: ' + (err.message || err));
+          _debugData.lastError = String(err.message || err);
+        });
+      }
+
+      return {
+        initialize: function (api, state, callback) {
+          loadData(api);
+          callback();
+        },
+        focus: function (api, state) {
+          if (map) {
+            map.invalidateSize();
+          }
+        },
+        blur: function (api, state) {}
+      };
+    };
+  </script>
+</body>
+</html>
