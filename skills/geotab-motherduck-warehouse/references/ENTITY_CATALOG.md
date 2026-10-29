@@ -1,6 +1,6 @@
 # Entity catalog: what to replicate beyond GPS
 
-A Geotab database is **52 entity types** (`mcp__Geotab_MCP__ListEntities`), not just GPS. A good
+A Geotab database is **52 entity types** (`mcp__MyGeotab_MCP__ListEntities` (older clients: `mcp__Geotab_MCP__…`)), not just GPS. A good
 warehouse mirrors a handful of **facts** (high-volume, time-series) and **dimensions** (slow-changing
 reference data). Pick the channel per entity.
 
@@ -106,7 +106,7 @@ see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the 
 > subset is tiny. Small dims stay on `Get` (exact, reproducible). (Bulk-CSV `Diagnostic` quirks: Ace
 > returned 65,772 vs `GetCountOf`=65,757, couldn't return `Controller` → loaded NULL, uppercased `SOURCE`.)
 
-`mcp__Geotab_MCP__Get(database, typeName, resultsLimit, propertySelector, search, sort)`. Returns
+`mcp__MyGeotab_MCP__Get(database, typeName, resultsLimit, propertySelector, search, sort)`. Returns
 JSON. Validated on `demo_fh4`:
 
 ```

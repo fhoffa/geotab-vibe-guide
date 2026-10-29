@@ -369,7 +369,7 @@ re-pulling from Ace. Use DuckDB's `INSERT INTO tbl BY NAME SELECT …` when name
 
 ## Dimensions from `Get` (JSON, not CSV)
 
-`mcp__Geotab_MCP__Get` returns JSON. Two ways to land it:
+`mcp__MyGeotab_MCP__Get` (older clients: `mcp__Geotab_MCP__Get`) returns JSON. Two ways to land it:
 
 - **Small/medium (≤ a few thousand):** read the JSON result and build an `INSERT … VALUES`, or write
   it to a local `.json`/`.csv` in the scratchpad and `read_json_auto`/`read_csv_auto` it.

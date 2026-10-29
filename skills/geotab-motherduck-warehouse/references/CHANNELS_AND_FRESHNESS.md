@@ -42,7 +42,7 @@ load, not because Ace is slow. Measure the two separately.)
 |---------|------|----------------------|-------|----------|
 | **Live snapshot** | `Get DeviceStatusInfo` | **~sub-second** (current position/speed/ignition per device) | JSON, one row per device | live map, "where is everything right now" |
 | **Raw event read** | `Get LogRecord` (+ window) | **to ~now** (full-resolution raw rows; b3 to `20:40+` at `~20:48`) | JSON, cursor-paginated | a specific device/window, gap-filling, an independent oracle |
-| **Bulk export** | `GetAceResults` → CSV URL | **tens of s – ~2 min** (continuous streams) | signed CSV, whole window in one file | warehouse bulk: daily incremental + historical backfill |
+| **Bulk export** | `AskDataAgent` (legacy: `GetAceResults`) → CSV URL | **tens of s – ~2 min** (continuous streams; data agent GPS ≈16–25 s on 2026-10-29) | signed CSV, whole window in one file | warehouse bulk: daily incremental + historical backfill |
 
 So all three are effectively current; they differ in **shape and volume**, not in being "live vs late."
 `DeviceStatusInfo` is a *snapshot* (it has no history — don't historize it). `Get LogRecord` is full
@@ -54,7 +54,7 @@ one CSV, which is why it's the bulk workhorse despite the sub-2-min lag and non-
 
 Read-freshness (above) is one axis; **how fast a *change* reaches Ace** is another — and for
 **dimension/config data they are wildly different.** Measured 2026-06-29: created a new geofence
-(`Zone` "ZZ_ACE_PROBE_ALPHA") via the **Get API** write (`mcp__Geotab_MCP__Add`) at `21:41:04`. It was
+(`Zone` "ZZ_ACE_PROBE_ALPHA") via the **Get API** write (`mcp__MyGeotab_MCP__Add`; older: `mcp__Geotab_MCP__Add`) at `21:41:04`. It was
 visible **instantly** through the **Get API** (`Get` — the write is synchronous), but **Ace**
 (`GetAceResults`) **lagged ~15–30 min**: it reported 0 zones at every poll up to T0+14 min (`21:55`) and
 first returned the zone at T0+~29 min (`22:09`). So **Ace's** dimension/config tables sync on a slow,
@@ -67,6 +67,15 @@ periodic cadence (here **between 14 and 29 minutes**), while telematics streams 
 > the "dimensions via `Get`" rule (the first being exactness/`IsTracked`). Use Ace for *telematics
 > volume*, `Get` for *current truth*. (Telematics history in Ace is fine — that pipeline is near-real-time;
 > it's the reference/config tables that lag.)
+
+### Data agent re-measurement (2026-10-29, `demo_fh8`)
+
+Two samples of the data agent's `GpsLogs` against wall-clock at query time: latest point `23:40:48`
+(query ≈`23:41:11`, **≈23 s**) and `23:47:19` (query ≈`23:47:35`, **≈16 s**) — consistent with the table
+above. `freshness.status` in the response was `fresh` on every telematics call (`unknown` on a catalog
+lookup). The upper-bound clip (#20) was **not** reproduced: all three "…and now" windows ended at
+`CURRENT_TIMESTAMP()`. n is small — the "don't use the agent as a watermark oracle" advice stands
+(watermark from `max(silver)`). Write→visible propagation (#18) for the data agent was **not re-probed**.
 
 ## The four loading modes — pick by question, not by habit
 
@@ -116,7 +125,7 @@ load. See the prompting rules in [`ACE_TO_CSV.md`](ACE_TO_CSV.md).
 
 ## `GetCountOf` (Get API, **not** Ace) is not a windowed oracle for facts
 
-> This is a **Get API** quirk — the classic `mcp__Geotab_MCP__GetCountOf` method — **not** an
+> This is a **Get API** quirk — the classic `mcp__MyGeotab_MCP__GetCountOf` method — **not** an
 > Ace/`GetAceResults` behavior. (Ace's own count caveat — source-table *selection* — is two sections down.)
 
 `GetCountOf` ignores the `fromDate`/`toDate`/`deviceSearch` in the search for high-volume entities:

@@ -1,5 +1,12 @@
 # Ace → CSV: extracting bulk Geotab data for the warehouse
 
+> **v2.0 note (2026-10-29):** the official MyGeotab MCP now exposes a **data agent**
+> (`AskDataAgent`) that replaces the `GetAceResults` flow below. Start with
+> [`DATA_AGENT_TO_CSV.md`](DATA_AGENT_TO_CSV.md). **This file remains the canonical, numbered quirk
+> catalog** (the quirks come from the same LLM-generated-SQL engine family) and the field guide if your
+> client still exposes `GetAceResults`. Each quirk below is annotated with its observed status on the
+> data agent in the table that precedes the catalog.
+
 Geotab **Ace** is the bulk-export channel. You ask a natural-language question; Ace generates SQL,
 runs it, and **always materializes the result to a signed CSV on Google Cloud Storage**. You feed
 that URL straight into MotherDuck. This file is the field guide to doing that reliably.
@@ -210,6 +217,36 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
 > small sample, not guarantees**. The safe engineering stance is the same for every quirk: **read the
 > returned SQL on every load, land raw to bronze, dedup in silver** — so a surprise costs nothing.
 
+### Status of each quirk on the data agent (`AskDataAgent`, measured 2026-10-29, `demo_fh8`, 16 calls)
+
+Legend: ✅ **reproduced** (still handle it) · ➖ **not observed** (keep the cheap guard anyway) · 🔄 **changed shape** · 🆕 new.
+Evidence: probes P19–P27 in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md) §1b/§2/§3.
+
+| # | Data-agent status | One-line observation |
+|---|-------------------|----------------------|
+| 1 | 🔄 gone | Response is ~5–10 KB structured JSON (`sql`, `data_preview`, `row_count`, `data_uri`); nothing to spill or grep |
+| 2 | ➖ | One `data_uri` string; 368,764 rows / 26 MB came back as **one** file. Still harvest "all URLs" if a client ever returns more |
+| 3 | 🔄 | Preview is **20** rows, not 10 |
+| 4 | ➖ | Not checked in JSON; CSV nulls untested |
+| 5 | 🔄 | No ` UTC` suffix: `UTC_*` columns carry `+00:00`; `GpsDateTime` is naive ISO. `read_csv_auto`/`TRY_CAST` handle both |
+| 6 | ➖ | 0 duplicate rows in 3 downloaded CSVs (GPS 11,599; StatusData 368,764; GPS 2-day 472,930 not downloaded). Joins use the **active-window** form. Keep the dedup |
+| 7 | ✅ | `Data` came back `DATA` |
+| 8 | ➖ | "Give me a CSV download link…" kept the exact columns — the degradation is **not** reproduced |
+| 9 | 🔄 | No ~33 s floor evident; instead a **~60 s tool timeout** (2-day StatusData and one trips call timed out; same trips prompt then passed) |
+| 10 | 🔄 | No chat state. Calls are stateless; `delegation_context` carries a follow-up |
+| 11 | ✅ | Default `IsTracked = TRUE` zeroed the fleet (0 vehicles/0 trips); unpinned distance → `VehicleKPI_Daily`, `Local_Date`, miles |
+| 12 | ✅/➖ | Predicate guards still injected (widening only, SQL varies run to run); joins were always LEFT + **active-window** `BETWEEN` — no fan-out seen |
+| 13 | ✅ | Unpinned "total distance yesterday" → `SUM(Distance_Km) * 0.621` (miles) |
+| 14 | ✅ | Activity filters not seen, but a **new validity filter `GpsValid = 1`** was injected on a "last 2 days" GPS ask |
+| 15 | ✅ | "engine status data readings" → queried the `Diagnostic` **catalog** (120 rows, `success`) instead of `StatusData` |
+| 16 | ➖ | Not re-probed |
+| 17 | ➖ | 0 `invalid_value` 400s in 16 calls |
+| 18 | ➖ | Not re-probed (Add→visible lag) |
+| 19 | ➖ | Not applicable to this connector shape (one server). Still preflight |
+| 20 | ➖ | Not reproduced: 3 "…and now" windows all bounded by `CURRENT_TIMESTAMP()`/now (n=3; keep the guard) |
+| 21 | 🆕 | `status: success` with 0 rows / empty `data_uri` |
+| 22 | 🆕 | Agent-derived columns can be wrong (negative driving minutes) |
+
 ### 🔴 Critical — silently produces wrong/incomplete data (handle these or the mirror is quietly wrong)
 
 - **#2 — A signed CSV URL is *always* returned; it *shards* only for large exports** (size-dependent).
@@ -263,6 +300,13 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
   both DBs — full prompt + all 6 generated SQL/answers in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md) §3 run
   archive 2026-06-30.)*
 
+- **#21 — A "successful" answer can be an empty one (data agent).** `status: success` with `row_count: 0`,
+  `data_uri: ""`, `turn_id: -1`, or a scalar `0` — produced by an injected `IsTracked = TRUE` /
+  `Device_ActiveTo >= now` filter on a fleet whose devices are `IsTracked = false` (all 50 on `demo_fh8`).
+  Nothing errors, so a loop would load 0 rows and move the watermark. **Treat `row_count = 0` (or a 0/0
+  scalar) on a window you know has data as a failure:** read `sql`, forbid the filter, re-ask; never advance
+  a watermark on an empty response without a `Get`-side sanity count. *(P19/P20; ev #21.)*
+
 ### 🟡 Operational — derails or misleads the run (usually visible / recoverable)
 
 - **#7 — Column-name honoring is inconsistent** (`day` came back `DAY`; bulk uppercased `DATA`/`SOURCE`).
@@ -284,6 +328,12 @@ proof; don't carry it while managing the warehouse. All point-in-time (2026-06-2
 - **#19 — ChatGPT: both MCP servers must be the same mode** (both official or both developer-mode), or
   the Geotab connector can drop mid-session → empty-bronze warehouse. **Preflight Ace with a tiny call
   before any DDL.** (Non-negotiable #13.)
+
+- **#22 — Agent-derived columns are the agent's arithmetic, not Geotab's.** Asked for
+  `driving_duration_minutes` it computed `(TripDuration − IdlingDuration)/60` — **negative** on short trips
+  (−3.52, −1.12, −0.05 min in the first 20 rows) and `distance_km` was `ROUND(TripDistance_Km, 3)`.
+  **Ask for the raw source columns** (`TripDuration`, `IdlingDuration`, `TripDistance_Km`) and derive in
+  silver where you control the formula and can test it. *(P21; ev #22.)*
 
 ### ⚪ Informational — good to know, no data hazard
 

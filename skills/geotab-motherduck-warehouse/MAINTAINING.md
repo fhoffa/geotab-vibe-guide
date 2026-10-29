@@ -6,7 +6,7 @@ obvious from a single file. If you change one of these on purpose, update this d
 
 ## Quirk catalog (the most-edited surface)
 
-The Ace quirk catalog lives in [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md); a lean mirror is in
+The quirk catalog (Ace + data agent; **22 quirks as of v2.0**, `#21`/`#22` added) lives in [`references/ACE_TO_CSV.md`](references/ACE_TO_CSV.md); a lean mirror is in
 [`SKILL.md`](SKILL.md); the evidence behind it is in [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) §1b.
 
 - **Numbers (`#1…#N`) are stable IDs.** They are *grouped by severity* (🔴 Critical / 🟡 Operational /
@@ -14,7 +14,7 @@ The Ace quirk catalog lives in [`references/ACE_TO_CSV.md`](references/ACE_TO_CS
   must keep resolving.
 - **Extend, don't renumber.** Folding a related finding into an existing quirk (e.g. fan-out → #12) is
   preferred. A genuinely new quirk takes the **next free number**, a severity bucket, a `§1b` evidence-map
-  row, and a bump of the `N-quirk` count in both `SKILL.md` and `ACE_TO_CSV.md`.
+  row, and a bump of the `N-quirk` count in both `SKILL.md` and `ACE_TO_CSV.md`, **and a row in the "Status of each quirk on the data agent" table** in `ACE_TO_CSV.md`.
 - **Keep the catalog lean** = *what to be aware of + why + the one action*. **Measurements, SQL, and
   `chat_id`s do not belong in the catalog body** — they go in `EVIDENCE_LOG.md` §1b (keyed by the same
   number) and/or §3 run archives. The catalog points there. This keeps the decision-maker context small.
@@ -25,6 +25,12 @@ The Ace quirk catalog lives in [`references/ACE_TO_CSV.md`](references/ACE_TO_CS
 - The **"lint the returned SQL"** claim is scoped to **semantic** issues (source table, predicates, units,
   filters, window bounds). Data-shape quirks — **#2 sharded URLs, #6 duplicate rows** — are *not* visible
   in the SQL; don't broaden the claim to "catches everything."
+
+## Archive convention
+
+Before a major rewrite, snapshot the live skill to `archive/v<old-version>/` (verbatim: `SKILL.md`,
+`MAINTAINING.md`, `IMPROVEMENT_PLAN.md`, `references/`), add a row to `archive/README.md`, and write
+`CHANGES_v<old>_to_v<new>.md` at the skill root. Never edit archived files. v1.1 → v2.0 is the first.
 
 ## Evidence discipline
 
@@ -49,6 +55,11 @@ The Ace quirk catalog lives in [`references/ACE_TO_CSV.md`](references/ACE_TO_CS
   `ALTER TABLE … DROP COLUMN IF EXISTS _source_db`) so appends don't hit a column-count mismatch.
 
 ## Reference databases (current state — for live validation)
+
+**Geotab side (v2.0):** `demo_fh8` on `my.geotab.com` (50 devices, `IsTracked=false`, `activeFrom 2026-10-01`) is the
+database the data-agent probes P19–P27 ran on. Geotab DB names are MyGeotab login names — **not** the MotherDuck
+`geotab_<source>` names below.
+
 
 `geotab_demo_fh4` and `geotab_Demo_fh_vegas4` are the live mirrors the evidence was measured on. As of the
 last cleanup: `_source_db` has been dropped from every table; **`silver.status_data`** is canonical (the

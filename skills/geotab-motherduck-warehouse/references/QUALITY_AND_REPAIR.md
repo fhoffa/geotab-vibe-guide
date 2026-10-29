@@ -40,7 +40,7 @@ UNION ALL SELECT 'trips: device not in dim', count(DISTINCT t.DeviceId) FILTER (
 ```
 
 **Cross-source reconciliation (the strongest test) — but pick the right oracle.** `GetCountOf` here is
-the **Get API** method (`mcp__Geotab_MCP__GetCountOf`), **not** Ace/`GetAceResults`. It is an
+the **Get API** method (`mcp__MyGeotab_MCP__GetCountOf`), **not** Ace/`GetAceResults`. It is an
 exact oracle **only for dimensions**: `GetCountOf Device = 50` and `dim_device = 50` ✓. For
 high-volume **facts it is useless as a windowed check — it ignores the date/device search entirely**:
 two different `LogRecord` windows for one device both returned **16,098,152** (the whole table), and a
@@ -57,8 +57,8 @@ was stable at 49 across 3 runs while a re-phrasing answered 47 from `Trip`; see 
 
 ## 2. Predict problems by reading Ace's generated SQL
 
-The Ace MCP response contains the **SQL Ace actually ran** (grep it from the spilled file — see
-[`ACE_TO_CSV.md`](ACE_TO_CSV.md)). Reading it is a *pre-load* quality gate: most semantic problems are
+The data-agent response carries the **SQL it actually ran** as a plain `sql` field (the legacy Ace response
+buries it in a spilled file — see [`ACE_TO_CSV.md`](ACE_TO_CSV.md)). Reading it is a *pre-load* quality gate: most semantic problems are
 visible in the SQL before you ever look at a row. Lint the SQL for:
 
 | Look for in the SQL | Predicts | Example we saw |
@@ -69,7 +69,11 @@ visible in the SQL before you ever look at a row. Lint the SQL for:
 | `BETWEEN lo AND hi` | inclusive bounds | both ends included → boundary-day overlap/dupes |
 | `GROUP BY` / aggregate fns | you got rollups | a "raw rows" request silently aggregated |
 | unit math (`/1609.34`, `*1.609`) | unit surprises | miles computed internally, km returned |
-| column aliases | rename/case drift | `day`→`DAY`; default schema `UTC_GpsTimestamp` |
+| column aliases | rename/case drift | `day`→`DAY`; default schema `UTC_GpsTimestamp`; data agent `Data`→`DATA` |
+| `GpsValid = 1`, `IsTracked = TRUE` (data agent) | silently thinned or **emptied** result | a "last 2 days" GPS ask added `GpsValid = 1`; the default fleet count was 0 on a fleet with every `IsTracked=false` (#14/#21) |
+| `FROM Diagnostic` / a catalog table when you asked for readings | wrong source (intent misrouted) | "engine status data readings" → 120 catalog rows, `status: success` (#15) |
+| derived columns (`a − b`, `/60`, `ROUND`) | agent arithmetic you didn't specify | negative `driving_duration_minutes` (#22) — ask for raw columns |
+| `row_count = 0` / `data_uri ""` / `turn_id -1` | empty-success | treat as failure on a window known to have data (#21) |
 
 If the SQL is wrong for your intent, **no amount of downstream cleanup fixes it** — the data is the
 wrong shape. Re-ask (section 4). If the SQL is right, trust it and move to result-level checks.

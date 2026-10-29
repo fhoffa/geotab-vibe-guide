@@ -143,9 +143,12 @@ For each fact table, run the loop (pseudocode the agent executes with MCP calls)
 ```
 for table in [planet_gps_pings, trips, status_data, exception_events]:   # silver names
   1. watermark = MotherDuck:  SELECT max(<event_time>) FROM my_db.<silver>;
-  2. ace_file  = Geotab Ace:  GetAceResults(new_chat=true, database=<db>,
-                              prompt="<entity> rows after <watermark> UTC, columns: …")   # ~33–60s
-     url, cols = grep(ace_file)                                                            # never inline
+  2. resp      = Geotab data agent: AskDataAgent(database=<db>,                          # stateless; ≤60 s tool limit
+                              prompt="<entity> rows after <watermark> UTC, columns: …,
+                                      include every device; do not filter on IsTracked")
+     url, sql, n = resp.data_uri, resp.sql, resp.row_count                                 # plain fields, no spill
+     if n == 0 and the window should have data: STOP, read `sql`, re-ask (quirk #21)       # empty-success guard
+     # (legacy Ace: GetAceResults(new_chat=true, …) → grep url/columns/SQL out of the spilled file)
   2b. log 'started': INSERT INTO warehouse_ingest_log (…, batch_id, status='started',      # LOG-AHEAD: persist the
                      watermark_from, source_uri) VALUES (…);                               # window + gs:// path NOW —
                                                                                            # an interruption from here
@@ -171,7 +174,10 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
 - **After downtime** (missed several days): identical loop — one Ace call with the wider
   `after <old watermark>` window. If that window is huge (days × big fleet), chunk it the same way as
   historical backfill (below) so no single CSV is unwieldy. **A too-big pull doesn't just make an
-  unwieldy CSV — it can *time out at the MCP layer* before Ace returns** (observed 2026-07-03: a ~1.9M-row
+  unwieldy CSV — it can *time out at the MCP layer* before Ace returns** (the data agent behaves the same:
+  2026-10-29 a 2-day `StatusData` pull hit its 60 s tool limit while a 12 h window — 368,764 rows, 26 MB,
+  one file, 0 duplicate rows — returned; one identical trips pull timed out once and passed on retry, so
+  *retry once before shrinking*) (observed 2026-07-03: a ~1.9M-row
   open-ended `StatusData` catch-up timed out twice; ~200K–400K-row windows returned fine). Size chunks to
   the proven single-pull size for that entity (≈ what your daily volume × fan-out lands at — StatusData
   chunked cleanly at **12 h ≈ 800K CSV rows incl. the #12 2× fan-out**). If you delegate the chunk loop to

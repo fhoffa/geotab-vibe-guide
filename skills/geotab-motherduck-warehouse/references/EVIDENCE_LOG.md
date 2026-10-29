@@ -15,7 +15,7 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 > to the recommended layout **`geotab_demo_fh4`** with `bronze`/`silver`/`gold` schemas
 > (`my_db.bronze_gps_raw` → `geotab_demo_fh4.bronze.gps_raw`, etc.). The figures stand; only the location moved.
 
-> Tool legend: **Ace** = `mcp__Geotab_MCP__GetAceResults`; **Get API** = `mcp__Geotab_MCP__Get` /
+> Tool legend: **Data agent** = `mcp__MyGeotab_MCP__AskDataAgent` (v2.0, probes P19–P27); **Ace** = `mcp__Geotab_MCP__GetAceResults` (legacy); **Get API** = `mcp__Geotab_MCP__Get` /
 > `GetCountOf` / `Add` / `Remove`; **MotherDuck** = `mcp__MotherDuck__query` / `query_rw`.
 > `chat_id`s let you continue a past Ace chat *while it's still live*; the prompts are always re-runnable.
 
@@ -43,6 +43,15 @@ and a given fleet all change, so this file is built to **accumulate runs over ti
 | **P16** | Ace + MotherDuck | **trip re-split drift** (mutable fact) | After a forward trips load, re-pull the affected day's trips (`TripId`+start); diff the source `TripId` set vs `silver.trips` for that day (orphans = silver∖source, missing = source∖silver) | drift > 0 means trips re-split after load; expect it **clustered in the hours before the prior watermark**. Fix = reconcile (delete orphans + anti-join new ids), [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D |
 | **P17** | MotherDuck | **location-enrichment (ASOF) match quality** | Over one day: `SELECT count(*), count(g.GpsDateTime), median/quantile_cont(0.95)/max of epoch(ev.ts − g.GpsDateTime) FROM <silver status/fault day> ev ASOF LEFT JOIN silver.planet_gps_pings g ON ev.DeviceId = g.DeviceId AND ev.ts >= g.GpsDateTime` | high match % + seconds-scale median gap = enrichment viable ([`MEDALLION_LOADING.md`](MEDALLION_LOADING.md) §Gold ASOF); a big `max` is a parked/offline device (last-known position); unmatched rows = events before the GPS history starts |
 | **P18** | MotherDuck | **warehouse health, one query** | The `warehouse_health` union query ([`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §Health): per fact table `count(*)`, distinct devices, `max(event_time)`, hours behind now, cadence tag, + last `warehouse_ingest_log` row per table | `continuous` tables: hours-behind ≈ time since last run; `event` tables: judge by recent-window counts, not staleness; **`latest_event` advancing with no matching log row = an unlogged load** |
+| **P19** | Data agent | default-population filter (empty-success) | "How many vehicles are in the fleet, and how many trips did they complete in the last 7 days?" — then the same + "Include all devices; do not filter on IsTracked, and do not restrict trips by Device_ActiveFrom/Device_ActiveTo." | read `sql`: `IsTracked = TRUE` + `Device_ActiveTo >= now` → 0/0 `success`; with the prompt → 50 / 5,355 / 50 |
+| **P20** | Data agent | scope check vs ground truth | `AskDataAgent`: total trips + min/max start; distinct devices + latest GPS; vs `Get`/`GetCountOf Device` | 30,500 trips 2026-09-09→10-29; 50 devices = `GetCountOf Device` 50 |
+| **P21** | Data agent | raw-entity prompts (GPS, Trips) + CSV download | the §DATA_AGENT_TO_CSV copy-paste prompts; `curl` the `data_uri`; count rows/dupes/headers | columns exact; `row_count` == CSV rows; 0 dupes; trips `driving_duration_minutes` negative on short trips |
+| **P22** | Data agent | unit pin / pre-aggregation | "What was the total distance driven by the whole fleet yesterday?" (unpinned) | `VehicleKPI_Daily`, `Local_Date`, `*0.621` → miles |
+| **P23** | Data agent | validity-filter injection + "CSV link" wording | "Give me a CSV download link with all GPS position logs from the last 2 days: …" | exact columns kept (no #8 degradation); `GpsValid = 1` injected; 472,930 rows / 3 calendar dates |
+| **P24** | Data agent | intent routing | "List all engine status data readings recorded between …" vs "From the StatusData table (raw readings, not the Diagnostic catalog), …" | first → `FROM Diagnostic` (120 rows, success); second → `StatusData` 117,181 rows |
+| **P25** | Data agent | large export / sharding / timeout | StatusData 2 days; 12 h; check `data_uri` count, CSV size, dupes, header | 2 d → tool timeout 60 s; 12 h → 368,764 rows, 26,199,860 B, **1** file, 0 dupes, header `DATA` |
+| **P26** | Data agent | upper-bound clip (#20) / freshness | GPS "between … and now"; "latest GPS timestamp" | bounds = `CURRENT_TIMESTAMP()`; lag ≈16–23 s; no clip in 3 |
+| **P27** | Data agent | determinism / follow-up / parallel | same trips prompt twice; `delegation_context` follow-up; 4 calls in parallel | same 1,320 rows & columns, only the partition guard differed; 1 timeout then pass; parallel OK |
 
 ---
 
@@ -54,6 +63,13 @@ aware of and why*. The measurements behind each quirk live here (point-in-time; 
 
 | # | Sev | Quirk (one-line) | Key measured evidence | Source |
 |---|-----|------------------|-----------------------|--------|
+| 21 | 🔴 🆕 | `status: success` can be an **empty** answer (data agent) | `IsTracked = TRUE` + `Device_ActiveTo >= CURRENT_DATETIME()` → NumberOfVehicles 0, NumberOfTrips 0 while API = 50 devices and 30,500 trips; "latest GPS of first 5 devices" → `row_count 0`, `data_uri ""`, `turn_id -1`. Re-asking with "do not filter on IsTracked" → 50 / 5,355 | P19, P20; ledger 2026-10-29 |
+| 22 | 🟡 🆕 | Agent-derived columns are the agent's arithmetic | `ROUND((TripDuration − IdlingDuration)/60, 2)` → −3.52, −1.12, −0.05 in the first 20 trips; `distance_km = ROUND(TripDistance_Km,3)` | P21; ledger 2026-10-29 |
+| 11/13 | 🔴 | (data agent) unpinned distance → rollup, local date, miles | `SELECT ROUND(SUM(Distance_Km) * 0.621, 2) … FROM VehicleKPI_Daily WHERE Local_Date = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY)` = 13,468.83 mi | P22 |
+| 14 | 🔴 | (data agent) new validity filter | "last 2 days" GPS → `AND t_g.GpsValid = 1`; window `DATE(GpsDateTime) BETWEEN d−2 AND today` (3 calendar dates) | P23 |
+| 15 | 🔴 | (data agent) intent routed to a catalog table | StatusData ask → `SELECT DISTINCT DiagnosticId, DiagnosticName FROM Diagnostic WHERE … LIKE '%engine%status%'`, 120 rows, `success` | P24 |
+| 7 | 🟡 | (data agent) case drift reproduced | requested `Data`, CSV header `DATA` (368,764 rows) | P25 |
+| 2/6/1/3/5/8/9/10/20 | — | (data agent) status changes — see the status table in [`ACE_TO_CSV.md`](ACE_TO_CSV.md) | one `data_uri` for 26 MB; 0 dupes in 3 CSVs; no blob; preview 20; `+00:00`; CSV-link ask harmless; 60 s timeout; stateless; no clip in 3 | P21, P23, P25–P27 |
 | 20 | 🔴 | Injected window **upper bound** can drop the current day | Same "most recent raw status" prompt: live max `2026-06-30 14:39–14:40` on 4/6 calls vs `2026-06-29 23:59:59.xxx` on 2/6; clip = `… AND CURRENT_DATE()` vs live `… AND CURRENT_DATETIME()`; window 7d/30d varied per call, not DB-stable; both DBs | P15; ledger 2026-06-30; **full Q&A + all 6 SQL/answers in §3 run archive 2026-06-30** |
 | 12 | 🔴 | Injects unrequested predicates (partition guards; metadata join type **and fan-out**) | Widened guards seen: `DATE(GpsDateTime) >= DATE('2026-06-27')` on a `>= 06-28` ask; `BETWEEN '06-26' AND '06-30'` around `[06-27,06-29)`. Metadata join `LEFT` one day, inner `JOIN` the next (inner drops devices w/o metadata). **Fan-out (2026-06-30, Demo_fh_vegas4):** `DeviceName` join `ON DeviceId` alone × devices with 2 metadata rows → **exactly 2×** — GPS 350,760→175,378 distinct `(DeviceId,GpsDateTime)`, exc 2,356→1,178 distinct `EventId`; StatusData's `… BETWEEN Device_ActiveFrom AND Device_ActiveTo` join did **not** fan out (550,909=550,909) | ledger 2026-06-29 (forward incremental); ledger 2026-06-30 (vegas daily update); run archive |
 | 15 | 🔴 | Source table can change for the "same" question (LLM-generated SQL — non-deterministic) | "distinct GPS devices on 2026-06-28" = **49** from `GpsLogs` on 3 identical English runs (same table each time — **small n, not a determinism guarantee**); **47** from `Trip` when `…FROM GpsLogs` SQL attached (Ace ignored it). Cross-DB 2026-06-30: 49 demo / 50 vegas, both `GpsLogs`. Per-call non-determinism confirmed on a different axis in P15 (#20 predicate flip) | P4/P5/P6; P15; run archive 2026-06-29 |
@@ -157,6 +173,15 @@ aware of and why*. The measurements behind each quirk live here (point-in-time; 
 | 2026-07-10 | shared run | **field test: quirk #17 reproduced** | a tightly-worded, column-bounded trips prompt failed `invalid_value`; the **identical request loosened to open-ended** succeeded immediately on retry | same conv. | reinforces #17 — transient; retry and prefer open-ended over bounded |
 | 2026-07-10 | shared run | **field test: P16 reconcile well-calibrated** | **50 orphans** (matches the skill's worked-example 50 exactly); missing 24 (vs 51 in the example — window/fleet dependent) | same conv. | reconcile logic reproduces on a different fleet; orphan count landing on 50 again is reassuring, not a fluke |
 | 2026-07-10 | shared run | **field test: 8 stale `started` rows + tool-call budget** | found **8** `warehouse_ingest_log` rows stuck at `status='started'` (2026-07-03, a prior crashed session); data itself re-verified fine. Separately, a long backfill **exhausted the host's per-turn tool-call limit** → operator said "continue" once, run resumed cleanly | same conv. | orphan-sweep guidance exists (INCREMENTAL_BACKFILL §state table) but wasn't found/applied → **discoverability + a stale-threshold→finalize-or-abandon branch** are IMPROVEMENT_PLAN follow-ups; the log-ahead design made the "continue" safe |
+| 2026-10-29 | demo_fh8 | P19 | default ask → **0 vehicles / 0 trips** (`success`); with "do not filter on IsTracked…" → **50 / 5,355 / 50** | data agent | quirk #21; GetCountOf Device = 50, all `activeFrom 2026-10-01` |
+| 2026-10-29 | demo_fh8 | P20 | trips total **30,500** (2026-09-09→10-29); 50 devices; latest GPS `23:40:48` | data agent | consistent with API; lag ≈23 s |
+| 2026-10-29 | demo_fh8 | P21 | GPS after 22:00 UTC: **11,172** rows (query ≈23:44) and **11,599** (a later query ≈23:47, window grew); trips since 10-28: **1,320** (twice); CSV 0 dupes | data agent | `LEFT JOIN … BETWEEN UTC_ActiveFrom AND UTC_ActiveTo` (no fan-out); negative driving minutes |
+| 2026-10-29 | demo_fh8 | P22 | distance yesterday **13,468.83 mi** from `VehicleKPI_Daily` | data agent | unit conversion + rollup reproduced |
+| 2026-10-29 | demo_fh8 | P23 | 472,930 rows, exact columns, `GpsValid = 1` injected | data agent | #8 not reproduced |
+| 2026-10-29 | demo_fh8 | P24 | catalog misroute (120 rows) vs StatusData 117,181 rows | data agent | name the table |
+| 2026-10-29 | demo_fh8 | P25 | 2 d → **timeout 60 s**; 12 h → **368,764 rows / 26,199,860 B / 1 file / 0 dupes**, header `DATA` | data agent | chunk status by ½ day |
+| 2026-10-29 | demo_fh8 | P26 | upper bound `CURRENT_TIMESTAMP()` ×3; lags ≈23 s, ≈16 s | data agent | no #20 clip in 3 |
+| 2026-10-29 | demo_fh8 | P27 | repeat trips: same 1,320 rows; 1 timeout then pass; 4 parallel calls OK; `delegation_context` accepted | data agent | partition guard differs run to run |
 
 _(append the next run's rows here)_
 
@@ -312,3 +337,30 @@ recovery patterns hold there too. Notes from the run, mapped to the catalog:
 
 No new quirk numbers (all map to existing #6/#2/#7/#17 and P16). Follow-ups tracked in
 [`IMPROVEMENT_PLAN.md`](../IMPROVEMENT_PLAN.md) §Field-test follow-ups.
+
+### Run 2026-10-29 (demo_fh8, MyGeotab MCP data agent) — Geotab-side re-validation for skill v2.0
+
+Server `my.geotab.com`, Geotab DB `demo_fh8` (50 devices, all `IsTracked=false`, `activeFrom 2026-10-01`;
+trips since 2026-09-09). Wrong-name attempts (`geotab_Demo_fh_vegas4`, `Demo_fh_vegas4`,
+`geotab_Demo_fh_vegas8`) → `-32601 Database … was not found on my.geotab.com` — the MotherDuck name is not the
+Geotab name. 16 `AskDataAgent` calls; prompts verbatim in the probe rows above. Verbatim SQL of note:
+
+```sql
+-- P19, unprompted: returns 0 / 0 on a fleet of 50
+SELECT COUNT(DISTINCT DeviceId) FROM `LatestVehicleMetadata`
+ WHERE Device_ActiveTo >= CURRENT_DATETIME() AND IsTracked = TRUE
+-- P19, with "do not filter on IsTracked…": 50 vehicles, 5,355 trips (7 d), 50 with trips
+SELECT COUNT(DISTINCT DeviceId) FROM `LatestVehicleMetadata`  -- + trips from `Trip` by DATE(TripStartDateTime)
+-- P22, unpinned distance
+SELECT ROUND(SUM(Distance_Km) * 0.621, 2) AS Total_Distance_mi FROM `VehicleKPI_Daily`
+ WHERE Local_Date = DATE_SUB(CURRENT_DATE(), INTERVAL 1 DAY);
+-- P24, intent misroute
+SELECT DISTINCT DiagnosticId, DiagnosticName FROM `Diagnostic` WHERE LOWER(DiagnosticName) LIKE LOWER('%engine%status%')
+```
+
+Response envelope: `{status, sql, data_preview[20], row_count, data_uri, turn_id, freshness{status,message}}`
+(~5–10 KB). `data_uri` = `https://storage.googleapis.com/ace-cli-sessions-prod-us/query-results/<uuid>/turn_0.csv?X-Goog-…&X-Goog-Expires=86400`.
+Downloaded and checked: GPS 11,599 rows (665,689 B) and StatusData 368,764 rows (26,199,860 B): single file,
+`row_count` == CSV rows, 0 duplicate rows, headers `DeviceId,GpsDateTime,Latitude,Longitude,Speed` /
+`DeviceId,DiagnosticId,DATA,UTC_StatusTimestamp`. Not tested: Exception/Fault prompts, dimension propagation (#18),
+bounded-prompt 400s (#17), multi-DB, runs > 26 MB, wall-clock latency.
