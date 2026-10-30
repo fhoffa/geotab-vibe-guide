@@ -7,7 +7,7 @@ data_uri}`) alongside the classic `Get` API tools. v2.0 re-validated the whole G
 and rewrote the skill so it only knows the data agent. **This file is the only place the earlier version is
 described.**
 
-**Where the earlier version lives:** git history. The last v1.1 tree is commit
+**Where the earlier version lives:** a frozen snapshot in [`archive/v1.1/`](archive/v1.1/) (see [`archive/README.md`](archive/README.md)) and, equivalently, git history. The last v1.1 tree is commit
 [`35a8a05`](https://github.com/fhoffa/geotab-vibe-guide/commit/35a8a054108700869ff4787f913971643648067d)
 (`main` after [PR #113](https://github.com/fhoffa/geotab-vibe-guide/pull/113) and the field-test follow-ups).
 Read any old file with `git show 35a8a05:skills/geotab-motherduck-warehouse/<path>`, or compare with
@@ -69,6 +69,7 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q17` in [`
 | `references/CHANNELS_AND_FRESHNESS.md`, `QUALITY_AND_REPAIR.md`, `INCREMENTAL_BACKFILL.md`, `MEDALLION_LOADING.md`, `ENTITY_CATALOG.md`, `COST_AND_SIZING.md` | Tool names, `Q#` references, `agent_csv`/`agent:<uuid>` provenance values, empty-success guard, timeout/chunking and "retry once" guidance; shard-only advice reduced to "load every file if a client returns several" |
 | `references/EVIDENCE_LOG.md` | Rebuilt: probes P1–P27, §1b keyed by `Q#`, ledger (all MotherDuck-side rows kept; Geotab-side rows condensed; Ace chat ids dropped), 2026-10-29/30 run archive |
 | `MAINTAINING.md` | `Q#` conventions, "don't narrate history in the live skill" |
+| `archive/` | Frozen v1.1 snapshot (`SKILL.md` renamed `SKILL_v1.1.md` so it isn't discovered as a second skill); not linked from the live skill |
 | Deleted | `references/ACE_TO_CSV.md` (→ `QUIRKS.md` + `DATA_AGENT_TO_CSV.md`); `IMPROVEMENT_PLAN.md` (an implementation record of PR #113's adapter-derived work — see that PR and git history) |
 | Outside the skill | `guides/MCP_TO_MOTHERDUCK_VS_GETFEED_API_ADAPTER.md`, `skills/README.md`, `skills/SKILLS_TODO.md`: wording and links |
 

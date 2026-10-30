@@ -25,6 +25,7 @@ a lean mirror is in [`SKILL.md`](SKILL.md); the evidence behind it is in
 - The **"lint the returned SQL"** claim is scoped to **semantic** issues (source table, predicates, units,
   filters, derived columns, window bounds). Data-shape problems — **empty/short results (Q2, Q9) and duplicate
   rows (Q6)** — are *not* visible in the SQL; don't broaden the claim to "catches everything."
+- **Archives.** Before a major rewrite, snapshot the live skill to `archive/v<old>/` (rename `SKILL.md` inside it, e.g. `SKILL_v<old>.md`, so skill discovery doesn't see a duplicate), add a row to `archive/README.md`, and never edit archived files. Don't link the archive from the live skill — only from the changes file.
 - **Don't narrate history in the live skill.** The skill describes how to work *now*. How it differs from earlier
   versions lives only in [`CHANGES_v1.1_to_v2.0.md`](CHANGES_v1.1_to_v2.0.md); when you do a major rewrite,
   update that file instead of adding "previously…/legacy…" asides to the references.
