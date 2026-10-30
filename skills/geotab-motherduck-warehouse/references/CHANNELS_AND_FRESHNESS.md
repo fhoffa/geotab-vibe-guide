@@ -1,72 +1,77 @@
 # Channels, freshness, and the loading strategy
 
 Which source gives you data *how fresh*, and how to decide between **live reads**, **bulk windows**,
-**historical backfill**, and **settling the gaps**. All numbers observed live on `demo_fh4`
-(2026-06-29, ~50-vehicle Iberia demo fleet).
+**historical backfill**, and **settling the gaps**. Pipeline-lag numbers were observed on ~50-vehicle Iberia
+demo fleets (2026-06-29 on `demo_fh4`; 2026-10-29 on `demo_fh8`) — point-in-time, re-verify on yours.
 
-## Is Ace "only late data"? No — continuous streams lag tens of seconds to ~2 min
+## Is the bulk channel "only late data"? No — continuous streams lag tens of seconds to ~2 min
 
-Measured **2026-06-29 on `demo_fh4`** across **four entity types** (point-in-time — re-verify and
-update the date), comparing Ace's `max(event_time)` to the true current time (Ace's own
-`CURRENT_TIMESTAMP`, cross-checked against the live `Get` API):
+Measured **2026-06-29 on `demo_fh4`** across **four entity types**, comparing the bulk channel's
+`max(event_time)` to the true current time (cross-checked against the live `Get` API):
 
-| Ace table | Cadence | Most-recent in Ace | "Now" | Real pipeline lag |
-|-----------|---------|--------------------|-------|-------------------|
+| Table | Cadence | Most-recent in bulk channel | "Now" | Real pipeline lag |
+|-------|---------|-----------------------------|-------|-------------------|
 | `GpsLogs` | continuous | `21:37:15.035` | `21:37:34.366` | **~19 s** (a separate run measured ~98 s) |
 | `StatusData` (engine/sensor) | continuous | `21:34:48.455` | ~`21:35` | **sub-minute** — *identical* to the live `DeviceStatusInfo` API's freshest reading |
 | `Trip` | event (on trip end) | `21:30:34` | ~`21:36` | **not lag** — 20 trips ended in the last 15 min; latest end is just the last vehicle that parked |
 | `FaultData` | event (rare) | `12:07–12:18` | ~`21:34` | **not lag** — no fault has occurred since noon |
 
-**The takeaway, refined: for *continuous* streams (GPS, StatusData) Ace is near-real-time — tens of
-seconds to ~2 minutes behind.** It is *not* batch/"yesterday's data." (Don't confuse Ace's lag with
-**load staleness**: a warehouse last refreshed 1.3 h ago is 1.3 h stale because *you* haven't re-run the
-load, not because Ace is slow. Measure the two separately.)
+Re-measured through the data agent on **2026-10-29 (`demo_fh8`)**: latest `GpsLogs` point `23:40:48` for a
+query at ≈`23:41:11` (**≈23 s**) and `23:47:19` for a query at ≈`23:47:35` (**≈16 s**).
+`freshness.status` was `fresh` on every telematics call.
 
-> **Don't measure freshness of event-driven tables with `max(timestamp)` vs now.** Trips, faults, and
+**The `Trip` table is the exception (2026-10-30, `demo_fh8`, Q3).** At 01:08 UTC the Get API showed trips starting
+through 01:07 and ≥ 9 trips starting after 23:24:03 on 10-29, but the agent's latest trip start was 23:24:03.665 —
+**≥ 1 h 44 min behind** — while `GpsLogs` and `StatusData` were **17 s** and **11 s** behind. Asked for trips on
+10-30 the agent silently answered for 10-29 and returned `freshness: stale`. Fresh at ≈ 23:45 the evening before.
+So "fact tables are tens of seconds behind" holds for GPS and StatusData; treat `Trip` as possibly hours behind and
+check it against `Get`.
+
+**The takeaway: for *continuous* streams (GPS, StatusData) the bulk channel is near-real-time — tens of
+seconds to ~2 minutes behind.** It is *not* batch/"yesterday's data." (Don't confuse pipeline lag with
+**load staleness**: a warehouse last refreshed 1.3 h ago is 1.3 h stale because *you* haven't re-run the
+load. Measure the two separately.)
+
+> **Don't measure freshness of event-driven tables with `max(timestamp)` vs now (Q12).** Trips, faults, and
 > exceptions only get a row *when the event happens*, so a "stale" max just means nothing happened
 > recently. `FaultData`'s newest row was 9 h old — yet that's correct, not lagged. To gauge those, count
 > **events in a recent window** (e.g. "20 trips ended in the last 15 min" → the pipeline is current);
 > reserve max-vs-now for the continuous streams.
 
-> **⚠ Don't use Ace as a freshness/watermark oracle — even for continuous streams.** Ace injects a time
-> window whose **upper bound is non-deterministic per call**, and when it lands on `CURRENT_DATE()`
-> (midnight today) instead of `CURRENT_DATETIME()` (now), it silently excludes the entire current day —
-> so `max(StatusDateTime)` comes back as **`<yesterday> 23:59:59.xxx`**, an artifact that looks like real
-> data. Measured 2026-06-30 on **both** `demo_fh4` and `Demo_fh_vegas4`: the identical "most recent raw
-> status" prompt returned the true live max (~`14:39–14:40`) on 4/6 calls and `2026-06-29 23:59:59.xxx`
-> on 2/6 — same `FROM StatusData`, only the upper bound differed (ACE_TO_CSV quirk #20). **A `…23:59:59.xxx`
-> "latest" is the fingerprint of the clip.** For a true latest reading use **`Get DeviceStatusInfo`** (or a
-> bounded `Get LogRecord`); the warehouse takes its watermark from `max(silver)`, never from Ace.
+> **Don't use the agent as a freshness/watermark oracle (Q11).** Its window bounds are LLM-generated and
+> have been seen to vary: on 2026-06-30 an identical "most recent raw status" ask returned the true live
+> max on 4 of 6 calls and a `<yesterday> 23:59:59.xxx` artifact on 2 of 6 (the injected upper bound landed
+> on `CURRENT_DATE()` instead of `CURRENT_DATETIME()`); three "…and now" windows on 2026-10-29 were all
+> bounded by `CURRENT_TIMESTAMP()`. A `…23:59:59.xxx` "latest" is the fingerprint of a clipped window. For a
+> true latest reading use **`Get DeviceStatusInfo`** (or a bounded `Get LogRecord`); the warehouse takes its
+> watermark from `max(silver)`, never from the agent.
 
 | Channel | Tool | Freshness (observed) | Shape | Best for |
 |---------|------|----------------------|-------|----------|
 | **Live snapshot** | `Get DeviceStatusInfo` | **~sub-second** (current position/speed/ignition per device) | JSON, one row per device | live map, "where is everything right now" |
-| **Raw event read** | `Get LogRecord` (+ window) | **to ~now** (full-resolution raw rows; b3 to `20:40+` at `~20:48`) | JSON, cursor-paginated | a specific device/window, gap-filling, an independent oracle |
-| **Bulk export** | `GetAceResults` → CSV URL | **tens of s – ~2 min** (continuous streams) | signed CSV, whole window in one file | warehouse bulk: daily incremental + historical backfill |
+| **Raw event read** | `Get LogRecord` (+ window) | **to ~now** (full-resolution raw rows) | JSON, cursor-paginated | a specific device/window, gap-filling, an independent oracle |
+| **Bulk export** | `AskDataAgent` → CSV URL | **tens of s – ~2 min** (continuous streams) | signed CSV, whole window in one file | warehouse bulk: daily incremental + historical backfill |
 
 So all three are effectively current; they differ in **shape and volume**, not in being "live vs late."
 `DeviceStatusInfo` is a *snapshot* (it has no history — don't historize it). `Get LogRecord` is full
 history but **paginates** (cursor for reference entities; window-splitting for time-series — see
-[`ENTITY_CATALOG.md`](ENTITY_CATALOG.md)), so it's painful for bulk. Ace streams an entire window to
-one CSV, which is why it's the bulk workhorse despite the sub-2-min lag and non-determinism.
+[`ENTITY_CATALOG.md`](ENTITY_CATALOG.md)), so it's painful for bulk. The data agent streams an entire window
+to one CSV, which is why it's the bulk workhorse despite the generated-SQL variability.
 
-## Write→Ace propagation: changes lag *far* behind reads
+## Write→agent propagation: changes may lag behind reads (Q14)
 
-Read-freshness (above) is one axis; **how fast a *change* reaches Ace** is another — and for
-**dimension/config data they are wildly different.** Measured 2026-06-29: created a new geofence
-(`Zone` "ZZ_ACE_PROBE_ALPHA") via the **Get API** write (`mcp__Geotab_MCP__Add`) at `21:41:04`. It was
-visible **instantly** through the **Get API** (`Get` — the write is synchronous), but **Ace**
-(`GetAceResults`) **lagged ~15–30 min**: it reported 0 zones at every poll up to T0+14 min (`21:55`) and
-first returned the zone at T0+~29 min (`22:09`). So **Ace's** dimension/config tables sync on a slow,
-periodic cadence (here **between 14 and 29 minutes**), while telematics streams (`GpsLogs`,
-`StatusData`) land in seconds.
+Read-freshness (above) is one axis; **how fast a *change* becomes visible** is another — and for
+**dimension/config data they differ.** Measured 2026-06-29 on the bulk channel: a new geofence (`Zone`
+"ZZ_PROBE_ALPHA") created via the **Get API** write (`mcp__MyGeotab_MCP__Add`) at `21:41:04` was visible
+**instantly** through `Get` (the write is synchronous), but the bulk channel reported 0 zones at every poll up
+to T0+14 min and first returned the zone at T0+~29 min — its dimension/config tables sync on a slow periodic
+cadence (**between 14 and 29 minutes**), while telematics streams land in seconds. The data agent's own
+propagation delay was **not re-measured** — assume the same until you test it (probe P8).
 
 > **Engineering consequence:** for anything you **just created or changed** in MyGeotab — zones, device
-> metadata, groups, rules, users — **read it from `Get`, never Ace.** `Get` is authoritative and
-> immediate; Ace will show stale reference data for many minutes. This is a second, stronger reason for
-> the "dimensions via `Get`" rule (the first being exactness/`IsTracked`). Use Ace for *telematics
-> volume*, `Get` for *current truth*. (Telematics history in Ace is fine — that pipeline is near-real-time;
-> it's the reference/config tables that lag.)
+> metadata, groups, rules, users — **read it from `Get`.** `Get` is authoritative and immediate. This is a
+> second, stronger reason for the "dimensions via `Get`" rule (the first being exactness / `IsTracked`). Use
+> the agent for *telematics volume*, `Get` for *current truth*.
 
 ## The four loading modes — pick by question, not by habit
 
@@ -74,8 +79,8 @@ periodic cadence (here **between 14 and 29 minutes**), while telematics streams 
                       how much?  →   one row / device        a window of rows         all of history
    how fresh? ↓
    "right now"                       Get DeviceStatusInfo     Get LogRecord (small win) —
-   "last few min … today"            Get LogRecord            Ace window (4-call loop)  —
-   "settled past"                    —                        Ace window + anti-join     Ace windowed backfill
+   "last few min … today"            Get LogRecord            Agent window (4-call loop) —
+   "settled past"                    —                        Agent window + anti-join   Agent windowed backfill
 ```
 
 1. **Live (sub-second): `Get DeviceStatusInfo`.** Current position/speed/ignition for the whole fleet
@@ -83,12 +88,12 @@ periodic cadence (here **between 14 and 29 minutes**), while telematics streams 
    snapshot, not an event stream; persisting it creates a fake "history" full of duplicated current
    points. If you want the live tail *in* the warehouse, read raw `Get LogRecord` for the last few
    minutes instead.
-2. **Recent bulk / daily incremental: Ace large window** (the 4-call loop in [`SKILL.md`](../SKILL.md)).
-   ~1–2 min behind, one CSV, cheap. This is steady-state warehouse loading. Because Ace is
-   non-deterministic, it lands in **append-only bronze** and silver dedups — see
+2. **Recent bulk / daily incremental: a data-agent window** (the 4-call loop in [`SKILL.md`](../SKILL.md)).
+   Seconds to ~2 min behind, one CSV, cheap. This is steady-state warehouse loading. Because the generated
+   SQL can vary, it lands in **append-only bronze** and silver dedups — see
    [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md).
-3. **Historical / past: Ace windowed backfill.** Walk backwards in bounded windows (a day each),
-   append each to bronze, derive silver with the anti-join. Runbook:
+3. **Historical / past: windowed backfill.** Walk backwards in bounded windows (a day each; half a day for
+   StatusData), append each to bronze, derive silver with the anti-join. Runbook:
    [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §Historical backfill.
 4. **Settle the missing data (make it whole):** detect holes (per-device time gaps, thin/empty
    `(device, day)` cells, calendar holes — [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md)
@@ -98,54 +103,52 @@ periodic cadence (here **between 14 and 29 minutes**), while telematics streams 
 
 ### Combining live + bulk for a complete *and* fresh mirror
 
-Ace lags ~1–2 min, so the newest sliver of time is always missing from a pure-Ace warehouse. If you
-need both completeness and true real-time, layer them: **Ace for the bulk/settled body**, and a small
-**`Get LogRecord` read for the last few minutes** (the tail Ace hasn't caught up to). Land both in
-bronze and let the natural-key dedup merge them — the boundary overlap collapses exactly like the Ace
-boundary-second dupes do.
+The bulk channel lags tens of seconds to ~2 min, so the newest sliver of time is always missing from a
+pure-agent warehouse. If you need both completeness and true real-time, layer them: **the agent for the
+bulk/settled body**, and a small **`Get LogRecord` read for the last few minutes**. Land both in bronze and
+let the natural-key dedup merge them — the overlap collapses on the natural key.
 
-## The active-only trap (why the warehouse undercounted the fleet)
+## The active-only trap (why a warehouse can undercount the fleet) — Q1
 
-The original `planet_gps_pings` was built from an Ace pull that defaulted to `IsTracked = TRUE`. Result:
-silver held **~25–26 devices**, but the fleet has **50**. Measured: a GPS pull for 2026-06-28 that
-explicitly said *"do not restrict to active/tracked devices"* returned **47–49 distinct devices**, vs
-**25** in the active-filtered silver. **Lesson:** Ace's default population is *tracked/active only*. If
-you want the whole fleet, say so explicitly (and verify device count against `dim_device` from `Get`,
-which is the exact roster). This is a coverage bug that no amount of dedup fixes — it's upstream of the
-load. See the prompting rules in [`ACE_TO_CSV.md`](ACE_TO_CSV.md).
+The original `planet_gps_pings` was built from a pull that defaulted to `IsTracked = TRUE`. Result: silver
+held **~25–26 devices**, but the fleet has **50**. A GPS pull for 2026-06-28 that explicitly said *"do not
+restrict to active/tracked devices"* returned **47–49 distinct devices**, vs **25** in the active-filtered
+silver. On 2026-10-29/30 the same default returned **0 vehicles** on two demo fleets whose devices are all
+`IsTracked = false`. **Lesson:** the agent's default population is *tracked/active only*. If you want the
+whole fleet, say so explicitly (and verify device count against `dim_device` from `Get`, which is the exact
+roster). This is a coverage bug that no amount of dedup fixes — it's upstream of the load. See the prompting
+rules in [`DATA_AGENT_TO_CSV.md`](DATA_AGENT_TO_CSV.md).
 
-## `GetCountOf` (Get API, **not** Ace) is not a windowed oracle for facts
+## `GetCountOf` (Get API) is not a windowed oracle for facts
 
-> This is a **Get API** quirk — the classic `mcp__Geotab_MCP__GetCountOf` method — **not** an
-> Ace/`GetAceResults` behavior. (Ace's own count caveat — source-table *selection* — is two sections down.)
+> This is a **Get API** quirk — the classic `mcp__MyGeotab_MCP__GetCountOf` method — not a data-agent behavior.
 
 `GetCountOf` ignores the `fromDate`/`toDate`/`deviceSearch` in the search for high-volume entities:
 two different `LogRecord` windows for one device both returned **16,098,152** (the whole table), and a
 `Trip` window returned **1,388,687** (all trips). So `GetCountOf` answers "how many of this type exist
 in total," **not** "how many in my window." Use it only for **dimensions** (`GetCountOf Device = 50`
 reconciles exactly with `dim_device`). For fact reconciliation, count rows from a bounded `Get`
-read of the same window, or cross-check Ace against the warehouse — never against `GetCountOf`.
+read of the same window, or cross-check the agent against the warehouse — never against `GetCountOf`.
 
-## Same question, different *source table* — read the SQL (2026-06-29)
+## Same question, different *source table* — read the SQL (Q6)
 
-Ace's variability is **source-table selection, not numeric noise on a pinned query.** Measured: the
-question *"how many distinct devices produced a raw GPS log on 2026-06-28 (no tracked filter)?"* was
-asked four times.
+The agent's variability is **source-table selection, not numeric noise on a pinned query.** Observed
+2026-06-29: *"how many distinct devices produced a raw GPS log on 2026-06-28 (no tracked filter)?"* asked four
+times.
 
-- **Three identical plain-English runs → `49` every time, from `GpsLogs`.** A pinned prompt is **stable**,
-  not random.
-- **A fourth run — the *same* English question but with `Run exactly: SELECT COUNT(DISTINCT DeviceId) …
-  FROM GpsLogs …` appended — returned `47`, answered from the `Trip` table.** Ace picked a *different
-  source* and **ignored the GpsLogs SQL we supplied.** A clean Trip query confirms **47** devices took a
-  trip that day, vs **49** that logged GPS — *both numbers are correct for their table.*
+- **Three identical plain-English runs → `49` every time, from `GpsLogs`.** A pinned prompt can be **stable**.
+- **A fourth run — the *same* English question with `Run exactly: SELECT COUNT(DISTINCT DeviceId) … FROM
+  GpsLogs …` appended — returned `47`, answered from the `Trip` table.** The agent picked a *different
+  source* and **ignored the GpsLogs SQL we supplied.** A clean Trip query confirms **47** devices took a trip
+  that day, vs **49** that logged GPS — *both numbers are correct for their table.*
 
-So the "49 vs 47" was **two different sources answering one question**, not a count that drifts. The
-engineering consequences are the same and still hold: **read the returned SQL every time** (a differing
-count across runs is almost always a different `FROM`, diagnosable — not noise), **pin the table** in the
-prompt, and don't assume an attached SQL forces the source. This source-selection variability is *why* a
-full re-ask can replace good data with a differently-shaped answer — so every fact load is
-append-to-bronze + dedup, every backfill is anti-join, and every repair prefers re-deriving from bronze
-over re-asking Ace.
+So "49 vs 47" was **two different sources answering one question**, not a count that drifts. And on
+2026-10-29 "engine status data readings" was answered from the `Diagnostic` catalog instead of `StatusData`.
+The consequences: **read the returned SQL every time** (a differing count across runs is almost always a
+different `FROM` or filter, diagnosable — not noise), **name the table** in the prompt, and don't assume an
+attached SQL forces the source. This variability is *why* a full re-ask can replace good data with a
+differently-shaped answer — so every fact load is append-to-bronze + dedup, every backfill is anti-join, and
+every repair prefers re-deriving from bronze over re-asking.
 
 ## Relationship to the official MyGeotab API Adapter (and the `GetFeed` gap)
 
@@ -159,17 +162,17 @@ MCP-only, agent-cadence** analog. Human-facing comparison:
 **Why this skill doesn't use `GetFeed`.** The adapter's incremental engine is the official
 [`GetFeed`](https://developers.geotab.com/myGeotab/apiReference/methods/GetFeed/) API: an exact
 version-token cursor per entity — no time-boundary math, no boundary dupes, resumable after restart.
-**The Geotab MCP server does not expose it** (verified 2026-07-02, three ways: the tool list has no
+**The Geotab MCP server does not expose it** (verified 2026-07-02, three ways, and the current MyGeotab MCP tool list still has no feed tool on 2026-10-30: the tool list has no
 feed tool; the `Get` tool's schema has no `fromVersion`/feed-token parameter and there's no generic
 method passthrough; the server's sole resource is `mygeotab://entities`). Watermarks + natural-key
 dedup are the MCP-compatible substitute — and the bronze layer is what makes the substitute safe
 (every pull is kept raw and replayable). If the MCP ever grows a `GetFeed` tool, adopt it as the
 **watermark replacement only** — bronze/silver and the dedup discipline stay exactly as they are
-(Ace non-determinism, not watermarking, is why they exist).
+(generated-SQL variability, not watermarking, is why they exist).
 
 One `GetFeed` behavior worth borrowing even without the API: the adapter treats a **full feed page as
 "I'm behind — poll again immediately"** and a partial page as "current — wait for the next interval."
 The same signal applies to this skill's `Get` **pagination** (a page hitting `resultsLimit` means more
-pages). It does **not** transfer to time-chunked Ace walks — a sparse window can end early while later
+pages). It does **not** transfer to time-chunked agent walks — a sparse window can end early while later
 windows still hold data, so those stop only when the window cursor reaches the target — see
 [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §A.

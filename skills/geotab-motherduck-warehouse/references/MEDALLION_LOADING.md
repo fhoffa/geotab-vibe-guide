@@ -15,9 +15,9 @@ How the data actually lands. Tools: `mcp__MotherDuck__query` (read), `mcp__Mothe
 
 It hinges on **one question: can you reproduce the source on demand?**
 
-- **Ace-sourced facts → bronze is mandatory.** The source is *not* reproducible: the signed CSV URL
-  **expires in ~24 h**, and **Ace is non-deterministic** — re-pulling the same window can return a
-  differently-shaped/counted result (different source table, `IsTracked` population — see quirk #11).
+- **Data-agent facts → bronze is mandatory.** The source is *not* reproducible: the signed CSV URL
+  **expires in ~24 h**, and **the agent's SQL is LLM-generated** — re-pulling the same window can return a
+  differently-shaped/counted result (different source table, `IsTracked` population — see Q1, Q6).
   Bronze is therefore your *only* durable, replayable record of what you actually ingested. **Silver is
   a deterministic projection of bronze** — never loaded straight from the URL.
 - **`Get`-sourced dimensions → skip bronze.** `Get` is exact, real-time, reproducible any time, and
@@ -25,7 +25,7 @@ It hinges on **one question: can you reproduce the source on demand?**
   to a typed `dim_*`.
 
 > This asymmetry is the whole design. Don't put a bronze layer under dimensions, and don't let a fact
-> table skip bronze. The "quick mirror, Ace → silver directly" shortcut is a trap: the moment the URL
+> table skip bronze. The "quick mirror, agent → silver directly" shortcut is a trap: the moment the URL
 > expires you've lost the ability to rebuild, and the first non-deterministic re-pull silently changes
 > your history with no raw record of what changed.
 
@@ -84,7 +84,7 @@ bytes after compression, but pure noise).
 ## Always inspect before you derive
 
 Appending to **bronze is unconditional** — it's lossless `all_varchar`, so it can't be "wrong"; just
-land whatever Ace returned. Inspection is about the **silver derive**: catch Class-A semantic problems
+land whatever the agent returned. Inspection is about the **silver derive**: catch Class-A semantic problems
 (wrong source table, aggregation, timezone — see [`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md))
 *before* they propagate, and confirm the cast/dedup will behave. Two cheap reads decide it. **Never
 derive silver blind.**
@@ -107,9 +107,9 @@ Decide from the result:
 | Observation | Action |
 |-------------|--------|
 | Schema identical, `new_rows` > 0 | Land in bronze, then derive silver with the watermark filter (below). |
-| Schema differs (renamed/dropped/case) — quirk #7/#8 | Still land raw in bronze; map by position in the **derive** `SELECT` **or** re-ask Ace. |
-| `overlap` > 0 (boundary second — quirk #6) | Expected; bronze keeps it, the silver derive's `> watermark`/anti-join removes it. |
-| `new_rows` = 0 | Ace had no fresher data (it lags real-time). Skip the bronze append too — nothing to record. |
+| Schema differs (renamed/dropped/case) — Q9 | Still land raw in bronze; map by position in the **derive** `SELECT` **or** re-ask the agent. |
+| `overlap` > 0 (boundary second — Q7) | Expected; bronze keeps it, the silver derive's `> watermark`/anti-join removes it. |
+| `new_rows` = 0 | The agent had no fresher data (the source lags tens of seconds to ~2 min) — **but first rule out Q2** (`row_count 0` with an unexplained empty `data_uri`). If it's genuinely nothing new, skip the bronze append too. |
 | `csv_rows` ≈ 0 / unexpectedly tiny | Vague prompt, wrong window, or new account; re-ask before landing. |
 
 > Observed for the GPS load: `DESCRIBE` returned `DeviceId VARCHAR, DeviceName VARCHAR,
@@ -133,7 +133,7 @@ CREATE TABLE IF NOT EXISTS my_db.planet_gps_pings (
 );
 ```
 
-Or let the first Ace CSV define it (then you own the types):
+Or let the first data-agent CSV define it (then you own the types):
 
 ```sql
 CREATE TABLE my_db.planet_gps_pings AS
@@ -148,10 +148,10 @@ would overwrite the system of record and destroy replay). Every run only ever `I
 ```sql
 CREATE TABLE IF NOT EXISTS my_db.bronze_gps_raw AS
 SELECT *,                                  -- raw columns exactly as returned
-       'ace:<chat-uuid>' AS _batch_id,     -- identifies the exact ingestion that produced this row
+       'agent:<uuid from data_uri>' AS _batch_id,  -- identifies the exact ingestion that produced this row
        now()      AS _loaded_at,
-       'ace_csv'  AS _source_channel,      -- how it arrived: ace_csv | bootstrap_from_silver | …
-       'gs://planet-user-results-prod-<region>/<uuid>-000000000000.csv' AS _source_uri
+       'agent_csv'  AS _source_channel,    -- how it arrived: agent_csv | bootstrap_from_silver | …
+       'gs://<bucket>/query-results/<uuid>/turn_0.csv' AS _source_uri
 FROM read_csv_auto('<signed url>', all_varchar=true)
 WHERE FALSE;                               -- create empty; INSERT below on each run
 ```
@@ -159,22 +159,22 @@ WHERE FALSE;                               -- create empty; INSERT below on each
 (No per-row `_source_db` — the source is one whole database, recorded once in `main.warehouse_meta`;
 see §isolate.)
 
-> `_batch_id` distinguishes ingestion provenance — e.g. `ace:4b008ce3-…` (the Ace chat id) for a live
+> `_batch_id` distinguishes ingestion provenance — e.g. `agent:4b008ce3-…` (the uuid in the `data_uri` path) for a live
 > window pull vs. `bootstrap_from_silver:2026-06-29` for the one-time reconstruction (see "Brownfield"
 > below) vs. `backfill:2026-06-18` for a historical window. It's what lets you audit, selectively
 > re-derive, or prune one batch without touching others. `_source_channel` is the coarse "how"
-> (`ace_csv`, `bootstrap_from_silver`); `_batch_id` is the fine-grained "which run."
+> (`agent_csv`, `bootstrap_from_silver`); `_batch_id` is the fine-grained "which run."
 
 > Verified: with `all_varchar=true` the bronze row preserves `GpsDateTime = '2026-06-26 01:42:40.423
 > UTC'` **verbatim** (suffix and all) and `now()` lands as `TIMESTAMP WITH TIME ZONE`. True lossless
 > landing — you can always replay bronze → silver if your typing logic changes.
 
-**Append to bronze — no dedup, no watermark.** Bronze keeps *everything* exactly as Ace returned it,
-including the boundary overlap (quirk #6) and any drift. Dedup happens later, in silver.
+**Append to bronze — no dedup, no watermark.** Bronze keeps *everything* exactly as the agent returned it,
+including any boundary overlap (Q7) and any drift. Dedup happens later, in silver.
 
 ```sql
 INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'ace:<chat-uuid>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
+SELECT *, 'agent:<uuid from data_uri>', now(), 'agent_csv', 'gs://…/<uuid>/turn_0.csv'
 FROM read_csv_auto('<signed url>', all_varchar=true);
 ```
 
@@ -182,8 +182,8 @@ FROM read_csv_auto('<signed url>', all_varchar=true);
 > to match the 4 provenance columns in the bronze DDL above.
 >
 > **`SELECT *` only works while the pull's columns line up with the bronze table's non-provenance
-> columns.** The bronze table has *more* columns than any single Ace pull returns (raw + the 4 provenance),
-> and Ace can hand back a **narrower or renamed** set than last time (quirks #7/#8) — either drifts the
+> columns.** The bronze table has *more* columns than any single agent pull returns (raw + the 4 provenance),
+> and the agent can hand back a **narrower or renamed** set than last time (Q9) — either drifts the
 > positional `SELECT *, …4 values` into a column-count/position mismatch. When the shapes don't match,
 > **name the columns explicitly on both sides** (or use `INSERT INTO <bronze> BY NAME SELECT … , <provenance>`
 > when names match but order differs) rather than trusting `*`. See §"Column mismatch? Fix it in the derive"
@@ -208,9 +208,9 @@ retry. This is the one path for facts; there is no "load silver straight from th
 > inserts (one statement per shard) succeeded. **Bound each derive by `_source_uri`** (the shard's
 > `gs://…` object path — genuinely per-shard) **or by an event-time day** (`WHERE
 > replace(GpsDateTime,' UTC','')::TIMESTAMP >= '<day>' AND < '<day+1>'`). **Do *not* filter by
-> `_batch_id`**: every shard of one Ace export shares the *same* `_batch_id` (the chat id), so a
+> `_batch_id`**: every shard of one export shares the *same* `_batch_id` (the `data_uri` uuid), so a
 > `WHERE _batch_id = '<shard>'` matches all shards or none. So for high-volume facts (StatusData
-> especially), **load each Ace CSV shard to bronze, then derive silver one shard (or one day) per
+> especially), **load each CSV (and every shard, if a client ever returns several) to bronze, then derive silver one shard (or one day) per
 > statement** — same projection, bounded per call. The anti-join / `DISTINCT ON` still dedups across
 > shards.
 >
@@ -239,9 +239,11 @@ FROM my_db.bronze_gps_raw b
 WHERE replace(GpsDateTime,' UTC','')::TIMESTAMP > (SELECT coalesce(max(GpsDateTime), TIMESTAMP '1970-01-01') FROM my_db.planet_gps_pings);
 ```
 
-> **Dedup on the parsed timestamp, not the raw string.** Bronze mixes batches with different
-> formatting — the `ace_csv` batch carries the literal ` UTC` suffix (`…40.423 UTC`) while the
-> `bootstrap_from_silver` batch has clean strings (`…40.423`). Those are the *same instant* but
+> **Dedup on the parsed timestamp, not the raw string.** Bronze can mix batches with different
+> timestamp text — the demo mirror's early bulk batches carry a literal ` UTC` suffix (`…40.423 UTC`), the
+> data agent's CSVs carry a `+00:00` offset (`UTC_*` columns) or naive ISO (`GpsDateTime`), and the
+> `bootstrap_from_silver` batch has clean strings (`…40.423`). **Test the cast on your first batch
+> (`SELECT TRY_CAST(<col> AS TIMESTAMP) …`) before deriving** — the SQL below shows the ` UTC` form. Those are the *same instant* but
 > *different text*, so `DISTINCT ON (DeviceId, GpsDateTime)` on the raw VARCHAR keeps both
 > (verified: **679,581** rows — dupes survive), while `DISTINCT ON` over
 > `replace(GpsDateTime,' UTC','')::TIMESTAMP` collapses them (verified: **679,577** — correct).
@@ -333,19 +335,19 @@ SELECT DeviceId::VARCHAR, DeviceName::VARCHAR, DeviceTimeZoneId::VARCHAR,
 FROM my_db.planet_gps_pings;
 ```
 
-After this, every fresh Ace pull appends to bronze as `_source_channel='ace_csv'` /
-`_batch_id='ace:<chat-uuid>'`, and silver is a pure projection of the union. Verify the round-trip:
+After this, every fresh agent pull appends to bronze as `_source_channel='agent_csv'` /
+`_batch_id='agent:<uuid>'`, and silver is a pure projection of the union. Verify the round-trip:
 re-deriving bronze → silver must reproduce silver's exact distinct-natural-key count before you trust
 the lineage.
 
 > Live result on `my_db`: bronze GPS holds two batches — `bootstrap_from_silver` (522,162 rows, the
-> legacy history) and `ace_csv` (157,419 rows, the live window). Their union is 679,581 raw rows;
+> legacy history) and the live window (157,419 rows, tagged `ace_csv` — the demo mirror's early name for `agent_csv`). Their union is 679,581 raw rows;
 > deriving bronze → silver collapses the 4 boundary-second dupes to **679,577** — exactly the silver
 > count that existed before bronze, proving the reconstruction is faithful.
 
-### Column mismatch? Fix it in the derive, not the landing (quirk #7/#8)
+### Column mismatch? Fix it in the derive, not the landing (Q9)
 
-Bronze always lands raw with whatever names/case Ace returned (`all_varchar`, no mapping). You
+Bronze always lands raw with whatever names/case the agent returned (`all_varchar`, no mapping). You
 reconcile the drift **when you derive silver** — alias by position so a rename can't silently drop a
 column:
 
@@ -365,11 +367,11 @@ WHERE replace(UTC_GpsTimestamp,' UTC','')::TIMESTAMP
 > insert 0 rows**. (The main derive above already guards this; match it everywhere.)
 
 Because the raw shape is preserved in bronze, you can re-derive with corrected mapping later without
-re-pulling from Ace. Use DuckDB's `INSERT INTO tbl BY NAME SELECT …` when names match but order differs.
+re-pulling. Use DuckDB's `INSERT INTO tbl BY NAME SELECT …` when names match but order differs.
 
 ## Dimensions from `Get` (JSON, not CSV)
 
-`mcp__Geotab_MCP__Get` returns JSON. Two ways to land it:
+`mcp__MyGeotab_MCP__Get` (older clients: `mcp__Geotab_MCP__Get`) returns JSON. Two ways to land it:
 
 - **Small/medium (≤ a few thousand):** read the JSON result and build an `INSERT … VALUES`, or write
   it to a local `.json`/`.csv` in the scratchpad and `read_json_auto`/`read_csv_auto` it.
@@ -387,10 +389,9 @@ or `INSERT … ON CONFLICT (id) DO UPDATE` if you declared a primary key. See
 
 ## The `device_id_map` helper
 
-A tiny `(DeviceId, DeviceName)` table (it already exists in `my_db`) resolves Ace output: depending on
-the prompt, Ace returns `DeviceName`, `DeviceId`, or both (the degraded URL request returned only
-`DeviceId`). Keep an authoritative map from `dim_device` so every fact table can be enriched/joined
-regardless of which Ace handed you.
+A tiny `(DeviceId, DeviceName)` table (it already exists in `my_db`) resolves agent output: depending on
+the prompt, it returns `DeviceName`, `DeviceId`, or both. Keep an authoritative map from `dim_device` so
+every fact table can be enriched/joined regardless of which one the agent handed you.
 
 ## Gold (later)
 

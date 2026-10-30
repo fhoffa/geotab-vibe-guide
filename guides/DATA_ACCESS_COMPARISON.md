@@ -2,20 +2,22 @@
 
 > **Three ways to get fleet data, three different tradeoffs.** This guide compares the OData Data Connector, the MyGeotab API, and Geotab Ace using identical questions against the same fleet. Use it to pick the right channel for your project.
 
+> **Added October 2026:** the MyGeotab MCP connector now has a **data agent** tool (`AskDataAgent`). It appears to run on the same engine as Ace (same tables, same generated-SQL behavior) but is called from an AI client instead of the Ace API. It is added to the tables below as a fourth column, with the same four questions re-run on a 50-vehicle demo fleet. Details: [A note on the MCP data agent](#the-mcp-data-agent).
+
 > **Want streaming instead of on-demand queries?** All three channels below *query* Geotab on request. For a continuous push-based stream (Geotab's upcoming **Cloud Data Share**) or a replicated warehouse you control, see [A Fourth Option: Your Own Warehouse](#a-fourth-option-your-own-warehouse).
 
 ## The Short Version
 
-| | OData Data Connector | MyGeotab API | Geotab Ace |
-|---|---|---|---|
-| **Speed** | ~5–11s | ~0.5–2s | ~30–45s |
-| **Data** | Pre-aggregated KPIs | Raw entities | Auto-generated SQL |
-| **Code needed** | Minimal (HTTP GET) | Moderate (aggregation logic) | None (natural language) |
-| **Best for** | Dashboards, BI tools, reports | Custom apps, real-time, granular analysis | Ad-hoc exploration, learning the data model |
-| **Permissions** | Respects user's group/vehicle permissions | Respects user's group/vehicle permissions | Respects user's group/vehicle permissions |
-| **Works in Add-Ins** | No (separate auth) | Yes | Yes (via [Ace API](../skills/geotab/references/ACE_API.md)) |
-| **Guide** | [DATA_CONNECTOR.md](./DATA_CONNECTOR.md) | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) | [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) |
-| **Skill** | [DATA_CONNECTOR.md](../skills/geotab/references/DATA_CONNECTOR.md) | [API_QUICKSTART.md](../skills/geotab/references/API_QUICKSTART.md) | [ACE_API.md](../skills/geotab/references/ACE_API.md) |
+| | OData Data Connector | MyGeotab API | Geotab Ace | MCP data agent |
+|---|---|---|---|---|
+| **Speed** | ~5–11s | ~0.5–2s | ~30–45s | ~6–10s for small questions (one run each; large exports take longer; 60s tool limit) |
+| **Data** | Pre-aggregated KPIs | Raw entities | Auto-generated SQL | Auto-generated SQL, plus the SQL and a CSV link for the full result |
+| **Code needed** | Minimal (HTTP GET) | Moderate (aggregation logic) | None (natural language) | None (natural language) |
+| **Best for** | Dashboards, BI tools, reports | Custom apps, real-time, granular analysis | Ad-hoc exploration, learning the data model | Ad-hoc questions and bulk exports from an AI client |
+| **Permissions** | Respects user's group/vehicle permissions | Respects user's group/vehicle permissions | Respects user's group/vehicle permissions | Not tested |
+| **Works in Add-Ins** | No (separate auth) | Yes | Yes (via [Ace API](../skills/geotab/references/ACE_API.md)) | No (an MCP tool for AI clients) |
+| **Guide** | [DATA_CONNECTOR.md](./DATA_CONNECTOR.md) | [API_REFERENCE_FOR_AI.md](./API_REFERENCE_FOR_AI.md) | [CUSTOM_MCP_GUIDE.md](./CUSTOM_MCP_GUIDE.md) | [OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md) |
+| **Skill** | [DATA_CONNECTOR.md](../skills/geotab/references/DATA_CONNECTOR.md) | [API_QUICKSTART.md](../skills/geotab/references/API_QUICKSTART.md) | [ACE_API.md](../skills/geotab/references/ACE_API.md) | [DATA_AGENT_TO_CSV.md](../skills/geotab-motherduck-warehouse/references/DATA_AGENT_TO_CSV.md) |
 
 ---
 
@@ -25,14 +27,16 @@ We ran 4 identical fleet analytics questions against all three channels on a dem
 
 ## Timing Results
 
-| Question | Data Connector | API | Ace |
-|---|---|---|---|
-| Q1: Total fleet distance (14 days) | 4.87s | 1.29s | ~41s |
-| Q2: Top 5 vehicles by distance | 0s* | 0.01s* | ~46s |
-| Q3: Fleet idle time percentage | 0s* | 0.02s* | ~35s |
-| Q4: Vehicle count & health | 10.94s | 0.58s | ~30s |
+| Question | Data Connector | API | Ace | MCP data agent† |
+|---|---|---|---|---|
+| Q1: Total fleet distance (14 days) | 4.87s | 1.29s | ~41s | ~7–10s |
+| Q2: Top 5 vehicles by distance | 0s* | 0.01s* | ~46s | ~8s |
+| Q3: Fleet idle time percentage | 0s* | 0.02s* | ~35s | ~6–9s |
+| Q4: Vehicle count & health | 10.94s | 0.58s | ~30s | ~7–8s |
 
 \* Q2 and Q3 reused data already fetched in Q1 (client-side aggregation), so the real cost is the initial fetch.
+
+† Added October 2026, on a different 50-vehicle demo database, one run per question. The MCP reports no timing, so each call was bracketed with clock readings, our own turn overhead (about 2 s per step) was subtracted, and the result was cross-checked against the timestamp on the result file (about ±3 s). **Only the timings are comparable.** On that database Q2, Q3 and Q4 came back empty, null and 0 because the agent added `IsTracked = TRUE` and none of its devices are tracked; Q1 came back in miles. See [the MCP data agent](#the-mcp-data-agent).
 
 ---
 
@@ -168,6 +172,26 @@ All three agree on 1.2% idle. The ratio is consistent even though absolute hours
 
 ---
 
+### The MCP data agent
+
+**How it works:** The MyGeotab MCP connector's `AskDataAgent` tool takes a natural-language question, generates BigQuery SQL, runs it, and returns the SQL, a 20-row preview, a row count and a signed link to the full result as a CSV. It is called from an AI client (Claude, ChatGPT, Copilot), not from an Add-In.
+
+**Strengths:**
+- No code required, and it returns the SQL it ran
+- About 6–10s for the four questions above (one run each), where Ace took 30–46s in this guide
+- Compact, structured response with a `row_count` that matched every CSV we downloaded (6 files, 1.29 million rows, no duplicate rows)
+- Good for bulk exports into a warehouse: the [MotherDuck warehouse skill](../skills/geotab-motherduck-warehouse/SKILL.md) is built on it
+
+**Weaknesses (shared with Ace, and worse on demo fleets):**
+- Adds `IsTracked = TRUE` to questions about "the fleet", which returns empty or zero answers on a fleet whose devices are untracked, with no error
+- Can quietly answer for a different date range than you asked for, and its `Trip` table lagged by 1 h 44 min in one test (GPS and engine status were 11–23s behind)
+- Converts distances to miles unless you ask for kilometers
+- About 60s tool limit, so big exports need to be split into windows
+
+A ranked list of these behaviors, with prompts that avoid them, is in the skill's [QUIRKS.md](../skills/geotab-motherduck-warehouse/references/QUIRKS.md).
+
+**Guide:** [OFFICIAL_MCP_CONNECTOR.md](./OFFICIAL_MCP_CONNECTOR.md) | **Skill:** [DATA_AGENT_TO_CSV.md](../skills/geotab-motherduck-warehouse/references/DATA_AGENT_TO_CSV.md)
+
 ## When to Use What
 
 | Your situation | Use this |
@@ -176,7 +200,8 @@ All three agree on 1.2% idle. The ratio is consistent even though absolute hours
 | Building a Python reporting script | Data Connector (if KPI-level data suffices) or API (if you need trip-level detail) |
 | Building a MyGeotab Add-In | API (or Ace for natural language features) |
 | Need real-time vehicle positions | API (`DeviceStatusInfo`) |
-| Fleet manager wants quick answers | Ace |
+| Fleet manager wants quick answers | Ace, or the MCP data agent from an AI client |
+| Copying fleet data into your own warehouse | MCP data agent (see the [warehouse skill](../skills/geotab-motherduck-warehouse/SKILL.md)) |
 | Need to validate data across sources | Cross-reference API `Device` count with Data Connector KPIs |
 | Analyzing specific trips or routes | API (the Data Connector doesn't have trip-level data) |
 | Monthly executive reports | Data Connector (`VehicleKpi_Monthly`) |
@@ -190,9 +215,9 @@ Even identical questions can return different numbers across channels:
 
 1. **Result caps:** The API has a default result limit. Always paginate for complete data.
 2. **Historical records:** Data Connector metadata tables include inactive/historical device assignments. The API's `Device` entity returns only active devices.
-3. **Implicit filters:** Ace may add filters like `IsTracked = TRUE` based on its interpretation of your question.
+3. **Implicit filters:** Ace and the MCP data agent may add filters like `IsTracked = TRUE` based on their interpretation of your question. Say "include every device; do not filter on IsTracked" when you want the whole fleet.
 4. **Aggregation level:** The Data Connector gives you pre-aggregated daily/monthly totals. The API gives you raw per-trip data that you sum yourself. Small rounding differences are normal.
-5. **Unit conversion:** Ace may auto-convert km to miles. The Data Connector and API always return metric units.
+5. **Unit conversion:** Ace and the MCP data agent may auto-convert km to miles. The Data Connector and API always return metric units.
 6. **Permissions:** All three channels respect user permissions — a user who only has access to certain groups will only see those vehicles. This can cause number differences when different users query the same fleet.
 
 When numbers don't match, it's usually one of these reasons — not a bug.

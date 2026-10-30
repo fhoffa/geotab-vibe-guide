@@ -46,7 +46,7 @@ Welcome! This folder contains guides to help you build with Geotab APIs using AI
 
 - **[DATA_CONNECTOR.md](./DATA_CONNECTOR.md)** - Query pre-aggregated fleet KPIs, safety scores, and fault data via the OData Data Connector. Includes copy-paste prompts for AI tools.
 - **[FAULT_MONITORING.md](./FAULT_MONITORING.md)** - Understanding vehicle fault codes: DTC types, fault cycles, persistence, severity tiers, and maintenance prompts. Works with Data Connector, API, and Ace.
-- **[DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)** - Data Connector vs MyGeotab API vs Geotab Ace: benchmarks, tradeoffs, and when to use each.
+- **[DATA_ACCESS_COMPARISON.md](./DATA_ACCESS_COMPARISON.md)** - Data Connector vs MyGeotab API vs Geotab Ace vs the MCP data agent: benchmarks, tradeoffs, and when to use each.
 
 ### Data Warehousing (Your Own Database)
 
