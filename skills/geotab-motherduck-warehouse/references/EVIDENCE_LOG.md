@@ -183,6 +183,7 @@ aware of and why*. The measurements behind each quirk live here (point-in-time; 
 | 2026-10-29 | demo_fh8 | P26 | upper bound `CURRENT_TIMESTAMP()` ×3; lags ≈23 s, ≈16 s | data agent | no #20 clip in 3 |
 | 2026-10-29 | demo_fh8 | P27 | repeat trips: same 1,320 rows; 1 timeout then pass; 4 parallel calls OK; `delegation_context` accepted | data agent | partition guard differs run to run |
 | 2026-10-30 | demo_fh_vegas8 | P19 | default ask #1 → **HTTP 502 `data_agent_query_failed`** (transient); retry → **0 vehicles / 0 trips / 0 with trips** (`IsTracked = TRUE` + active-window join), `freshness.status: "stale"` with message "Data is still not available for the requested date range despite adjusting…"; with "do not filter on IsTracked…" → **50 vehicles / 14,956 trips (7 d)** | data agent | #21 reproduced on a 2nd DB; EU bucket `ace-cli-sessions-prod-eu`; a `stale` freshness can accompany the empty answer |
+| 2026-10-30 | demo_fh8 | P21 | raw trips prompt (`TripDistance_Km, TripDuration, IdlingDuration`): **77** rows since 20:00 UTC; `TripDuration` = end−start in seconds; `IdlingDuration` > `TripDuration` on some trips (1062 vs 132 s) | data agent | fixes the canonical trips prompt (Codex review of #121); response also carried `freshness: stale` + message |
 
 _(append the next run's rows here)_
 

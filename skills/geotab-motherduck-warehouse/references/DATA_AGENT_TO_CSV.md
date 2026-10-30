@@ -41,10 +41,12 @@ GPS (GpsLogs):
 
 Trips (Trip):
   List individual trips that started after <WATERMARK> UTC. Return these exact columns: DeviceId, TripId,
-  device_name, trip_start_utc, trip_end_utc, DriverId, distance_km, driving_duration_minutes. Use UTC.
-  Raw rows, no aggregation. Include every device; do not filter on IsTracked.
-  # Safer: ask for the RAW duration columns (TripDuration, IdlingDuration) and derive "driving minutes"
-  # in silver — the agent's own `TripDuration − IdlingDuration` produced NEGATIVE minutes (quirk #22).
+  trip_start_utc, trip_end_utc, DriverId, TripDistance_Km, TripDuration, IdlingDuration. Use UTC. Raw rows,
+  no aggregation, no unit conversion, no derived columns. Include every device; do not filter on IsTracked.
+  # RAW columns only (verified 2026-10-30, 20 rows): TripDuration = trip_end − trip_start in SECONDS
+  # (1208.937 s for 20:02:14.7→20:22:23.7); IdlingDuration is SECONDS and can EXCEED TripDuration (1062 s vs
+  # 132 s) — so the agent's own `(TripDuration − IdlingDuration)/60` went NEGATIVE (quirk #22). Join
+  # device_name from dim_device in silver; derive minutes there, deciding what idling means for you.
   # Watermark on start with the lookback L from INCREMENTAL_BACKFILL §D (trips are re-split).
 
 Engine/sensor (StatusData):
@@ -133,4 +135,4 @@ prompt; use `delegation_context` for output shaping.
 | miles instead of km / `Local_Date` / `VehicleKPI_Daily` in SQL | pre-aggregated rollup chosen (#11/#13) | ask for raw rows in UTC, pin km |
 | `DATA` instead of `Data` | case drift (#7) | key by the CSV header, alias in derive |
 | `-32601 … Database '<x>' was not found on my.geotab.com` | wrong DB name (MotherDuck name ≠ Geotab name) or another server | use the Geotab login DB name; pass `server` for gov/other |
-| negative `driving_duration_minutes` | agent-derived `TripDuration − IdlingDuration` (#22) | ask for raw columns, derive in silver |
+| negative `driving_duration_minutes` | agent-derived `TripDuration − IdlingDuration`; `IdlingDuration` can exceed `TripDuration` (#22) | ask for raw `TripDuration`/`IdlingDuration` (seconds), derive in silver |

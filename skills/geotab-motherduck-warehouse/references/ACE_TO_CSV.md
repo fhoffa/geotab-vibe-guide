@@ -98,6 +98,8 @@ Trips:
   List individual trips that started after <WATERMARK> UTC. Return these exact columns: DeviceId,
   TripId, device_name, trip_start_utc, trip_end_utc, DriverId, distance_km, driving_duration_minutes.
   Use UTC. Raw rows.
+  # v2.0: Ace derived driving_duration_minutes the same way the data agent does (quirk #22) — prefer the raw
+  # TripDuration / IdlingDuration columns (seconds), as in DATA_AGENT_TO_CSV.md.
   # TripId and DriverId are NOT optional: TripId is the key the re-split reconcile (INCREMENTAL_BACKFILL
   # §D) deletes/anti-joins on, and DriverId carries the driver assignment (UnknownDriverId when none).
   # Watermark on trip_start_utc (re-splits change the end), but set <WATERMARK> = max(start) − L with
@@ -332,8 +334,9 @@ Evidence: probes P19–P27 in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md) §1b/§2/§3.
 - **#22 — Agent-derived columns are the agent's arithmetic, not Geotab's.** Asked for
   `driving_duration_minutes` it computed `(TripDuration − IdlingDuration)/60` — **negative** on short trips
   (−3.52, −1.12, −0.05 min in the first 20 rows) and `distance_km` was `ROUND(TripDistance_Km, 3)`.
-  **Ask for the raw source columns** (`TripDuration`, `IdlingDuration`, `TripDistance_Km`) and derive in
-  silver where you control the formula and can test it. *(P21; ev #22.)*
+  **Ask for the raw source columns** (`TripDuration`, `IdlingDuration`, `TripDistance_Km`; verified
+  2026-10-30: both durations are seconds, `TripDuration` = end − start, and `IdlingDuration` can exceed it —
+  1062 s on a 132 s trip) and derive in silver where you control the formula and can test it. *(P21; ev #22.)*
 
 ### ⚪ Informational — good to know, no data hazard
 
