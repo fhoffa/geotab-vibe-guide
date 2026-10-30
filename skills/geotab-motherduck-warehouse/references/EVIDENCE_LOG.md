@@ -209,6 +209,6 @@ Response envelope: `{status, sql, data_preview[20], row_count, data_uri, turn_id
 (~5–10 KB). `data_uri` = `https://storage.googleapis.com/ace-cli-sessions-prod-<region>/query-results/<uuid>/turn_<n>.csv?X-Goog-…&X-Goog-Expires=86400`.
 Downloaded and checked: GPS 11,599 rows (665,689 B) and StatusData 368,764 rows (26,199,860 B): single file,
 `row_count` == CSV rows, 0 duplicate rows, headers `DeviceId,GpsDateTime,Latitude,Longitude,Speed` /
-`DeviceId,DiagnosticId,DATA,UTC_StatusTimestamp`. Not tested: Exception/Fault prompts, dimension propagation (Q14),
-multi-DB beyond the two above, exports > 26 MB, wall-clock latency, and the MotherDuck load of a data-agent CSV
+`DeviceId,DiagnosticId,DATA,UTC_StatusTimestamp`. Not tested in this first run (exceptions, faults and Q14 propagation were covered in the 2026-10-30 pass): multi-DB
+beyond the two above, exports > 26 MB (later 52.9 MB), wall-clock latency, and the MotherDuck load of a data-agent CSV
 (MotherDuck was not connected).
