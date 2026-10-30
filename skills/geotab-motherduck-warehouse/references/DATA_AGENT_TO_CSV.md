@@ -68,8 +68,11 @@ Rules (each tied to a quirk):
 - **Pin units** ("in kilometers, do not convert units") and **ask for raw rows in UTC** — Q4, Q5.
 - **Request raw source columns, derive in silver** — Q7.
 - **Specificity beats attached SQL:** name exact columns; treat any SQL you add as a hint, not a contract.
-- **Bound the window.** The tool call times out at ~60 s: chunk by half-day (StatusData) or day (GPS,
-  trips) and retry once — Q9; see [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §timeouts.
+- **Bound the window, and never use future dates.** The tool call times out at ~60 s: StatusData ≤ 1 day (744,965 rows /
+  53 MB passed; 2 days timed out), GPS and trips ≤ 1–2 days; retry once — Q9; see
+  [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §timeouts. Future-dated prompts failed with HTTP 502.
+- **Check the window you got.** On `freshness: stale`, compare the returned min/max timestamps to the window you
+  asked for — the agent can shift it (Q18), notably for `Trip`.
 - Asking for a "CSV link" is harmless (columns stay exact) but pointless — the URL always comes back.
 
 ## Step 2 — read the response (no parsing)
@@ -83,8 +86,11 @@ row_count 0 / data_uri "" / turn_id -1 → an EMPTY result: investigate, don't t
 ```
 
 `freshness.status` is `fresh`, `stale` or `unknown` and may carry a message ("Data is still not available for
-the requested date range despite adjusting…"). Read the message: it means the agent could not cover the
-range you asked for — narrow or shift the window and tell the user what range is available.
+the requested date range despite adjusting…"). Read the message: `stale` means **your window reaches past the data
+the agent has**, and it may have silently answered for an earlier window (Q18: a request for 2026-10-30 trips was
+answered for 2026-10-29). It is **not** a verdict on correctness — `stale` also accompanied correct results and a
+genuinely empty window, and `fresh` accompanied filter-caused empties (Q2). Always compare returned min/max to the
+window you asked for.
 
 Signed URL shape: `https://storage.googleapis.com/ace-cli-sessions-prod-<region>/query-results/<uuid>/turn_<n>.csv?X-Goog-…&X-Goog-Expires=86400`
 (**24 h**; the region varies by database — match by shape).
@@ -126,7 +132,8 @@ use `delegation_context` for output shaping.
 | catalog-looking rows (diagnostic names) instead of readings | intent routed to `Diagnostic` | name the table `StatusData`; ask for `DiagnosticId` (Q3) |
 | HTTP 502 `data_agent_query_failed` / "Try rephrasing" | transient agent failure | retry once, then rephrase (Q9) |
 | tool timed out after 60 s | window too big, or a load spike (same prompt passed on retry) | retry once; then halve the window (Q9) |
-| `freshness: "stale"` + message | agent could not cover the range | read the message; narrow/shift the window |
+| `freshness: "stale"` + message | window reaches past the data (the `Trip` table lagged ≥ 1 h 44 min); the agent may have answered for another window (Q18) | compare returned min/max to the asked window; re-ask a window it covers; check completeness with `Get` |
+| HTTP 502 "Failed to generate a valid query" | future-dated prompt (2/2) | remove future dates; ask "after <past date>" or an open-ended past window (Q9) |
 | miles instead of km / `Local_Date` / `VehicleKPI_Daily` in the SQL | pre-aggregated rollup chosen (Q4, Q5) | ask for raw rows in UTC, pin km |
 | `DATA` instead of `Data` | case drift (Q8) | key by the CSV header, alias in the derive |
 | negative `driving_duration_minutes` | agent-derived `TripDuration − IdlingDuration` (Q7) | ask for raw `TripDuration`/`IdlingDuration`, derive in silver |

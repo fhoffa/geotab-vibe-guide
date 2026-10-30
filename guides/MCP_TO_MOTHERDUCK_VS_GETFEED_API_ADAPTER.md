@@ -54,7 +54,7 @@ classic API, how to organize the warehouse in **bronze** (raw, append-only), **s
 deduplicated), and **gold** (business summaries) layers, and how to run incremental updates with
 watermarks so re-runs never duplicate data.
 
-What makes it more than a toy: the skill encodes **17 documented quirks** of the data-agent export path
+What makes it more than a toy: the skill encodes **18 documented quirks** of the data-agent export path
 (silently injected filters that can return an empty "success", unit conversions, wrong-table answers, tool timeouts…) with the
 defensive pattern for each — all measured on live databases, with the evidence logged. Your agent
 doesn't rediscover these the hard way.

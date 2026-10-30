@@ -20,6 +20,13 @@ Re-measured through the data agent on **2026-10-29 (`demo_fh8`)**: latest `GpsLo
 query at ≈`23:41:11` (**≈23 s**) and `23:47:19` for a query at ≈`23:47:35` (**≈16 s**).
 `freshness.status` was `fresh` on every telematics call.
 
+**The `Trip` table is the exception (2026-10-30, `demo_fh8`, Q18).** At 01:08 UTC the Get API showed trips starting
+through 01:07 and ≥ 9 trips starting after 23:24:03 on 10-29, but the agent's latest trip start was 23:24:03.665 —
+**≥ 1 h 44 min behind** — while `GpsLogs` and `StatusData` were **17 s** and **11 s** behind. Asked for trips on
+10-30 the agent silently answered for 10-29 and returned `freshness: stale`. Fresh at ≈ 23:45 the evening before.
+So "fact tables are tens of seconds behind" holds for GPS and StatusData; treat `Trip` as possibly hours behind and
+check it against `Get`.
+
 **The takeaway: for *continuous* streams (GPS, StatusData) the bulk channel is near-real-time — tens of
 seconds to ~2 minutes behind.** It is *not* batch/"yesterday's data." (Don't confuse pipeline lag with
 **load staleness**: a warehouse last refreshed 1.3 h ago is 1.3 h stale because *you* haven't re-run the

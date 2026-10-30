@@ -49,7 +49,7 @@ entirely through MCP tools (MotherDuck + the Geotab data agent + Geotab Get) —
 - **Location:** `skills/geotab-motherduck-warehouse/SKILL.md`
 - **References:**
   - `references/DATA_AGENT_TO_CSV.md` — bulk extraction via the data agent, the signed-CSV-URL loop, per-entity prompts, CSV checks, failure modes
-  - `references/QUIRKS.md` — the 17 numbered data-agent quirks (what to watch for, why, the one action)
+  - `references/QUIRKS.md` — the 18 numbered data-agent quirks (what to watch for, why, the one action)
   - `references/MEDALLION_LOADING.md` — table creation from zero, bronze/silver/gold DDL, pre-load shape/size checks, conditional transforms, idempotent inserts, natural-key dedup
   - `references/INCREMENTAL_BACKFILL.md` — daily-run runbook, `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill
   - `references/ENTITY_CATALOG.md` — what to replicate beyond GPS, per-entity channel, natural keys, suggested schemas, the `Get` cursor-pagination quirk

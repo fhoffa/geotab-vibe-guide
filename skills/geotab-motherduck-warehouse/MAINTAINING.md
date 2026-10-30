@@ -6,7 +6,7 @@ obvious from a single file. If you change one of these on purpose, update this d
 
 ## Quirk catalog (the most-edited surface)
 
-The data-agent quirk catalog (**17 quirks, `Q1…Q17`**) lives in [`references/QUIRKS.md`](references/QUIRKS.md);
+The data-agent quirk catalog (**18 quirks, `Q1…Q18`**) lives in [`references/QUIRKS.md`](references/QUIRKS.md);
 a lean mirror is in [`SKILL.md`](SKILL.md); the evidence behind it is in
 [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) §1b.
 
@@ -71,5 +71,5 @@ provenance names above. Don't reintroduce the removed objects.
 ## Before pushing
 
 - `bash tests/gem-validation/run.sh` (repo pre-commit).
-- Confirm internal `.md` links resolve and every bare `Q#` reference stays within `Q1…Q17`.
+- Confirm internal `.md` links resolve and every bare `Q#` reference stays within `Q1…Q18`.
 - If you touched the live mirrors, append a dated row to `EVIDENCE_LOG.md` §2.

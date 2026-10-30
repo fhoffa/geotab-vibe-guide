@@ -36,7 +36,7 @@ These don't depend on which Geotab tool fetches the data and were not re-tested 
 
 ## Quirk renumbering (v1.1 `#N` → v2.0 `Q#`)
 
-v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q17` in [`references/QUIRKS.md`](references/QUIRKS.md).
+v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q18` in [`references/QUIRKS.md`](references/QUIRKS.md).
 
 | v1.1 | v2.0 | Note |
 |------|------|------|
@@ -52,10 +52,11 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q17` in [`
 | #20 injected upper bound clips today | **Q11** | not reproduced (n=3), guard kept |
 | #18 config writes lag | **Q12** | not re-measured on the agent |
 | — | **Q13** | **new:** wrong DB/server name |
+| — | **Q18** | **new:** window silently shifted; `Trip` table lags (found in the 2026-10-30 verification pass) |
 | #19 ChatGPT mixed mode | **Q14** | unchanged |
 | #1, #3, #10 envelope / preview / chat | **Q15** | changed shape |
 | #4, #5 nulls / timestamp text | **Q16** | changed shape |
-| #2 sharded URLs, URL lifetime | **Q17** | one file observed up to 26 MB |
+| #2 sharded URLs, URL lifetime | **Q17** | one file observed up to 53 MB |
 | #8 "ask for a URL" degrades schema | — | not reproduced; dropped |
 | #9 ~33 s floor | — | replaced by Q9 |
 
@@ -65,7 +66,7 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q17` in [`
 |------|--------|
 | `SKILL.md` | Version 2.0. Tools table (`AskDataAgent`, `GetSkill`, DB-name warning), core loop step 2, `Q#` quirk list, channel table, preflight, rules #4/#5/#9/#13 (always forbid `IsTracked`/`GpsValid`; read `sql` + `row_count`) |
 | `references/DATA_AGENT_TO_CSV.md` | **New** field guide: response shape, per-entity prompts, CSV verification table, delegation, failure modes |
-| `references/QUIRKS.md` | **New** `Q1…Q17` catalog (replaces `ACE_TO_CSV.md`, deleted) |
+| `references/QUIRKS.md` | **New** `Q1…Q18` catalog (replaces `ACE_TO_CSV.md`, deleted) |
 | `references/CHANNELS_AND_FRESHNESS.md`, `QUALITY_AND_REPAIR.md`, `INCREMENTAL_BACKFILL.md`, `MEDALLION_LOADING.md`, `ENTITY_CATALOG.md`, `COST_AND_SIZING.md` | Tool names, `Q#` references, `agent_csv`/`agent:<uuid>` provenance values, empty-success guard, timeout/chunking and "retry once" guidance; shard-only advice reduced to "load every file if a client returns several" |
 | `references/EVIDENCE_LOG.md` | Rebuilt: probes P1–P27, §1b keyed by `Q#`, ledger (all MotherDuck-side rows kept; Geotab-side rows condensed; Ace chat ids dropped), 2026-10-29/30 run archive |
 | `MAINTAINING.md` | `Q#` conventions, "don't narrate history in the live skill" |
@@ -75,7 +76,7 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q17` in [`
 
 ## Not verified in v2.0 (be honest in downstream docs)
 
-Exception/Fault prompts · dimension write→visible lag via the agent (Q12) · exports above 26 MB (sharding may
+Dimension write→visible lag via the agent (Q12 — needs a write to the Geotab database) · ChatGPT connector modes (Q14) · production fleets (both test fleets are demo fleets with every device `IsTracked=false`, all UTC; Q1 and Q4 are demo-sensitive) · exports above 53 MB (sharding may
 reappear) · wall-clock latency (the MCP gives no timing) · other databases/servers (only `demo_fh8`, and for the
 core `IsTracked` probe `demo_fh_vegas8`, both `my.geotab.com`) · the MotherDuck load of a data-agent CSV (the
 `read_csv_auto(all_varchar=true)` path is unchanged, but the `+00:00` timestamp cast in the derive was not run —

@@ -177,8 +177,8 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   one file, 0 duplicate rows — returned; one identical trips pull timed out once and passed on retry, so
   *retry once before shrinking* (Q9); an earlier ~1.9M-row
   open-ended `StatusData` catch-up timed out twice, ~200K–400K-row windows returned fine). Size chunks to
-  the proven single-pull size for that entity — StatusData chunked cleanly at **12 h ≈ 369K rows / 26 MB** on
-  the 50-vehicle demo fleet. If you delegate the chunk loop to
+  the proven single-pull size for that entity — StatusData chunked cleanly at **1 day ≈ 745K rows / 53 MB** on
+  the 50-vehicle demo fleet (2 days timed out 2/2); 12 h is a safer default. If you delegate the chunk loop to
   a sub-agent, **bound its runtime** (≈2 windows per sub-agent): a single sub-agent grinding ~10 sequential
   agent calls hit an *unrelated* model-gateway `ConnectionRefused` at ~7.6 min; log-ahead makes that death
   clean (bronze + `started` rows persist, no orphaned completion), and the next sub-agent resumes.

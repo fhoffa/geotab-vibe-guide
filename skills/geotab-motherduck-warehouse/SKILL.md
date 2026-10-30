@@ -87,36 +87,37 @@ prompts: [`references/DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md). M
 [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) §1b, keyed by the same `Q#`.
 
 **🔴 Critical — silently produces wrong/incomplete data:**
-- **Q1** — Default filters `IsTracked = TRUE`, `Device_ActiveTo >= now`, and `GpsValid = 1` thin or empty the result (a fleet with every device `IsTracked=false` came back "0 vehicles, 0 trips") → **every prompt: "include every device; do not filter on IsTracked, GpsValid, speed or ignition."**
-- **Q2** — `status: success` can be an **empty answer** (`row_count 0`, `data_uri ""`, `turn_id -1`, or a scalar 0; sometimes with `freshness: stale`) → **0 rows on a window with data = failure; never advance a watermark on it; confirm with a `Get` count.**
-- **Q3** — Wrong table / intent misroute ("engine status data readings" → the `Diagnostic` *catalog*) → **name the table; read the `FROM` every load.**
-- **Q4** — Metric/KPI asks use a pre-aggregated rollup (`VehicleKPI_Daily`) and device-local dates → **ask for raw rows with explicit UTC bounds.**
-- **Q5** — Units convert km → miles unless pinned → *"in kilometers, do not convert units."*
-- **Q6** — Predicates and joins vary per run (partition guards, `LatestVehicleMetadata` join) → **read the SQL; dedup silver on the parsed natural key; expect `csv_rows ≥ distinct keys`.**
-- **Q7** — Agent-derived columns are the agent's arithmetic (`TripDuration − IdlingDuration` gave **negative** minutes) → **ask for raw columns; derive in silver.**
+- **Q1** — Roster-based asks ("fleet", "vehicles", lists by device) get `IsTracked = TRUE` + `Device_ActiveTo >= now`; plain GPS asks got `GpsValid = 1`. Demo fleets (all `IsTracked=false`) came back "0 vehicles, 0 trips" 6/6 → **every prompt: "include every device; do not filter on IsTracked, GpsValid, speed or ignition."** *(demo-sensitive; untested on a production fleet)*
+- **Q2** — `status: success` can be an **empty answer** (`row_count 0`, `data_uri ""`, `turn_id -1`, or a scalar 0) and a genuinely empty window looks **identical** → **0 rows on a window with data = failure; read `sql`; never advance a watermark on it; confirm with a `Get` count.**
+- **Q3** — A catalog table can answer instead of the fact table ("engine status data readings" → the `Diagnostic` *catalog*, 2/2) → **name the table; read the `FROM` every load.**
+- **Q5** — Units convert km → miles unless pinned (2/2, despite `isMetric: true`) → *"in kilometers, do not convert units."*
+- **Q6** — Predicates and joins vary per run (guards every query; joins always `LEFT … BETWEEN Device_ActiveFrom/To`; 0 duplicate rows in 6 CSVs) → **read the SQL; dedup silver on the parsed natural key; expect `csv_rows ≥ distinct keys`.**
+- **Q7** — Agent-derived columns are the agent's arithmetic: `TripDuration − IdlingDuration` gave **negative** minutes (10 of 77 trips) → **ask for raw columns; derive in silver.**
+- **Q18** — The agent can **silently answer for a different window** and its `Trip` table lagged ≥ 1 h 44 min (GPS/Status 11–23 s); the only flag is `freshness: stale` + a message → **on `stale`, compare the returned min/max to the window you asked for; keep trips behind a `Get` completeness check.**
 
 **🟡 Operational — derails or misleads the run (usually visible):**
-- **Q8** — Column-case drift (`Data` → `DATA`) → key by the CSV header.
-- **Q9** — **~60 s tool timeout** and transient errors (HTTP 502) → chunk windows (½-day status, 1-day GPS/trips); **retry once**, then shrink/rephrase.
-- **Q10** — Event tables (`Trip`/`FaultData`/`ExceptionEvent`) update only on an event → gauge by **counting events in a recent window**, not `max(ts)` vs now.
+- **Q4** — KPI-flavored asks use the `VehicleKPI_Daily` rollup and device-local dates (equal to raw on these all-UTC fleets) → **ask for raw rows with explicit UTC bounds.**
+- **Q8** — Column-case drift (`Data` → `DATA`, 3/3) → key by the CSV header.
+- **Q9** — **~60 s tool timeout** (StatusData: 1 day passes, 2 days failed 2/2) and transient errors (502; future-dated prompts fail) → chunk windows (status ≤ 1 day, GPS/trips ≤ 1–2 days); **retry once**, then shrink/rephrase; no future dates.
+- **Q10** — Event tables (`Trip`/`FaultData`/`Events`) update only on an event, *or* lag (Q18) → compare with the Get API / count events in a recent window before concluding which.
 - **Q11** — Don't use the agent as a freshness/watermark oracle → watermark from `max(silver)`; live reading from `Get DeviceStatusInfo`; confirm the window's upper bound is *now*.
-- **Q12** — Just-changed config (zones, groups, rules, users, metadata) → **read from `Get`**, not the agent.
+- **Q12** — Just-changed config (zones, groups, rules, users, metadata) → **read from `Get`**, not the agent. *(not re-tested)*
 - **Q13** — Wrong database/server name → ask the user; the Geotab DB is the MyGeotab login name.
-- **Q14** — ChatGPT: **both MCP servers must be the same mode**; **preflight** with a tiny call before any DDL.
+- **Q14** — ChatGPT: **both MCP servers must be the same mode**; **preflight** with a tiny call before any DDL. *(field-reported)*
 
-**⚪ Informational:** **Q15** inline ~5–10 KB envelope, 20-row preview, single `data_uri`, stateless (`delegation_context` for follow-ups) · **Q16** `UTC_*` carry `+00:00`, `GpsDateTime` is naive ISO — land `all_varchar`, parse in the derive · **Q17** signed URL lasts 24 h, bucket region varies; log the `gs://` path not the signature.
+**⚪ Informational:** **Q15** inline ~5–10 KB envelope, 20-row preview, single `data_uri`, stateless (`delegation_context` for follow-ups); exceptions live in the **`Events`** table · **Q16** `UTC_*` carry `+00:00`, `GpsDateTime` is naive ISO — land `all_varchar`, parse in the derive · **Q17** signed URL lasts 24 h, bucket region varies, one file up to 53 MB; log the `gs://` path not the signature.
 
 **Always:** the agent **returns the SQL it ran** — by design, an approval surface, not a leak. **Lint it
-before loading** — it exposes the *semantic* 🔴 issues (Q1, Q3–Q7) while they're still free to fix
+before loading** — it exposes the *semantic* 🔴 issues (Q1, Q3, Q5–Q7, Q18) while they're still free to fix
 ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). The *data-shape* problems aren't in the
-SQL: **Q2/Q9** need you to check `row_count` against the CSV, and **Q6** needs the **silver dedup** after
-load — linting won't surface either.
+SQL: **Q2/Q9** need you to check `row_count` against the CSV, **Q18** needs the returned min/max compared to your window, and
+**Q6** needs the **silver dedup** after load — linting won't surface any of them.
 
 ## Three source channels — pick per entity *and* per freshness need
 
 | Channel | Best for | Shape | Freshness (observed) | Reference |
 |---------|----------|-------|----------------------|-----------|
-| **Data agent → CSV URL** | High-volume **facts**: GPS (`GpsLogs`), trips, status/engine, exceptions, faults | signed CSV, bulk (`row_count` returned) | **~16–25 s behind** on GPS (2 samples, 2026-10-29) | [`DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md) |
+| **Data agent → CSV URL** | High-volume **facts**: GPS (`GpsLogs`), trips, status/engine, exceptions, faults | signed CSV, bulk (`row_count` returned) | **GPS/StatusData ~11–23 s behind** (4 samples); **`Trip` ≥ 1 h 44 min behind** at one sample (Q18) | [`DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md) |
 | **Get → JSON** | **Dimensions** & small/precise sets: `Device`, `User`, `Zone`, `Group`, `Diagnostic`, `Rule`; raw `LogRecord` for a window | JSON, paged | **to ~now** (full-res raw) | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) |
 | **Get `DeviceStatusInfo`** | **Live** position/speed/ignition snapshot per device | JSON, 1 row/device | **~sub-second** | [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) |
 
@@ -149,7 +150,7 @@ DDL, the bronze→silver derive, and the brownfield bootstrap: [`references/MEDA
 | Reference | When to read |
 |-----------|--------------|
 | [`DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md) | **Start here for Geotab facts.** `AskDataAgent`: response shape, copy-paste prompts per entity, CSV checks, timeout/chunking, failure modes |
-| [`QUIRKS.md`](references/QUIRKS.md) | The numbered `Q1…Q17` quirk catalog (what to be aware of, why, the one action) |
+| [`QUIRKS.md`](references/QUIRKS.md) | The numbered `Q1…Q18` quirk catalog (what to be aware of, why, the one action) |
 | [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) | The bronze-vs-`Get` decision rule, bronze/silver/gold DDL, append-only bronze + deriving silver from it, the brownfield bootstrap, shape checks, normalized-key dedup, full replay |
 | [`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) | The backfills (forward catch-up, historical recovery, cross-channel reconciliation, trip re-split), the `warehouse_ingest_log` state table, watermarks, gap detection, the active-only population check, and the settle loop |
 | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) | What to replicate beyond GPS: per-entity channel, natural keys, suggested schemas, the `Get` pagination quirk (cursor vs date-window) |
