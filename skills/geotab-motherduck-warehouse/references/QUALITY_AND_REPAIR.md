@@ -1,7 +1,7 @@
 # Pipeline quality tests, predicting problems, and repair strategy
 
 A warehouse is only as good as your trust in it. This file covers (1) the quality tests to run after
-every load, (2) how to **predict** problems by reading Ace's generated SQL, (3) the crucial distinction
+every load, (2) how to **predict** problems by reading the agent's generated SQL, (3) the crucial distinction
 between *SQL* problems and *result* problems, and (4) how to repair — re-ask vs. patch the gap.
 
 Everything here was exercised live on the `my_db` warehouse built from `demo_fh4`, **2026-06-29**. The
@@ -18,7 +18,7 @@ warehouse are shown so you know what "good" looks like (and what slips through).
 | **Bounds** lat∈[-90,90], lng∈[-180,180], speed≥0 | corrupt coordinates, bad sensors | 0 bad |
 | **Not-null** on key columns (DeviceId, event-time) | dropped/blank keys | 0 null |
 | **No future rows** (`event_time <= now()`) | clock/timezone bugs, bad parse | 0 future |
-| **Freshness** `now() - max(event_time)` | stale pipeline (≠ Ace lag) | measures time since last load; Ace's *own* lag is only ~1–2 min (see [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md)) |
+| **Freshness** `now() - max(event_time)` | stale pipeline (≠ source lag) | measures time since last load; the source's *own* lag is only tens of seconds to ~2 min (see [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md)) |
 | **Referential integrity** fact.DeviceId ∈ `dim_device.id` | facts for unknown devices | 0 orphans (gps/trips/exc) |
 | **Range sanity** trip end ≥ start, duration ≥ 0 | logic/parse errors | 0 bad |
 | **Trip re-split orphans** silver `TripId`s (recent window) absent from a fresh source pull | trips re-split after load (new id retires old) | found **50 orphans + 51 missing** on one day (`Demo_fh_vegas4`, 2026-06-30) → reconciled to 0/0; see §4 |
@@ -40,14 +40,14 @@ UNION ALL SELECT 'trips: device not in dim', count(DISTINCT t.DeviceId) FILTER (
 ```
 
 **Cross-source reconciliation (the strongest test) — but pick the right oracle.** `GetCountOf` here is
-the **Get API** method (`mcp__MyGeotab_MCP__GetCountOf`), **not** Ace/`GetAceResults`. It is an
+the **Get API** method (`mcp__MyGeotab_MCP__GetCountOf`), **not** the data agent. It is an
 exact oracle **only for dimensions**: `GetCountOf Device = 50` and `dim_device = 50` ✓. For
 high-volume **facts it is useless as a windowed check — it ignores the date/device search entirely**:
 two different `LogRecord` windows for one device both returned **16,098,152** (the whole table), and a
 `Trip` window returned **1,388,687** (all trips). So `GetCountOf LogRecord` answers "how many logs
 exist in total," not "how many in my window." To reconcile a fact window, **count rows from a bounded
 `Get` read of the same window** (e.g. `Get LogRecord` with `deviceSearch`+`fromDate`/`toDate`), or
-compare Ace against the warehouse silver — never against `GetCountOf`. (And if two Ace runs of the
+compare the agent's answer against the warehouse silver — never against `GetCountOf`. (And if two runs of the
 "same" question disagree, suspect a **different source table**, not random drift — an identical prompt
 was stable at 49 across 3 runs while a re-phrasing answered 47 from `Trip`; see §4 and
 [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md). Read the returned SQL to tell which.)
@@ -55,11 +55,10 @@ was stable at 49 across 3 runs while a re-phrasing answered 47 from `Trip`; see 
 **Record results.** Add a `warehouse_quality_checks(run_id, check, value, passed, checked_at)` table
 (or extend `warehouse_ingest_log`) so you get a time series and can alert on regressions.
 
-## 2. Predict problems by reading Ace's generated SQL
+## 2. Predict problems by reading the agent's generated SQL
 
-The data-agent response carries the **SQL it actually ran** as a plain `sql` field (the legacy Ace response
-buries it in a spilled file — see [`ACE_TO_CSV.md`](ACE_TO_CSV.md)). Reading it is a *pre-load* quality gate: most semantic problems are
-visible in the SQL before you ever look at a row. Lint the SQL for:
+The data-agent response carries the **SQL it actually ran** as a plain `sql` field. Reading it is a *pre-load*
+quality gate: most semantic problems are visible in the SQL before you ever look at a row. Lint the SQL for:
 
 | Look for in the SQL | Predicts | Example we saw |
 |---------------------|----------|----------------|
@@ -69,11 +68,11 @@ visible in the SQL before you ever look at a row. Lint the SQL for:
 | `BETWEEN lo AND hi` | inclusive bounds | both ends included → boundary-day overlap/dupes |
 | `GROUP BY` / aggregate fns | you got rollups | a "raw rows" request silently aggregated |
 | unit math (`/1609.34`, `*1.609`) | unit surprises | miles computed internally, km returned |
-| column aliases | rename/case drift | `day`→`DAY`; default schema `UTC_GpsTimestamp`; data agent `Data`→`DATA` |
-| `GpsValid = 1`, `IsTracked = TRUE` (data agent) | silently thinned or **emptied** result | a "last 2 days" GPS ask added `GpsValid = 1`; the default fleet count was 0 on a fleet with every `IsTracked=false` (#14/#21) |
-| `FROM Diagnostic` / a catalog table when you asked for readings | wrong source (intent misrouted) | "engine status data readings" → 120 catalog rows, `status: success` (#15) |
-| derived columns (`a − b`, `/60`, `ROUND`) | agent arithmetic you didn't specify | negative `driving_duration_minutes` (#22) — ask for raw columns |
-| `row_count = 0` / `data_uri ""` / `turn_id -1` | empty-success | treat as failure on a window known to have data (#21) |
+| column aliases | rename/case drift | `Data`→`DATA` in the CSV header (Q8); default schema `UTC_GpsTimestamp` |
+| `GpsValid = 1`, `IsTracked = TRUE` (data agent) | silently thinned or **emptied** result | a "last 2 days" GPS ask added `GpsValid = 1`; the default fleet count was 0 on a fleet with every `IsTracked=false` (Q1/Q2) |
+| `FROM Diagnostic` / a catalog table when you asked for readings | wrong source (intent misrouted) | "engine status data readings" → 120 catalog rows, `status: success` (Q3) |
+| derived columns (`a − b`, `/60`, `ROUND`) | agent arithmetic you didn't specify | negative `driving_duration_minutes` (Q7) — ask for raw columns |
+| `row_count = 0` / `data_uri ""` / `turn_id -1` | empty-success | treat as failure on a window known to have data (Q2) |
 
 If the SQL is wrong for your intent, **no amount of downstream cleanup fixes it** — the data is the
 wrong shape. Re-ask (section 4). If the SQL is right, trust it and move to result-level checks.
@@ -82,15 +81,15 @@ wrong shape. Re-ask (section 4). If the SQL is right, trust it and move to resul
 
 This is the key mental split:
 
-**Class A — semantic / SQL problems.** Ace built a different query than you intended: wrong source
+**Class A — semantic / SQL problems.** The agent built a different query than you intended: wrong source
 table, active-only filter, device-local dates, inclusive range, unwanted aggregation, unit conversion.
 - **Systematic** (the same "wrong" applies to every row), and **predictable by reading the SQL**.
 - **Fix by re-asking** with sharper wording (pin columns, "raw rows, do not aggregate", "Use UTC",
   a precise lower bound). Cleaning the output won't help — the rows are the wrong shape/population.
 
-**Class B — result / data problems.** The query was fine but the *output* needs handling: the ` UTC`
-suffix, second-precision boundary overlap (quirk #6), omitted nulls (quirk #4), schema/case drift in
-the `columns` array (quirk #7/#8), a short/partial window, or accumulated dupes from prior loads.
+**Class B — result / data problems.** The query was fine but the *output* needs handling: timestamp text
+formats (Q16), a boundary-second overlap or duplicate rows (Q6), schema/case drift in the CSV header (Q8), a
+short/partial window (Q2, Q9), or accumulated dupes from prior loads.
 - **Caught by inspecting output** (DESCRIBE, counts, min/max, the uniqueness test).
 - **Fix in the load** (cast, dedup, watermark/anti-join, column mapping) — re-asking won't change it.
 
@@ -99,31 +98,31 @@ the `columns` array (quirk #7/#8), a short/partial window, or accumulated dupes 
 
 ## 4. Repair: re-ask the same question, or ask for the gap and patch?
 
-Ace's **source-table selection is not guaranteed** — re-asking a question (especially re-phrased) can
-land on a different `FROM` and return differently-shaped/counted data. Observed 2026-06-29: a
-"distinct GPS devices" question gave 49 from `GpsLogs` on 3 identical runs but 47 from `Trip` when
-re-phrased with an attached SQL (which it ignored); separately the engine chose `VehicleKPI_Daily` for a
-distance ask. (An *identical* prompt was stable; it's the *selection* across phrasings that varies.) Continue-chat
-also showed it re-resolving context each turn). That reality drives the strategy:
+The agent's **source-table selection is not guaranteed** (Q3) — re-asking a question (especially re-phrased)
+can land on a different `FROM` and return differently-shaped/counted data. Observed 2026-06-29: a "distinct
+GPS devices" question gave 49 from `GpsLogs` on 3 identical runs but 47 from `Trip` when re-phrased with an
+attached SQL (which it ignored); on 2026-10-29 it chose `VehicleKPI_Daily` for a distance ask and the
+`Diagnostic` catalog for a status-data ask. (An *identical* prompt can be stable; it's the *selection* across
+phrasings that varies.) That reality drives the strategy:
 
 | Situation | Most reliable action | Why |
 |-----------|---------------------|-----|
-| Transient failure (no `chat_id`, empty, timeout) | **Re-ask the same question**, retry w/ backoff | nothing loaded yet; idempotent to retry |
+| Transient failure (HTTP 502, timeout; an *unexplained* empty result is Q2, not transient) | **Re-ask the same question**, retry w/ backoff | nothing loaded yet; idempotent to retry |
 | Class A semantic mismatch | **Re-ask with corrected wording** | the data shape is wrong; only a new query fixes it |
 | Known missing rows / a gap (Class B coverage) | **Ask only for the missing window**, land in bronze, derive silver with anti-join | surgical, cheap, idempotent; doesn't disturb good data |
 | Suspect a whole window is bad | **Re-pull that window into staging, validate, then swap** | a bad re-pull can't corrupt the live table |
 | Wrong typing/dedup logic, or accumulated dupes in silver | **Re-derive silver from bronze** (the raw is still there) | bronze is the system of record; rebuild the projection, no re-ask needed |
-| Type errors you can't fix from bronze | **Repair in SQL** (cast), don't touch Ace | it's a result problem; re-asking changes nothing |
+| Type errors you can't fix from bronze | **Repair in SQL** (cast), don't re-ask | it's a result problem; re-asking changes nothing |
 | **Trip re-split** — orphaned/missing trips after a `DriverChange` or late GPS (the row *changed*, not just missing) | **Trip boundary reconcile**: re-pull the window before the prior watermark → bronze; `DELETE` silver trips whose `TripId` isn't in a fresh source pull; anti-join the new ids in | append+dedup can't update a mutated fact; the old id was *retired* at the source, so it must be deleted, not merely supplemented — runbook in [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §D |
 
-**Prefer "ask for the missing data and patch" over "re-ask the whole thing."** Because Ace varies
+**Prefer "ask for the missing data and patch" over "re-ask the whole thing."** Because the agent varies
 between runs, a full re-ask risks *replacing good data with a differently-shaped answer*. A bounded
 "give me rows in window X" + **anti-join** load only adds what's truly missing and is safe to repeat.
 
 **Repair patterns (validated):**
 
 Re-derive from bronze (the preferred fix for *any* silver-side problem — dupes, wrong cast, changed
-dedup logic). Bronze is the system of record, so you rebuild the projection instead of touching Ace:
+dedup logic). Bronze is the system of record, so you rebuild the projection instead of re-asking:
 
 ```sql
 TRUNCATE my_db.planet_gps_pings;
@@ -154,7 +153,7 @@ bronze first, then derive silver from it so the patch is replayable like everyth
 ```sql
 -- 1. land the re-pulled window in bronze (append-only)
 INSERT INTO my_db.bronze_gps_raw
-SELECT *, 'backfill:<window_lo>', now(), 'ace_csv', 'gs://…/<uuid>….csv'
+SELECT *, 'backfill:<window_lo>', now(), 'data_agent_csv', 'gs://…/<uuid>….csv'
 FROM read_csv_auto('<window url>', all_varchar=true);
 -- 2. derive only the genuinely-missing rows into silver
 INSERT INTO my_db.planet_gps_pings (DeviceId, DeviceName, DeviceTimeZoneId, Latitude, Longitude, GpsDateTime, Speed)
@@ -189,4 +188,4 @@ DROP TABLE my_db._stg_gps;
 - **Wrap multi-statement repairs in a transaction** so a partial failure rolls back.
 
 See also: [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) for gap detection and windowed backfill,
-and [`ACE_TO_CSV.md`](ACE_TO_CSV.md) for grepping the generated SQL out of the response.
+and [`DATA_AGENT_TO_CSV.md`](DATA_AGENT_TO_CSV.md) for the response fields (`sql`, `row_count`, `data_uri`).

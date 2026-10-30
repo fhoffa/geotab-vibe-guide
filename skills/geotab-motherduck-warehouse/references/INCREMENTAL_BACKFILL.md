@@ -9,7 +9,7 @@ which one you're doing before you start**, because the detection, the load, and 
 |---|--------------------------|-----------|------------------------|-----------|-----------|
 | **A. Forward catch-up** | "get me all the data missing **forward**" (steady daily run, or catch up after downtime) | watermark → now | `now() − max(event_time)` per table | watermark derive (the daily loop) | freshness < your cadence |
 | **B. Historical recovery** | "I know we have lots of data, but there's **more past data to recover**" | oldest row → an earlier target | `min(event_time)` vs `target_start` | windowed walk backward + anti-join | `min(event_time)` reaches `target_start` |
-| **C. Cross-channel reconciliation** | "re-check our mix of **`Get` + Ace** pulls isn't **missing rows**" | interior holes & channel disagreements | gap detection **+** cross-channel counts | targeted window/device re-pull + anti-join | gap scan clean **and** channels agree |
+| **C. Cross-channel reconciliation** | "re-check our mix of **`Get` + data-agent** pulls isn't **missing rows**" | interior holes & channel disagreements | gap detection **+** cross-channel counts | targeted window/device re-pull + anti-join | gap scan clean **and** channels agree |
 | **D. Re-split reconcile** | "trips I **already have changed** — a DriverChange / late GPS re-split them" | mutation *in place* (id+boundaries change) | source `TripId` set vs silver, recent window | delete retired orphans **+** anti-join the new ids | day's `TripId` sets match |
 
 A and B move the *frontiers* (newest / oldest). C fills holes *between* them and reconciles the
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS my_db.warehouse_ingest_log (
   batch_id        VARCHAR,                 -- ties the log row to bronze._batch_id
   status          VARCHAR,                 -- 'started' | 'completed' | 'abandoned'  (append-only; resolve an orphan by appending a terminal row, never UPDATE)
   source_db       VARCHAR   NOT NULL,
-  source_channel  VARCHAR   NOT NULL,      -- 'ace_csv' | 'direct_get' | 'bootstrap_from_silver'
+  source_channel  VARCHAR   NOT NULL,      -- 'agent_csv' | 'direct_get' | 'bootstrap_from_silver'
   backfill_kind   VARCHAR,                 -- 'forward' | 'historical' | 'reconcile' (which of the 3)
   watermark_from  TIMESTAMP,               -- lower bound of the window requested
   watermark_to    TIMESTAMP,               -- max event-time actually loaded (NULL on the 'started' row)
@@ -49,25 +49,25 @@ batch `ace:dsn1wQaKsAhZN1mBPVBP`, 522,571 GPS rows, silver derived, **no log row
 three fact tables never loaded** — a mid-loop interruption; EVIDENCE_LOG ledger). So log **ahead**:
 
 ```sql
--- Row 1 — 'started': write it the moment Ace returns, BEFORE the bronze append.
+-- Row 1 — 'started': write it the moment the agent returns, BEFORE the bronze append.
 -- It persists the two things a dead session loses: the window you asked for and the object path.
 INSERT INTO my_db.warehouse_ingest_log
   (target_table, batch_id, status, source_db, source_channel, backfill_kind, watermark_from, source_uri)
 VALUES
-  ('planet_gps_pings', 'ace:<chat-uuid>', 'started', 'demo_fh4', 'ace_csv', 'forward',
-   TIMESTAMP '2026-06-26 01:42:40.779', 'gs://planet-user-results-prod-eu/<uuid>-000000000000.csv');
+  ('planet_gps_pings', 'agent:<uuid from data_uri>', 'started', 'demo_fh4', 'agent_csv', 'forward',
+   TIMESTAMP '2026-06-26 01:42:40.779', 'gs://<bucket>/query-results/<uuid>/turn_0.csv');
 
 -- Row 2 — 'completed': write it after the verify step, same batch_id.
 INSERT INTO my_db.warehouse_ingest_log
   (target_table, batch_id, status, source_db, source_channel, backfill_kind,
    watermark_from, watermark_to, rows_loaded, source_uri)
 VALUES
-  ('planet_gps_pings', 'ace:<chat-uuid>', 'completed', 'demo_fh4', 'ace_csv', 'forward',
+  ('planet_gps_pings', 'agent:<uuid from data_uri>', 'completed', 'demo_fh4', 'agent_csv', 'forward',
    TIMESTAMP '2026-06-26 01:42:40.779', TIMESTAMP '2026-06-29 18:45:58.658',
-   157415, 'gs://planet-user-results-prod-eu/<uuid>-000000000000.csv');
+   157415, 'gs://<bucket>/query-results/<uuid>/turn_0.csv');
 ```
 
-(Not before the Ace call: pre-Ace there is nothing worth recovering — a re-run just re-asks. Post-Ace
+(Not before the agent call: before it there is nothing worth recovering — a re-run just re-asks. After it
 there is: the window and the `gs://` path. Both rows are plain `INSERT`s — append-only, no `UPDATE`, so
 restrictive hosts and dropped connections can't half-write a state transition.)
 
@@ -97,7 +97,7 @@ sweep in a terminal state, so the next session's worklist is clean:
   query below is exactly this). Idempotent — safe if silver is in fact already correct.
 - **Batch present in bronze, silver missing/partial** → the load died between append and derive: re-run
   the silver derive (it's idempotent) and append the `completed` row. No re-pull — bronze has the data.
-- **Batch absent from bronze** → it died before landing. **Default: re-ask Ace for the *same window*** (the
+- **Batch absent from bronze** → it died before landing. **Default: re-ask the agent for the *same window*** (the
   `started` row preserved it; the stored `gs://` path can't be re-downloaded — the signature wasn't kept —
   but the window makes the re-ask exact), then continue the loop. This is the safe branch — take it whenever
   in doubt, even for old orphans; re-asking a window you already have is harmless (bronze append + silver
@@ -147,8 +147,7 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
                               prompt="<entity> rows after <watermark> UTC, columns: …,
                                       include every device; do not filter on IsTracked")
      url, sql, n = resp.data_uri, resp.sql, resp.row_count                                 # plain fields, no spill
-     if n == 0 and the window should have data: STOP, read `sql`, re-ask (quirk #21)       # empty-success guard
-     # (legacy Ace: GetAceResults(new_chat=true, …) → grep url/columns/SQL out of the spilled file)
+     if n == 0 and the window should have data: STOP, read `sql`, re-ask (Q2)       # empty-success guard
   2b. log 'started': INSERT INTO warehouse_ingest_log (…, batch_id, status='started',      # LOG-AHEAD: persist the
                      watermark_from, source_uri) VALUES (…);                               # window + gs:// path NOW —
                                                                                            # an interruption from here
@@ -171,18 +170,17 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   the silver derive inserts 0 (watermark already advanced) and dedups on the natural key, so silver is
   unchanged. Safe to retry. (For bronze idempotency too, skip the append when `new_rows==0`, or dedupe
   bronze by `_batch_id` on replay.)
-- **After downtime** (missed several days): identical loop — one Ace call with the wider
+- **After downtime** (missed several days): identical loop — one agent call with the wider
   `after <old watermark>` window. If that window is huge (days × big fleet), chunk it the same way as
   historical backfill (below) so no single CSV is unwieldy. **A too-big pull doesn't just make an
-  unwieldy CSV — it can *time out at the MCP layer* before Ace returns** (the data agent behaves the same:
-  2026-10-29 a 2-day `StatusData` pull hit its 60 s tool limit while a 12 h window — 368,764 rows, 26 MB,
+  unwieldy CSV — it can *time out at the MCP layer* before the agent returns** (2026-10-29: a 2-day `StatusData` pull hit its 60 s tool limit while a 12 h window — 368,764 rows, 26 MB,
   one file, 0 duplicate rows — returned; one identical trips pull timed out once and passed on retry, so
-  *retry once before shrinking*) (observed 2026-07-03: a ~1.9M-row
-  open-ended `StatusData` catch-up timed out twice; ~200K–400K-row windows returned fine). Size chunks to
-  the proven single-pull size for that entity (≈ what your daily volume × fan-out lands at — StatusData
-  chunked cleanly at **12 h ≈ 800K CSV rows incl. the #12 2× fan-out**). If you delegate the chunk loop to
+  *retry once before shrinking* (Q9); an earlier ~1.9M-row
+  open-ended `StatusData` catch-up timed out twice, ~200K–400K-row windows returned fine). Size chunks to
+  the proven single-pull size for that entity — StatusData chunked cleanly at **12 h ≈ 369K rows / 26 MB** on
+  the 50-vehicle demo fleet. If you delegate the chunk loop to
   a sub-agent, **bound its runtime** (≈2 windows per sub-agent): a single sub-agent grinding ~10 sequential
-  Ace calls hit an *unrelated* model-gateway `ConnectionRefused` at ~7.6 min; log-ahead makes that death
+  agent calls hit an *unrelated* model-gateway `ConnectionRefused` at ~7.6 min; log-ahead makes that death
   clean (bronze + `started` rows persist, no orphaned completion), and the next sub-agent resumes.
 - **Expect long backfills to exceed the host's per-turn tool-call budget — and know that's fine.** A big
   first-time or after-downtime catch-up is dozens of MCP calls; many AI clients cap tool calls per turn,
@@ -203,17 +201,17 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   Geotab's official API Adapter uses on `GetFeed` pages — see
   [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter). And don't
   judge "caught up" by `max(event_time)` vs *now* alone — an event-cadence table looks stale even
-  when fully caught up (§C2, quirk #16).
-- **Cost:** ~33–60 s of Ace time per fact table + a couple fast MotherDuck calls. Dimensions (via `Get`)
+  when fully caught up (§C2, Q10).
+- **Cost:** one agent call per fact table (keep it inside the ~60 s tool limit by sizing windows, Q9) + a couple fast MotherDuck calls. Dimensions (via `Get`)
   are sub-second; refresh weekly, not daily. **Ordering:** load dimensions first, then facts.
-- **Freshness floor:** Ace lags ~1–2 min, so "caught up" means `max(event_time)` within ~2 min of now,
+- **Freshness floor:** the source lags tens of seconds to ~2 min, so "caught up" means `max(event_time)` within ~2 min of now,
   not exactly now ([`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md)).
 
 ---
 
 ## B. Historical recovery — "there's more past data to recover"
 
-The other frontier: extend *earlier* than your current oldest row. Don't ask Ace for "everything" —
+The other frontier: extend *earlier* than your current oldest row. Don't ask the agent for "everything" —
 that's slow, may hit caps, and one giant CSV is unwieldy. **Walk backwards in bounded windows:**
 
 ```
@@ -221,8 +219,8 @@ target_start = 2026-01-01
 cursor       = current earliest in table  (SELECT min(<event_time>) …)
 while cursor > target_start:
   window_lo = max(cursor - INTERVAL 1 DAY, target_start)
-  Ace: "<entity> rows where <event_time> >= <window_lo> and <event_time> < <cursor> UTC, columns: …"
-       # repeat <event_time> on BOTH sides — Ace drops a bare "< <cursor>" and returns the whole tail (quirk #12)
+  agent: "<entity> rows where <event_time> >= <window_lo> and <event_time> < <cursor> UTC, columns: …"
+       # repeat <event_time> on BOTH sides and verify the loaded min/max — a dropped upper bound returns the whole tail (Q6)
   MotherDuck (rw): INSERT INTO <bronze> SELECT *, provenance ('backfill:<window_lo>' as _batch_id)
                    FROM read_csv_auto(url, all_varchar=true);                   # land raw, append-only
   MotherDuck (rw): INSERT INTO <silver> … FROM <bronze> with the ANTI-JOIN dedup  # windows can overlap
@@ -233,8 +231,8 @@ while cursor > target_start:
 Why windows:
 - **Bounded size** per CSV → predictable load, easy retry on the one failed window.
 - **Resumable** — the log shows which windows are done; restart from the gap.
-- **Respects Ace's date semantics** (quirks #11/#12): inclusive, device-local, with injected partition
-  guards. Use explicit UTC bounds and verify the loaded `min/max` against what you asked for.
+- **Respects the agent's date semantics** (Q4, Q6): possibly inclusive or device-local, with injected
+  partition guards. Use explicit UTC bounds and verify the loaded `min/max` against what you asked for.
 - Pick window width from density: ~157K GPS rows ≈ 3.7 days across 26 vehicles, so **1 day ≈ 40K rows
   ≈ 3 MB** here — comfortably one CSV. Larger fleets → narrower windows.
 
@@ -243,12 +241,12 @@ from the newest watermark.
 
 ---
 
-## C. Cross-channel reconciliation — "are `Get` + Ace missing rows?"
+## C. Cross-channel reconciliation — "are `Get` + the agent missing rows?"
 
-Neither A nor B can see holes *behind the frontier*: a device offline for a day, an Ace window that came
+Neither A nor B can see holes *behind the frontier*: a device offline for a day, an agent window that came
 back short, a failed run, or — the big one — **rows a channel never returns because of its default
 filters.** Reconciliation is the completeness audit that makes the mirror *provably* whole. Two halves:
-**interior gaps** (within a table) and **channel disagreements** (between Ace, `Get`, and the roster).
+**interior gaps** (within a table) and **channel disagreements** (between the agent, `Get`, and the roster).
 
 ### C1. Interior gap detection (within the fact table)
 
@@ -299,10 +297,10 @@ ORDER BY d.DeviceName, c.day;
 
 ### C2. Channel disagreement (the part people forget)
 
-Ace and `Get` return **different populations**, so a table can look internally contiguous yet still be
+The agent and `Get` return **different populations**, so a table can look internally contiguous yet still be
 missing whole devices. Compare across channels:
 
-- **Device population vs the roster (the active-only trap).** Ace defaults to `IsTracked = TRUE`, so the
+- **Device population vs the roster (the active-only trap).** the agent defaults to `IsTracked = TRUE` (Q1), so the
   fact table can hold far fewer devices than the fleet. Compare to `dim_device` (from `Get`, the exact
   roster):
   ```sql
@@ -311,16 +309,16 @@ missing whole devices. Compare across channels:
   LEFT JOIN (SELECT DISTINCT DeviceId FROM my_db.planet_gps_pings) f ON f.DeviceId = d.id
   WHERE f.DeviceId IS NULL;          -- devices in the fleet with NO GPS in the warehouse
   ```
-  Measured live: the warehouse held **~25** GPS devices while the fleet has **50**; an Ace pull that
+  Measured live: the warehouse held **~25** GPS devices while the fleet has **50**; a pull that
   explicitly said *"include all devices, do not restrict to tracked/active"* returned **47–49**. If this
   query returns rows, your facts were pulled active-only — re-pull the window with the IsTracked
-  exclusion lifted (prompt rules in [`ACE_TO_CSV.md`](ACE_TO_CSV.md)).
+  exclusion lifted (prompt rules in [`DATA_AGENT_TO_CSV.md`](DATA_AGENT_TO_CSV.md)).
 - **Window row-count vs an independent read.** To check a window isn't short, count it from a bounded
   **Get API `Get LogRecord`** read of the *same* window — **not the Get API `GetCountOf`** (same family,
   but `GetCountOf` ignores date/device filters for facts and returns the whole-table count: 16,098,152
-  for two different windows in testing). Neither of these is Ace. See
+  for two different windows in testing). Neither of these is the data agent. See
   [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md).
-- **Real-time tail.** Because Ace lags ~1–2 min, the newest sliver may be absent until the next run;
+- **Real-time tail.** Because the source lags up to ~2 min, the newest sliver may be absent until the next run;
   that's expected, not a gap. Top it up with a small `Get LogRecord` read if you need it now.
 
 ### C3. Settle it (the convergence loop)
@@ -328,7 +326,7 @@ missing whole devices. Compare across channels:
 For each confirmed hole or missing device/window:
 
 ```
-1. Ace (or Get): pull EXACTLY that window/device — "<entity> for device X where <event_time> in [lo,hi) UTC,
+1. Agent (or Get): pull EXACTLY that window/device — "<entity> for device X where <event_time> in [lo,hi) UTC,
                  include all devices, columns …"     # bounded, surgical
 2. INSERT INTO <bronze> … (append-only, _batch_id='reconcile:<lo>')      # land raw
 3. INSERT INTO <silver> … FROM <bronze> with the ANTI-JOIN dedup         # add only genuinely-missing rows
@@ -337,7 +335,7 @@ For each confirmed hole or missing device/window:
 ```
 
 Always **anti-join** (overlapping windows are expected) and **append to bronze** — never blind-insert,
-never re-ask the whole question (Ace is non-deterministic; a full re-ask can replace good data with a
+never re-ask the whole question (the agent is non-deterministic; a full re-ask can replace good data with a
 differently-shaped answer). Prefer re-deriving silver from bronze over re-pulling when the raw is
 already there. Suspect a whole window is corrupt? Stage-and-swap it atomically — see
 [`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md).
@@ -387,14 +385,14 @@ urban fleets; **≥ 24–36 h for long-haul / overnight**). The anti-join dedups
 prev_wm = the watermark you just caught up from           # e.g. 2026-06-29 23:28:52
 L       = ≥ your longest expected trip                     # urban: a few h · long-haul/overnight: ≥24–36 h
 lo      = prev_wm − L                                      # covers re-splits AND late-completing long trips
-1. Ace:  re-pull trips that started after <lo> UTC, FULL columns         # open-ended "started after X" is fine
-         → land append-only in bronze (_batch_id='reconcile:<lo>')       #   (a bounded "…and before Y" prompt
-                                                                          #    flaked with invalid_value 400s — quirk #17)
-2. Truth set: a fresh source pull of the affected day(s), keyed by TripId (Ace, or Get Trip per device)
+1. Agent: re-pull trips that started after <lo> UTC, FULL columns       # open-ended "started after X" is fine
+         → land append-only in bronze (_batch_id='reconcile:<lo>')       #   (if a bounded "…and before Y" prompt
+                                                                          #    fails: retry once, then go open-ended — Q9)
+2. Truth set: a fresh source pull of the affected day(s), keyed by TripId (the agent, or Get Trip per device)
 2a. GUARD — validate the truth set BEFORE deleting, or a bad pull wipes valid trips:
       require  count(truth set) > 0  AND  count(truth set) ≈ the silver count for the window
-      (and the expected device population). If the pull is empty or implausibly short — Ace
-      source-table variability (#15), an `invalid_value` 400 (#17), or a failed staging load —
+      (and the expected device population). If the pull is empty or implausibly short — an
+      empty-success (Q2), a wrong source table (Q3), a timeout/502 (Q9), or a failed staging load —
       **ABORT, do not DELETE; re-pull/retry first.** With an empty/partial truth set,
       `TripId NOT IN (truth set)` is true for every row and step 3 deletes the whole window.
 3. DELETE FROM silver.trips                                              # drop the retired orphans
@@ -413,12 +411,12 @@ orphans, step 4 inserted **51** current splits, and step 5 went from `2138 sourc
 
 > **This is the one place the warehouse `DELETE`s silver fact rows** — justified because the *source*
 > retired those ids. **Never run step 3 without guard 2a:** a destructive delete keyed on a `NOT IN`
-> source set must first verify that set is non-empty and plausibly complete, or an Ace miss wipes the
+> source set must first verify that set is non-empty and plausibly complete, or a bad pull wipes the
 > window. Keep everything else append + anti-join. The same pattern applies to any
 > *derived/recomputed* fact; `Trip` is the one we hit. **Pure event tables (`ExceptionEvent`, `FaultData`)
 > are append-only once fired**, so A/B/C suffice for them — don't delete-reconcile those. (`silver.trips`
 > must carry `TripId` for any of this to work — the
-> [`ACE_TO_CSV.md`](ACE_TO_CSV.md) trips prompt now requests it; see [`ENTITY_CATALOG.md`](ENTITY_CATALOG.md) †.)
+> [`DATA_AGENT_TO_CSV.md`](DATA_AGENT_TO_CSV.md) trips prompt requests it; see [`ENTITY_CATALOG.md`](ENTITY_CATALOG.md) †.)
 
 ### Replaying trips from bronze — *not* a plain `DISTINCT ON (TripId)`
 
@@ -499,8 +497,8 @@ rebuild, one `UNION ALL` branch per fact table added at bootstrap; the adapter's
 stats views play the same role). Reading it:
 
 - **`cadence` tells you which staleness matters:** a `continuous` table hours behind means the loop
-  hasn't run (or quirk #20 clipped a pull); an `event` table hours behind may just mean nothing
-  happened — judge those by recent-window event counts (§C2, quirk #16), not `hours_behind_now`.
+  hasn't run (or a clipped window, Q11); an `event` table hours behind may just mean nothing
+  happened — judge those by recent-window event counts (§C2, Q10), not `hours_behind_now`.
 - **`latest_event` newer than `last_loaded_at` explains itself** (the load happened, log says when);
   `latest_event` advancing with **no matching log row is a red flag** — someone loaded without logging.
   The validation run caught exactly that: GPS `latest_event` `2026-07-02 17:20` vs last logged load

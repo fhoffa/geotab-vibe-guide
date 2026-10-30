@@ -29,11 +29,11 @@ They solve the same problem with opposite philosophies: **agent-driven and zero-
 | **Runs where** | Inside an AI chat session (Claude, or any MCP client) | Your server/VM — Windows service, Linux systemd, or manual |
 | **Infrastructure you manage** | None | A host machine + SQL Server 2019+ or PostgreSQL 16+ |
 | **Target database** | MotherDuck (cloud DuckDB) | SQL Server or PostgreSQL |
-| **How it syncs** | Watermark-based incremental loads via Geotab MCP (Ace bulk CSV for facts, `Get` for dimensions) | Official `GetFeed` API — exact version-token cursors per entity |
-| **Freshness** | As fresh as your last run (typically daily or on-demand); the Ace source itself lags only ~1–2 min | Near-real-time — continuous polling, intervals down to 2 seconds |
+| **How it syncs** | Watermark-based incremental loads via Geotab MCP (the Geotab data agent's bulk CSV for facts, `Get` for dimensions) | Official `GetFeed` API — exact version-token cursors per entity |
+| **Freshness** | As fresh as your last run (typically daily or on-demand); the Geotab source itself lags only tens of seconds to ~2 min | Near-real-time — continuous polling, intervals down to 2 seconds |
 | **Coverage** | Curated catalog: GPS, trips, engine status, exceptions, faults + device/user/zone/rule dimensions (extensible to any of the 52 entity types) | 14 feed types (GPS, trips, faults, DVIR, HOS logs, charge events…) + ~10 reference caches, chosen in a config file |
 | **Setup effort** | Minutes — connect two MCP servers, say "replicate my Geotab data" | Hours — provision database, configure `appsettings.json`, deploy the service |
-| **Cost** | Free tiers go far: MotherDuck Lite includes 10 GB (~70 operational vehicle-years with cleanup, measured June 2026); Geotab MCP/Ace ride the standard plan | Software is free; you pay for the host + database (Geotab's own estimate: ~20,000 devices ≈ 40 GB of PostgreSQL in 7 days) |
+| **Cost** | Free tiers go far: MotherDuck Lite includes 10 GB (~70 operational vehicle-years with cleanup, measured June 2026); the Geotab MCP rides the standard plan | Software is free; you pay for the host + database (Geotab's own estimate: ~20,000 devices ≈ 40 GB of PostgreSQL in 7 days) |
 | **Extras** | Bronze/silver/gold layers, replayable raw history, quality checks, natural-language operation | Location interpolation for faults/status, DVIR write-back to MyGeotab, automated partitioning & index maintenance |
 | **Best for** | Analytics, BI, data science, demos, small-to-large fleets without a data team | Production integrations, minute-level SLAs, enterprise fleets with ops staff |
 
@@ -48,14 +48,14 @@ Geotab MCP and the MotherDuck MCP — and ask for what you want in plain English
 
 > *"Replicate my Geotab database into MotherDuck and keep it fresh with a daily update."*
 
-The skill teaches the agent everything else: how to pull bulk GPS/trip/status data through Geotab
-Ace (which returns a CSV download link), how to load dimensions like devices and zones through the
+The skill teaches the agent everything else: how to pull bulk GPS/trip/status data through the Geotab data
+agent (which returns a CSV download link), how to load dimensions like devices and zones through the
 classic API, how to organize the warehouse in **bronze** (raw, append-only), **silver** (typed,
 deduplicated), and **gold** (business summaries) layers, and how to run incremental updates with
 watermarks so re-runs never duplicate data.
 
-What makes it more than a toy: the skill encodes **20+ documented quirks** of the Ace export path
-(duplicated rows, silently injected filters, unit conversions, sharded downloads…) with the
+What makes it more than a toy: the skill encodes **17 documented quirks** of the data-agent export path
+(silently injected filters that can return an empty "success", unit conversions, wrong-table answers, tool timeouts…) with the
 defensive pattern for each — all measured on live databases, with the evidence logged. Your agent
 doesn't rediscover these the hard way.
 
@@ -63,7 +63,7 @@ doesn't rediscover these the hard way.
 with the whole conversation shared —
 [read the transcript](https://claude.ai/share/7bafaf73-8018-4312-a16b-5052cca6ef77). Anything it ran
 into fed back into the skill's
-[improvement plan](../skills/geotab-motherduck-warehouse/IMPROVEMENT_PLAN.md) and
+[changes file](../skills/geotab-motherduck-warehouse/CHANGES_v1.1_to_v2.0.md) and
 [evidence log](../skills/geotab-motherduck-warehouse/references/EVIDENCE_LOG.md), so a fresh run is
 smoother still.
 

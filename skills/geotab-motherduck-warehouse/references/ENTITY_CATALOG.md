@@ -13,13 +13,13 @@ per-entity the hard way with `Trip`; check it *before* adding a new fact, not af
 
 | Entity | Role | Channel | Natural key | Mutates? | Cadence |
 |--------|------|---------|-------------|----------|---------|
-| `LogRecord` (GPS) | fact | **Ace** (bulk CSV) | `(DeviceId, GpsDateTime)` | no | daily |
-| `Trip` † | **mutable** fact | **Ace** | `(DeviceId, trip_start_utc)` | **yes — re-splits** | daily **+ re-split reconcile** |
-| `StatusData` (engine/sensor) | fact | **Ace** | `(DeviceId, DiagnosticId, status_datetime_utc)` | no | daily |
-| `ExceptionEvent` (safety) | fact | **Ace** | `(DeviceId, RuleId, active_from_utc)` | no (append-only once fired) | daily |
-| `FaultData` (DTCs) | fact | **Ace** or `Get` | `(DeviceId, DiagnosticId, dateTime)` | dismissal fields only ‡ | daily |
+| `LogRecord` (GPS) | fact | **Agent** (bulk CSV) | `(DeviceId, GpsDateTime)` | no | daily |
+| `Trip` † | **mutable** fact | **Agent** | `(DeviceId, trip_start_utc)` | **yes — re-splits** | daily **+ re-split reconcile** |
+| `StatusData` (engine/sensor) | fact | **Agent** | `(DeviceId, DiagnosticId, status_datetime_utc)` | no | daily |
+| `ExceptionEvent` (safety) | fact | **Agent** | `(DeviceId, RuleId, active_from_utc)` | no (append-only once fired) | daily |
+| `FaultData` (DTCs) | fact | **Agent** or `Get` | `(DeviceId, DiagnosticId, dateTime)` | dismissal fields only ‡ | daily |
 | `DriverChange` | fact (driver↔vehicle assignment) | `Get` (9,735 rows on `demo_fh4`, 2026-07-02) | `id` (or `(DeviceId, dateTime)`) | no | daily — **load it if you mirror trips** § |
-| `FuelUsed` (engine-computed fuel) | fact | `Get`; Ace if large (33,408 on `demo_fh4`, 2026-07-02) | `(DeviceId, dateTime)` | no | daily |
+| `FuelUsed` (engine-computed fuel) | fact | `Get`; agent if large (33,408 on `demo_fh4`, 2026-07-02) | `(DeviceId, dateTime)` | no | daily |
 | `FuelTransaction` / `FillUp` (fuel-card) | fact | `Get` (sparse; 0 on the demos) | `(DeviceId, dateTime)` | no | daily/weekly |
 | `ChargeEvent` / `BatteryStateOfHealth` (EV) | fact | `Get` (0 on the demos) | `(DeviceId, startTime)` | no | daily |
 | `Audit` (admin/audit trail) | fact | `Get` (35,902 on `demo_fh4`, 2026-07-02) | `id` | no | weekly, if needed |
@@ -28,7 +28,7 @@ per-entity the hard way with `Trip`; check it *before* adding a new fact, not af
 | `User` (incl. drivers) | dimension | `Get` (`{isDriver:true}` for drivers) | `id` | archived via `activeTo` | weekly |
 | `Zone` (geofences) | dimension | `Get` | `id` | edits + deletes | weekly |
 | `Group` (hierarchy) | dimension | `Get` | `id` | edits + deletes | weekly |
-| `Diagnostic` | dimension (decodes StatusData/Fault) | `Get` if small; **Ace bulk CSV if large** | `id` | rare | monthly |
+| `Diagnostic` | dimension (decodes StatusData/Fault) | `Get` if small; **agent bulk CSV if large** | `id` | rare | monthly |
 | `Controller` / `FailureMode` | dimensions (decode `FaultData` DTCs) | `Get` (594 / 283 on `demo_fh4`, 2026-07-02) | `id` | rare | monthly |
 | `Rule` | dimension (decodes ExceptionEvent) | `Get` | `id` | edits | monthly |
 | `Driver`* / `AuditLog`* | — | use `User` + `{isDriver:true}` / typeName is **`Audit`** | — | — | — |
@@ -73,16 +73,16 @@ for rows where a driver was assigned and is the sentinel `'UnknownDriverId'` oth
 trips→`dim_user` join must tolerate that sentinel. (Pure event facts — `ExceptionEvent`, `FaultData` —
 don't mutate once fired.)
 
-**Heuristic:** if it has a timestamp and grows forever → **fact via Ace**. If it's a list you join
+**Heuristic:** if it has a timestamp and grows forever → **fact via the data agent**. If it's a list you join
 *to* (vehicles, drivers, zones, diagnostics, rules) → **dimension via `Get`**, because `Get` is exact,
-real-time, and permission-scoped, while Ace filters to `IsTracked=TRUE` and pre-aggregates.
+real-time, and permission-scoped, while the agent defaults to `IsTracked=TRUE` and may pre-aggregate (Q1, Q4).
 
-## Facts via Ace
+## Facts via the data agent
 
-Same loop as GPS — see [`ACE_TO_CSV.md`](ACE_TO_CSV.md) for prompts (GPS, trips, status, exceptions
-are pre-written there). Each fact gets its own **append-only `bronze_*_raw`** table (lossless landing)
+Same loop as GPS — see [`DATA_AGENT_TO_CSV.md`](DATA_AGENT_TO_CSV.md) for prompts (GPS, trips, status; an exceptions
+template). Each fact gets its own **append-only `bronze_*_raw`** table (lossless landing)
 **and** a silver table derived from it, plus a watermark column and `warehouse_ingest_log` rows.
-Bronze is mandatory for these because Ace's output isn't reproducible (URL expiry + non-determinism) —
+Bronze is mandatory for these because the agent's output isn't reproducible (URL expiry + generated-SQL variability) —
 see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the entity's event time:
 
 | Table | Watermark column |
@@ -97,14 +97,15 @@ see [`MEDALLION_LOADING.md`](MEDALLION_LOADING.md). The watermark column is the 
 > **Pick the channel by *size*, not just fact-vs-dimension.** The `Get` → JSON → hand-built `INSERT`
 > path is great for small/medium dimensions but **doesn't scale to large ones** — observed on
 > `Demo_fh_vegas4` (2026-06-29): `User`=1, `Zone`=0, `Rule`=13, but **`Diagnostic`=65,757** (`GetCountOf`;
-> the Ace bulk CSV returned 65,772 — see the Get-vs-Ace gap below). Serializing
+> the bulk CSV returned 65,772 — see the Get-vs-bulk gap below). Serializing
 > 65 K rows of JSON into SQL is impractical (and impossible to hand-build in clients without a scratchpad,
-> e.g. ChatGPT). For a **large reference table, use the Ace bulk-CSV path** (land it via `read_csv_auto`
+> e.g. ChatGPT). For a **large reference table, use the data-agent bulk-CSV path** (land it via `read_csv_auto`
 > like a fact, then treat the typed result as your `dim_*`), **or load only the subset your facts
 > reference** (e.g. the `DiagnosticId`s present in `status_data`/`fault_data`) — you rarely need all
 > 65 K. **Measured: of 65,772 diagnostics, `status_data` referenced only 56** (~0.1%); the referenced
-> subset is tiny. Small dims stay on `Get` (exact, reproducible). (Bulk-CSV `Diagnostic` quirks: Ace
-> returned 65,772 vs `GetCountOf`=65,757, couldn't return `Controller` → loaded NULL, uppercased `SOURCE`.)
+> subset is tiny. Small dims stay on `Get` (exact, reproducible). (Bulk-CSV `Diagnostic` quirks, measured 2026-06-29 on the
+> bulk natural-language channel — re-verify with the data agent: 65,772 rows vs `GetCountOf`=65,757, couldn't return
+> `Controller` → loaded NULL, uppercased `SOURCE`.)
 
 `mcp__MyGeotab_MCP__Get(database, typeName, resultsLimit, propertySelector, search, sort)`. Returns
 JSON. Validated on `demo_fh4`:
@@ -142,7 +143,7 @@ Tips:
    Loop until a page returns fewer than `resultsLimit`. **There are no page numbers.**
 2. **Time-series entities (`LogRecord`, `Trip`, `StatusData`, …): narrow the `fromDate`/`toDate`
    window**, don't page. If a window hits the limit, split it in half and re-pull. (This is exactly
-   why facts are easier via Ace, which streams the whole window to one CSV.)
+   why facts are easier via the agent, which streams the whole window to one CSV.)
 
 The live `Get Device` response spelled this out:
 > `"hasMoreResults": true … To fetch the next page: use sort with offset set to the last record's
@@ -190,7 +191,7 @@ exactly this reason, on top of its frequent incremental updates.) Consequences f
 ### Entities cover different device populations
 
 Observed counts (2026-06-29, `demo_fh4`; point-in-time) on the same fleet/window: GPS **26 devices**,
-trips **26**, exception events **50**, `dim_device` **50**. Facts pulled via Ace reflect only devices with activity (and `IsTracked=TRUE`),
+trips **26**, exception events **50**, `dim_device` **50**. Facts pulled via the agent reflect only devices with activity (and, by default, `IsTracked=TRUE` — Q1),
 while the device dimension has the whole fleet. So **a device missing from a fact table isn't
 necessarily a gap** — cross-check against `dim_device` and the entity's own nature before backfilling.
 
