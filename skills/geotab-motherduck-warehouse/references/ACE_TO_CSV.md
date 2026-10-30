@@ -244,7 +244,7 @@ Evidence: probes P19–P27 in [`EVIDENCE_LOG.md`](EVIDENCE_LOG.md) §1b/§2/§3.
 | 18 | ➖ | Not re-probed (Add→visible lag) |
 | 19 | ➖ | Not applicable to this connector shape (one server). Still preflight |
 | 20 | ➖ | Not reproduced: 3 "…and now" windows all bounded by `CURRENT_TIMESTAMP()`/now (n=3; keep the guard) |
-| 21 | 🆕 | `status: success` with 0 rows / empty `data_uri` |
+| 21 | 🆕 | `status: success` with 0 rows / empty `data_uri` — **reproduced on a 2nd DB** (`demo_fh_vegas8`, 2026-10-30: 0/0 default vs 50 / 14,956 pinned); that call also carried `freshness: stale` + a message, and a first attempt returned a transient **HTTP 502** `data_agent_query_failed` (retry once) |
 | 22 | 🆕 | Agent-derived columns can be wrong (negative driving minutes) |
 
 ### 🔴 Critical — silently produces wrong/incomplete data (handle these or the mirror is quietly wrong)

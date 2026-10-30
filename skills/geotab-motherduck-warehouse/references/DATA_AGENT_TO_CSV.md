@@ -127,6 +127,8 @@ prompt; use `delegation_context` for output shaping.
 | `status: success`, `row_count: 0`, `data_uri: ""`, `turn_id: -1` | injected filter (`IsTracked`) or wrong source — NOT "no data" | read `sql`; re-ask forbidding the filter (#21) |
 | 0 vehicles / 0 trips on a demo fleet | `IsTracked = TRUE` + `Device_ActiveTo >= now` | forbid `IsTracked`, don't restrict by ActiveFrom/To |
 | catalog-looking rows (diagnostic names) instead of readings | intent routed to `Diagnostic` | name the table `StatusData`; ask for `DiagnosticId` (#15) |
+| HTTP 502 `data_agent_query_failed` / "Try rephrasing" | transient agent failure (seen once, passed on identical retry) | retry once, then rephrase |
+| `freshness.status: "stale"` + message | agent could not cover the requested range | read the message, narrow/shift the window, tell the user the available range |
 | tool timed out after 60 s | window too big, or load spike (same prompt passed on retry) | halve the window; retry once |
 | miles instead of km / `Local_Date` / `VehicleKPI_Daily` in SQL | pre-aggregated rollup chosen (#11/#13) | ask for raw rows in UTC, pin km |
 | `DATA` instead of `Data` | case drift (#7) | key by the CSV header, alias in derive |

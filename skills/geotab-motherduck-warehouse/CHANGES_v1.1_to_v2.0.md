@@ -66,6 +66,6 @@ model. Those do not depend on which Geotab tool fetches the data and were not re
 
 Exception/Fault prompts · dimension write→visible lag via the agent (#18) · bounded-prompt 400s (#17) ·
 exports above 26 MB (sharding may still appear) · wall-clock latency (the MCP gives no timing) ·
-other databases/servers (single DB: `demo_fh8`) · the MotherDuck-side load of a data-agent CSV
+other databases/servers (only `demo_fh8` and, for the core #21 probe, `demo_fh_vegas8`, both `my.geotab.com`) · the MotherDuck-side load of a data-agent CSV
 (the `read_csv_auto(all_varchar=true)` path is unchanged but was not re-run in this session —
 MotherDuck was not connected).
