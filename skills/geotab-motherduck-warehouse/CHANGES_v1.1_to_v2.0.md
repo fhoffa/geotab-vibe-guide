@@ -50,7 +50,7 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q18` in [`
 | #17 `invalid_value` 400s, tool timeouts | **Q8** | now a ~60 s timeout + transient 502 |
 | #16 event vs continuous freshness | **Q12** | unchanged |
 | #20 injected upper bound clips today | **Q11** | not reproduced (n=3), guard kept |
-| #18 config writes lag | **Q14** | not re-measured on the agent |
+| #18 config writes lag | **Q14** | re-measured once: 23–29 min |
 | — | **Q13** | **new:** wrong DB/server name |
 | — | **Q1** | **new:** window silently shifted; `Trip` table lags (found in the 2026-10-30 verification pass) |
 | #19 ChatGPT mixed mode | **Q15** | unchanged |
@@ -76,7 +76,7 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q18` in [`
 
 ## Not verified in v2.0 (be honest in downstream docs)
 
-Dimension write→visible lag via the agent (Q14 — needs a write to the Geotab database) · ChatGPT connector modes (Q15) · production fleets (both test fleets are demo fleets with every device `IsTracked=false`, all UTC; Q3 and Q10 are demo-sensitive) · exports above 53 MB (sharding may
+Dimension write→visible lag measured once only (Q14, n = 1) · ChatGPT connector modes (Q15) · production fleets (both test fleets are demo fleets with every device `IsTracked=false`, all UTC; Q3 and Q10 are demo-sensitive) · exports above 53 MB (sharding may
 reappear) · wall-clock latency (the MCP gives no timing) · other databases/servers (only `demo_fh8`, and for the
 core `IsTracked` probe `demo_fh_vegas8`, both `my.geotab.com`) · the MotherDuck load of a data-agent CSV (the
 `read_csv_auto(all_varchar=true)` path is unchanged, but the `+00:00` timestamp cast in the derive was not run —

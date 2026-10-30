@@ -102,7 +102,7 @@ prompts: [`references/DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md). M
 - **Q11** — Don't use the agent as a freshness/watermark oracle → watermark from `max(silver)`; live reading from `Get DeviceStatusInfo`; confirm the window's upper bound is *now*.
 - **Q12** — Event tables (`Trip`/`FaultData`/`Events`) update only on an event, *or* lag (Q1) → compare with the Get API / count events in a recent window before concluding which.
 - **Q13** — Wrong database/server name → ask the user; the Geotab DB is the MyGeotab login name.
-- **Q14** — Just-changed config (zones, groups, rules, users, metadata) → **read from `Get`**, not the agent. *(not re-tested)*
+- **Q14** — Just-changed config (zones, groups, rules, users, metadata) → **read from `Get`**, not the agent. *(a created zone took 23–29 min to appear in the agent)*
 - **Q15** — ChatGPT: **both MCP servers must be the same mode**; **preflight** with a tiny call before any DDL. *(field-reported)*
 
 **⚪ Informational:** **Q16** inline ~5–10 KB envelope, 20-row preview, single `data_uri`, stateless (`delegation_context` for follow-ups); exceptions live in the **`Events`** table · **Q17** `UTC_*` carry `+00:00`, `GpsDateTime` is naive ISO — land `all_varchar`, parse in the derive · **Q18** signed URL lasts 24 h, bucket region varies, one file up to 53 MB; log the `gs://` path not the signature.

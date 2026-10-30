@@ -81,7 +81,7 @@ rank in the table below instead of renumbering.
   53 MB) passes; 2 days timed out 2/2.** GPS: 2 days (315,780 rows) passed. A small `Trip` aggregation timed out
   once and passed on retry. Two future-dated prompts ("trips in 2030", "after 2029-12-31") failed twice with
   HTTP 502 *"Failed to generate a valid query after multiple attempts"*; one fleet-count ask failed once with
-  502 `data_agent_query_failed` and passed on retry. **Action:** chunk windows (StatusData ≤ 1 day; GPS and
+  502 `data_agent_query_failed` and passed on retry. One call during polling returned HTTP 503 `data_agent_rejected` and passed on retry. **Action:** chunk windows (StatusData ≤ 1 day; GPS and
   trips ≤ 1–2 days), **retry once**, then shrink or rephrase; never put future dates in a prompt. *(P25, P27, P35.)*
 - **Q9 — One column's case drifts.** Requested `Data`, the CSV header was `DATA` (3/3 StatusData CSVs). Every
   other requested column kept its name (GPS, trips, exceptions). **Action:** key by the CSV header, alias into
@@ -105,9 +105,12 @@ rank in the table below instead of renumbering.
   **not** the MotherDuck `geotab_<source>` name. A wrong name gives `-32601 Database '…' was not found on
   my.geotab.com`. **Action:** ask the user; pass `server` for `gov.geotab.com` and other hosts. **Seen:** ✅ 3/3
   wrong names, 2/2 right names. *(ledger 2026-10-29.)*
-- **Q14 — Just-changed configuration may not be visible to the agent yet.** ❔ **Not re-tested** (needs a write to
-  the Geotab database). Kept because the Get API is synchronous and authoritative regardless. **Action:** read
-  anything you just created or changed (zones, groups, rules, users, device metadata) from the **Get API**.
+- **Q14 — Just-changed configuration reaches the agent about 25 minutes after the Get API.** A zone created with
+  `Add` was visible to `Get` immediately and to the agent's `Zones` table **between 23 and 29 minutes later**
+  (absent at 01:59:55, present at 02:05:06; created ≈ 01:36:30; 10 polls in between). **Action:**
+  read anything you just created or changed (zones, groups, rules, users, device metadata) from the **Get API**,
+  which is synchronous and authoritative. **Seen:** ✅ 1/1 (n = 1; an earlier run on the previous channel measured
+  14–29 min). *(P36.)*
 - **Q15 — Connector setup (ChatGPT).** ❔ Not testable from this session; field-reported. Both MCP servers (Geotab,
   MotherDuck) must be in the **same mode** — both official connectors or both developer-mode — or the Geotab
   connector can drop mid-session and leave a warehouse with empty bronze. **Action:** preflight with a tiny call
