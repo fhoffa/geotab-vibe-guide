@@ -17,7 +17,7 @@ It hinges on **one question: can you reproduce the source on demand?**
 
 - **Data-agent facts → bronze is mandatory.** The source is *not* reproducible: the signed CSV URL
   **expires in ~24 h**, and **the agent's SQL is LLM-generated** — re-pulling the same window can return a
-  differently-shaped/counted result (different source table, `IsTracked` population — see Q1, Q3).
+  differently-shaped/counted result (different source table, `IsTracked` population — see Q3, Q6).
   Bronze is therefore your *only* durable, replayable record of what you actually ingested. **Silver is
   a deterministic projection of bronze** — never loaded straight from the URL.
 - **`Get`-sourced dimensions → skip bronze.** `Get` is exact, real-time, reproducible any time, and
@@ -107,8 +107,8 @@ Decide from the result:
 | Observation | Action |
 |-------------|--------|
 | Schema identical, `new_rows` > 0 | Land in bronze, then derive silver with the watermark filter (below). |
-| Schema differs (renamed/dropped/case) — Q8 | Still land raw in bronze; map by position in the **derive** `SELECT` **or** re-ask the agent. |
-| `overlap` > 0 (boundary second — Q6) | Expected; bronze keeps it, the silver derive's `> watermark`/anti-join removes it. |
+| Schema differs (renamed/dropped/case) — Q9 | Still land raw in bronze; map by position in the **derive** `SELECT` **or** re-ask the agent. |
+| `overlap` > 0 (boundary second — Q7) | Expected; bronze keeps it, the silver derive's `> watermark`/anti-join removes it. |
 | `new_rows` = 0 | The agent had no fresher data (the source lags tens of seconds to ~2 min) — **but first rule out Q2** (`row_count 0` with an unexplained empty `data_uri`). If it's genuinely nothing new, skip the bronze append too. |
 | `csv_rows` ≈ 0 / unexpectedly tiny | Vague prompt, wrong window, or new account; re-ask before landing. |
 
@@ -170,7 +170,7 @@ see §isolate.)
 > landing — you can always replay bronze → silver if your typing logic changes.
 
 **Append to bronze — no dedup, no watermark.** Bronze keeps *everything* exactly as the agent returned it,
-including any boundary overlap (Q6) and any drift. Dedup happens later, in silver.
+including any boundary overlap (Q7) and any drift. Dedup happens later, in silver.
 
 ```sql
 INSERT INTO my_db.bronze_gps_raw
@@ -183,7 +183,7 @@ FROM read_csv_auto('<signed url>', all_varchar=true);
 >
 > **`SELECT *` only works while the pull's columns line up with the bronze table's non-provenance
 > columns.** The bronze table has *more* columns than any single agent pull returns (raw + the 4 provenance),
-> and the agent can hand back a **narrower or renamed** set than last time (Q8) — either drifts the
+> and the agent can hand back a **narrower or renamed** set than last time (Q9) — either drifts the
 > positional `SELECT *, …4 values` into a column-count/position mismatch. When the shapes don't match,
 > **name the columns explicitly on both sides** (or use `INSERT INTO <bronze> BY NAME SELECT … , <provenance>`
 > when names match but order differs) rather than trusting `*`. See §"Column mismatch? Fix it in the derive"
@@ -345,7 +345,7 @@ the lineage.
 > deriving bronze → silver collapses the 4 boundary-second dupes to **679,577** — exactly the silver
 > count that existed before bronze, proving the reconstruction is faithful.
 
-### Column mismatch? Fix it in the derive, not the landing (Q8)
+### Column mismatch? Fix it in the derive, not the landing (Q9)
 
 Bronze always lands raw with whatever names/case the agent returned (`all_varchar`, no mapping). You
 reconcile the drift **when you derive silver** — alias by position so a rename can't silently drop a

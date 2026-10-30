@@ -40,25 +40,25 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q18` in [`
 
 | v1.1 | v2.0 | Note |
 |------|------|------|
-| #11 pre-aggregated rollup, #13 units | **Q4**, **Q5** | reproduced |
-| #14 activity filters | **Q1** | broadened: `IsTracked`, `Device_ActiveTo`, `GpsValid` |
+| #11 pre-aggregated rollup, #13 units | **Q10**, **Q5** | reproduced |
+| #14 activity filters | **Q3** | broadened: `IsTracked`, `Device_ActiveTo`, `GpsValid` |
 | — | **Q2** | **new:** `success` with an empty/zero answer |
-| #15 source table varies | **Q3** | reproduced (StatusData → `Diagnostic` catalog) |
-| #12 predicate injection / join flip / fan-out, #6 duplicates | **Q6** | guards still vary; fan-out and duplicates *not* reproduced |
-| — | **Q7** | **new:** agent-derived columns (negative minutes) |
-| #7 column-case drift | **Q8** | reproduced (`Data`→`DATA`) |
-| #17 `invalid_value` 400s, tool timeouts | **Q9** | now a ~60 s timeout + transient 502 |
-| #16 event vs continuous freshness | **Q10** | unchanged |
+| #15 source table varies | **Q6** | reproduced (StatusData → `Diagnostic` catalog) |
+| #12 predicate injection / join flip / fan-out, #6 duplicates | **Q7** | guards still vary; fan-out and duplicates *not* reproduced |
+| — | **Q4** | **new:** agent-derived columns (negative minutes) |
+| #7 column-case drift | **Q9** | reproduced (`Data`→`DATA`) |
+| #17 `invalid_value` 400s, tool timeouts | **Q8** | now a ~60 s timeout + transient 502 |
+| #16 event vs continuous freshness | **Q12** | unchanged |
 | #20 injected upper bound clips today | **Q11** | not reproduced (n=3), guard kept |
-| #18 config writes lag | **Q12** | not re-measured on the agent |
+| #18 config writes lag | **Q14** | not re-measured on the agent |
 | — | **Q13** | **new:** wrong DB/server name |
-| — | **Q18** | **new:** window silently shifted; `Trip` table lags (found in the 2026-10-30 verification pass) |
-| #19 ChatGPT mixed mode | **Q14** | unchanged |
-| #1, #3, #10 envelope / preview / chat | **Q15** | changed shape |
-| #4, #5 nulls / timestamp text | **Q16** | changed shape |
-| #2 sharded URLs, URL lifetime | **Q17** | one file observed up to 53 MB |
+| — | **Q1** | **new:** window silently shifted; `Trip` table lags (found in the 2026-10-30 verification pass) |
+| #19 ChatGPT mixed mode | **Q15** | unchanged |
+| #1, #3, #10 envelope / preview / chat | **Q16** | changed shape |
+| #4, #5 nulls / timestamp text | **Q17** | changed shape |
+| #2 sharded URLs, URL lifetime | **Q18** | one file observed up to 53 MB |
 | #8 "ask for a URL" degrades schema | — | not reproduced; dropped |
-| #9 ~33 s floor | — | replaced by Q9 |
+| #9 ~33 s floor | — | replaced by Q8 |
 
 ## File-by-file
 
@@ -76,7 +76,7 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q18` in [`
 
 ## Not verified in v2.0 (be honest in downstream docs)
 
-Dimension write→visible lag via the agent (Q12 — needs a write to the Geotab database) · ChatGPT connector modes (Q14) · production fleets (both test fleets are demo fleets with every device `IsTracked=false`, all UTC; Q1 and Q4 are demo-sensitive) · exports above 53 MB (sharding may
+Dimension write→visible lag via the agent (Q14 — needs a write to the Geotab database) · ChatGPT connector modes (Q15) · production fleets (both test fleets are demo fleets with every device `IsTracked=false`, all UTC; Q3 and Q10 are demo-sensitive) · exports above 53 MB (sharding may
 reappear) · wall-clock latency (the MCP gives no timing) · other databases/servers (only `demo_fh8`, and for the
 core `IsTracked` probe `demo_fh_vegas8`, both `my.geotab.com`) · the MotherDuck load of a data-agent CSV (the
 `read_csv_auto(all_varchar=true)` path is unchanged, but the `+00:00` timestamp cast in the derive was not run —

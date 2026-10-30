@@ -68,11 +68,11 @@ quality gate: most semantic problems are visible in the SQL before you ever look
 | `BETWEEN lo AND hi` | inclusive bounds | both ends included → boundary-day overlap/dupes |
 | `GROUP BY` / aggregate fns | you got rollups | a "raw rows" request silently aggregated |
 | unit math (`/1609.34`, `*1.609`) | unit surprises | miles computed internally, km returned |
-| column aliases | rename/case drift | `Data`→`DATA` in the CSV header (Q8); default schema `UTC_GpsTimestamp` |
-| `GpsValid = 1`, `IsTracked = TRUE` (data agent) | silently thinned or **emptied** result | a "last 2 days" GPS ask added `GpsValid = 1`; the default fleet count was 0 on a fleet with every `IsTracked=false` (Q1/Q2) |
-| `FROM Diagnostic` / a catalog table when you asked for readings | wrong source (intent misrouted) | "engine status data readings" → 120 catalog rows, `status: success` (Q3) |
-| derived columns (`a − b`, `/60`, `ROUND`) | agent arithmetic you didn't specify | negative `driving_duration_minutes` (Q7) — ask for raw columns |
-| a date bound **different from the window you asked for** (e.g. `BETWEEN '2026-10-27' AND '2026-10-29'` when you asked for 10-30), or `freshness: stale` | the agent shifted the window; the answer is for another period (Q18) | trips for 10-30 answered as 10-29 (643 trips, latest start 23:24:03) while `Get` showed trips through 01:07 |
+| column aliases | rename/case drift | `Data`→`DATA` in the CSV header (Q9); default schema `UTC_GpsTimestamp` |
+| `GpsValid = 1`, `IsTracked = TRUE` (data agent) | silently thinned or **emptied** result | a "last 2 days" GPS ask added `GpsValid = 1`; the default fleet count was 0 on a fleet with every `IsTracked=false` (Q3/Q2) |
+| `FROM Diagnostic` / a catalog table when you asked for readings | wrong source (intent misrouted) | "engine status data readings" → 120 catalog rows, `status: success` (Q6) |
+| derived columns (`a − b`, `/60`, `ROUND`) | agent arithmetic you didn't specify | negative `driving_duration_minutes` (Q4) — ask for raw columns |
+| a date bound **different from the window you asked for** (e.g. `BETWEEN '2026-10-27' AND '2026-10-29'` when you asked for 10-30), or `freshness: stale` | the agent shifted the window; the answer is for another period (Q1) | trips for 10-30 answered as 10-29 (643 trips, latest start 23:24:03) while `Get` showed trips through 01:07 |
 | `row_count = 0` / `data_uri ""` / `turn_id -1` | empty-success | treat as failure on a window known to have data (Q2) |
 
 If the SQL is wrong for your intent, **no amount of downstream cleanup fixes it** — the data is the
@@ -89,8 +89,8 @@ table, active-only filter, device-local dates, inclusive range, unwanted aggrega
   a precise lower bound). Cleaning the output won't help — the rows are the wrong shape/population.
 
 **Class B — result / data problems.** The query was fine but the *output* needs handling: timestamp text
-formats (Q16), a boundary-second overlap or duplicate rows (Q6), schema/case drift in the CSV header (Q8), a
-short/partial window (Q2, Q9), or accumulated dupes from prior loads.
+formats (Q17), a boundary-second overlap or duplicate rows (Q7), schema/case drift in the CSV header (Q9), a
+short/partial window (Q2, Q8), or accumulated dupes from prior loads.
 - **Caught by inspecting output** (DESCRIBE, counts, min/max, the uniqueness test).
 - **Fix in the load** (cast, dedup, watermark/anti-join, column mapping) — re-asking won't change it.
 
@@ -99,7 +99,7 @@ short/partial window (Q2, Q9), or accumulated dupes from prior loads.
 
 ## 4. Repair: re-ask the same question, or ask for the gap and patch?
 
-The agent's **source-table selection is not guaranteed** (Q3) — re-asking a question (especially re-phrased)
+The agent's **source-table selection is not guaranteed** (Q6) — re-asking a question (especially re-phrased)
 can land on a different `FROM` and return differently-shaped/counted data. Observed 2026-06-29: a "distinct
 GPS devices" question gave 49 from `GpsLogs` on 3 identical runs but 47 from `Trip` when re-phrased with an
 attached SQL (which it ignored); on 2026-10-29 it chose `VehicleKPI_Daily` for a distance ask and the

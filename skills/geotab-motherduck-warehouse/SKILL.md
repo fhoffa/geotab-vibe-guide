@@ -86,38 +86,38 @@ Full text: [`references/QUIRKS.md`](references/QUIRKS.md) (stable `Q#` IDs). Fie
 prompts: [`references/DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md). Measurements/proof:
 [`references/EVIDENCE_LOG.md`](references/EVIDENCE_LOG.md) §1b, keyed by the same `Q#`.
 
-**🔴 Critical — silently produces wrong/incomplete data:**
-- **Q1** — Roster-based asks ("fleet", "vehicles", lists by device) get `IsTracked = TRUE` + `Device_ActiveTo >= now`; plain GPS asks got `GpsValid = 1`. Demo fleets (all `IsTracked=false`) came back "0 vehicles, 0 trips" 6/6 → **every prompt: "include every device; do not filter on IsTracked, GpsValid, speed or ignition."** *(demo-sensitive; untested on a production fleet)*
+**🔴 Wrong or missing data, with no error — ranked by importance (Q1 matters most):**
+- **Q1** — The agent can **silently answer for a different window** and its `Trip` table lagged ≥ 1 h 44 min (GPS/Status 11–23 s); the only flag is `freshness: stale` + a message → **on `stale`, compare the returned min/max to the window you asked for; keep trips behind a `Get` completeness check.**
 - **Q2** — `status: success` can be an **empty answer** (`row_count 0`, `data_uri ""`, `turn_id -1`, or a scalar 0) and a genuinely empty window looks **identical** → **0 rows on a window with data = failure; read `sql`; never advance a watermark on it; confirm with a `Get` count.**
-- **Q3** — A catalog table can answer instead of the fact table ("engine status data readings" → the `Diagnostic` *catalog*, 2/2) → **name the table; read the `FROM` every load.**
+- **Q3** — Roster-based asks ("fleet", "vehicles", lists by device) get `IsTracked = TRUE` + `Device_ActiveTo >= now`; plain GPS asks got `GpsValid = 1`. Demo fleets (all `IsTracked=false`) came back "0 vehicles, 0 trips" 6/6 → **every prompt: "include every device; do not filter on IsTracked, GpsValid, speed or ignition."** *(demo-sensitive; untested on a production fleet)*
+- **Q4** — Agent-derived columns are the agent's arithmetic: `TripDuration − IdlingDuration` gave **negative** minutes (10 of 77 trips) → **ask for raw columns; derive in silver.**
 - **Q5** — Units convert km → miles unless pinned (2/2, despite `isMetric: true`) → *"in kilometers, do not convert units."*
-- **Q6** — Predicates and joins vary per run (guards every query; joins always `LEFT … BETWEEN Device_ActiveFrom/To`; 0 duplicate rows in 6 CSVs) → **read the SQL; dedup silver on the parsed natural key; expect `csv_rows ≥ distinct keys`.**
-- **Q7** — Agent-derived columns are the agent's arithmetic: `TripDuration − IdlingDuration` gave **negative** minutes (10 of 77 trips) → **ask for raw columns; derive in silver.**
-- **Q18** — The agent can **silently answer for a different window** and its `Trip` table lagged ≥ 1 h 44 min (GPS/Status 11–23 s); the only flag is `freshness: stale` + a message → **on `stale`, compare the returned min/max to the window you asked for; keep trips behind a `Get` completeness check.**
+- **Q6** — A catalog table can answer instead of the fact table ("engine status data readings" → the `Diagnostic` *catalog*, 2/2) → **name the table; read the `FROM` every load.**
+- **Q7** — Predicates and joins vary per run (guards every query; joins always `LEFT … BETWEEN Device_ActiveFrom/To`; 0 duplicate rows in 6 CSVs) → **read the SQL; dedup silver on the parsed natural key; expect `csv_rows ≥ distinct keys`.**
 
 **🟡 Operational — derails or misleads the run (usually visible):**
-- **Q4** — KPI-flavored asks use the `VehicleKPI_Daily` rollup and device-local dates (equal to raw on these all-UTC fleets) → **ask for raw rows with explicit UTC bounds.**
-- **Q8** — Column-case drift (`Data` → `DATA`, 3/3) → key by the CSV header.
-- **Q9** — **~60 s tool timeout** (StatusData: 1 day passes, 2 days failed 2/2) and transient errors (502; future-dated prompts fail) → chunk windows (status ≤ 1 day, GPS/trips ≤ 1–2 days); **retry once**, then shrink/rephrase; no future dates.
-- **Q10** — Event tables (`Trip`/`FaultData`/`Events`) update only on an event, *or* lag (Q18) → compare with the Get API / count events in a recent window before concluding which.
+- **Q8** — **~60 s tool timeout** (StatusData: 1 day passes, 2 days failed 2/2) and transient errors (502; future-dated prompts fail) → chunk windows (status ≤ 1 day, GPS/trips ≤ 1–2 days); **retry once**, then shrink/rephrase; no future dates.
+- **Q9** — Column-case drift (`Data` → `DATA`, 3/3) → key by the CSV header.
+- **Q10** — KPI-flavored asks use the `VehicleKPI_Daily` rollup and device-local dates (equal to raw on these all-UTC fleets) → **ask for raw rows with explicit UTC bounds.**
 - **Q11** — Don't use the agent as a freshness/watermark oracle → watermark from `max(silver)`; live reading from `Get DeviceStatusInfo`; confirm the window's upper bound is *now*.
-- **Q12** — Just-changed config (zones, groups, rules, users, metadata) → **read from `Get`**, not the agent. *(not re-tested)*
+- **Q12** — Event tables (`Trip`/`FaultData`/`Events`) update only on an event, *or* lag (Q1) → compare with the Get API / count events in a recent window before concluding which.
 - **Q13** — Wrong database/server name → ask the user; the Geotab DB is the MyGeotab login name.
-- **Q14** — ChatGPT: **both MCP servers must be the same mode**; **preflight** with a tiny call before any DDL. *(field-reported)*
+- **Q14** — Just-changed config (zones, groups, rules, users, metadata) → **read from `Get`**, not the agent. *(not re-tested)*
+- **Q15** — ChatGPT: **both MCP servers must be the same mode**; **preflight** with a tiny call before any DDL. *(field-reported)*
 
-**⚪ Informational:** **Q15** inline ~5–10 KB envelope, 20-row preview, single `data_uri`, stateless (`delegation_context` for follow-ups); exceptions live in the **`Events`** table · **Q16** `UTC_*` carry `+00:00`, `GpsDateTime` is naive ISO — land `all_varchar`, parse in the derive · **Q17** signed URL lasts 24 h, bucket region varies, one file up to 53 MB; log the `gs://` path not the signature.
+**⚪ Informational:** **Q16** inline ~5–10 KB envelope, 20-row preview, single `data_uri`, stateless (`delegation_context` for follow-ups); exceptions live in the **`Events`** table · **Q17** `UTC_*` carry `+00:00`, `GpsDateTime` is naive ISO — land `all_varchar`, parse in the derive · **Q18** signed URL lasts 24 h, bucket region varies, one file up to 53 MB; log the `gs://` path not the signature.
 
 **Always:** the agent **returns the SQL it ran** — by design, an approval surface, not a leak. **Lint it
-before loading** — it exposes the *semantic* 🔴 issues (Q1, Q3, Q5–Q7, Q18) while they're still free to fix
+before loading** — it exposes the *semantic* 🔴 issues (Q1, Q3–Q7) while they're still free to fix
 ([`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md) §2). The *data-shape* problems aren't in the
-SQL: **Q2/Q9** need you to check `row_count` against the CSV, **Q18** needs the returned min/max compared to your window, and
-**Q6** needs the **silver dedup** after load — linting won't surface any of them.
+SQL: **Q2/Q8** need you to check `row_count` against the CSV, **Q1** needs the returned min/max compared to your window, and
+**Q7** needs the **silver dedup** after load — linting won't surface any of them.
 
 ## Three source channels — pick per entity *and* per freshness need
 
 | Channel | Best for | Shape | Freshness (observed) | Reference |
 |---------|----------|-------|----------------------|-----------|
-| **Data agent → CSV URL** | High-volume **facts**: GPS (`GpsLogs`), trips, status/engine, exceptions, faults | signed CSV, bulk (`row_count` returned) | **GPS/StatusData ~11–23 s behind** (4 samples); **`Trip` ≥ 1 h 44 min behind** at one sample (Q18) | [`DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md) |
+| **Data agent → CSV URL** | High-volume **facts**: GPS (`GpsLogs`), trips, status/engine, exceptions, faults | signed CSV, bulk (`row_count` returned) | **GPS/StatusData ~11–23 s behind** (4 samples); **`Trip` ≥ 1 h 44 min behind** at one sample (Q1) | [`DATA_AGENT_TO_CSV.md`](references/DATA_AGENT_TO_CSV.md) |
 | **Get → JSON** | **Dimensions** & small/precise sets: `Device`, `User`, `Zone`, `Group`, `Diagnostic`, `Rule`; raw `LogRecord` for a window | JSON, paged | **to ~now** (full-res raw) | [`ENTITY_CATALOG.md`](references/ENTITY_CATALOG.md) |
 | **Get `DeviceStatusInfo`** | **Live** position/speed/ignition snapshot per device | JSON, 1 row/device | **~sub-second** | [`CHANNELS_AND_FRESHNESS.md`](references/CHANNELS_AND_FRESHNESS.md) |
 
@@ -245,19 +245,19 @@ Rationale: [`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate.
    columns/types *or* map by position in the derive. (On restrictive MCP hosts that block
    `DESCRIBE`/multi-statement/complex SQL — e.g. ChatGPT — use `list_columns`/`list_tables`, one statement
    per call, and simple staged shape-check SQL.)
-3. **Dedup every silver derive** (Q6) — `> watermark` filter or natural-key anti-join, and dedup on the
+3. **Dedup every silver derive** (Q7) — `> watermark` filter or natural-key anti-join, and dedup on the
    **parsed/normalized** key (bronze keeps timestamp text as returned). Never trust the window boundary.
 4. **Ask the agent for data + exact columns.** **Specificity beats attached SQL:** name exact columns, pin
    units ("in km, don't convert"), force "Use UTC," say "raw rows, do not aggregate," and "include every
    device; do not filter on IsTracked, GpsValid, speed or ignition" (**always** — the default filters
-   silently empty or thin results, Q1/Q2). Request raw source columns and derive in silver (Q7).
+   silently empty or thin results, Q3/Q2). Request raw source columns and derive in silver (Q4).
 5. **Read the agent's `sql` before every load** (it's the approval gate) and check `row_count` against the
    CSV. The response is small and inline — there is nothing to parse out of a file.
 6. **`query_rw` is a write** — only on explicit user intent ("load/append/sync"); the warehouse loop counts. An explicit "replicate/load/sync this database" request *is* that intent — it's the confirmation for hosts that gate writes.
 7. **Test credentials/queries once**, not in a loop. Load CSVs into bronze **within ~24h** before the URL expires.
 8. **Don't store the signed URL's query string** (it carries a signature) — log the `gs://…/<uuid>…csv` object path instead: drop everything from `?` and rewrite the host, `https://storage.googleapis.com/<bucket>/<object>?X-Goog-…` → `gs://<bucket>/<object>`. (The bucket region varies by DB — `…-prod-us`, `…-prod-eu`, … — so match by shape, not a fixed host.)
 9. **Read the generated SQL** (it's in the response) as a pre-load gate — most problems are visible there before any row loads. Classify failures: *SQL/semantic* (wrong source, filter, timezone, aggregation) → **re-ask** with sharper wording; *result/data* (dupes, nulls, schema drift) → **fix in the derive**. See [`QUALITY_AND_REPAIR.md`](references/QUALITY_AND_REPAIR.md).
-10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, reconciliation). Reconcile **dimensions** with `GetCountOf` (exact); reconcile **fact windows** with a bounded `Get` read of the same window — **`GetCountOf` ignores date/device filters for facts** and returns the whole-table count. To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — the agent can answer the same question from a different source table across runs (Q3), so a full re-ask can replace good data with a differently-shaped answer.
+10. **Run the quality battery after every load** (uniqueness, bounds, nulls, freshness, referential integrity, reconciliation). Reconcile **dimensions** with `GetCountOf` (exact); reconcile **fact windows** with a bounded `Get` read of the same window — **`GetCountOf` ignores date/device filters for facts** and returns the whole-table count. To repair, prefer **asking for the missing window + anti-join** over re-asking the whole question — the agent can answer the same question from a different source table across runs (Q6), so a full re-ask can replace good data with a differently-shaped answer.
 11. **Writes can drop mid-call — and whole runs can die mid-loop.** Keep writes idempotent (silver/gold `CREATE OR REPLACE` or `IF NOT EXISTS` + watermark/anti-join; bronze append-only) and re-check with `list_tables`/`COUNT(*)` before retrying. **Log ahead, not just after:** write a `started` row to `warehouse_ingest_log` the moment the agent returns (persisting the window + `gs://` path), and a `completed` row only after the verify — so an interruption leaves a *visible orphan* to resume from instead of a silent hole (observed 2026-07-02: an interrupted run left 522K GPS rows loaded but unlogged, and the loop's other tables never ran). On session start, sweep for orphaned `started` rows and bronze batches missing from the log, and **finalize each orphan to a terminal row** so it clears — append-only, never `UPDATE`: `completed` when bronze verifies; otherwise re-ask the saved window (safe default). Only mark `abandoned` with **proof the window already landed another way** (a later `completed` row spanning it, or a gap-scan showing no hole) — never on age alone, or you'd bury a real gap ([`INCREMENTAL_BACKFILL.md`](references/INCREMENTAL_BACKFILL.md) §state table). **Expect a big backfill to pause on the host's per-turn tool-call limit — just say *continue*;** the log-ahead + orphan-sweep design makes resuming across turns safe (chunk windows so each pause lands on a clean boundary).
 12. **One MotherDuck database per Geotab source + a schema per medallion layer** (`geotab_<source>.bronze.*` / `.silver.*` / `.gold.*`). Geotab entity IDs (`b1`,`b2`,…) are unique only *within* a database, so two sources in the *same* tables **collide** in silver/dims (append+dedup, not overwrite — worse). Database-level isolation is also where MotherDuck scopes Sharing, retention, access, and cost. **On a new source, `list_databases` FIRST and create a fresh `geotab_<source>`; never write into a database that already holds another source.** **Provenance: keep per-row `_batch_id`; record the source identity once at the DB level** in a `main.warehouse_meta` table (+ optional `COMMENT ON TABLE`, `warehouse_ingest_log`) — **no per-row `_source_db`** (constant in this layout). **Don't use `COMMENT ON DATABASE` — it's *not implemented* in MotherDuck** (verified 2026-06-30: "Not implemented Error: Adding comments to databases is not implemented"); `COMMENT ON TABLE`/`COLUMN` do work. ([`MEDALLION_LOADING.md`](references/MEDALLION_LOADING.md) §isolate, [`SKILL.md`](SKILL.md) §First run.)
 13. **Preflight the connectors before any DDL/write.** Confirm MotherDuck, Geotab `Get`, **and** Geotab `AskDataAgent` are callable *now* — verify the agent with a tiny call, not just `Get`. **On ChatGPT, use both servers in the same mode** (both official connectors or both developer-mode) — a mixed setup dropped the Geotab connector mid-session (2026-06-29), leaving an empty-bronze warehouse. If the agent is unavailable, fix the setup and **stop before creating tables** — bulk facts need it. Bootstrap is resumable (`IF NOT EXISTS`), so a clean stop is safe to continue later.

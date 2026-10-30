@@ -175,7 +175,7 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   historical backfill (below) so no single CSV is unwieldy. **A too-big pull doesn't just make an
   unwieldy CSV — it can *time out at the MCP layer* before the agent returns** (2026-10-29: a 2-day `StatusData` pull hit its 60 s tool limit while a 12 h window — 368,764 rows, 26 MB,
   one file, 0 duplicate rows — returned; one identical trips pull timed out once and passed on retry, so
-  *retry once before shrinking* (Q9); an earlier ~1.9M-row
+  *retry once before shrinking* (Q8); an earlier ~1.9M-row
   open-ended `StatusData` catch-up timed out twice, ~200K–400K-row windows returned fine). Size chunks to
   the proven single-pull size for that entity — StatusData chunked cleanly at **1 day ≈ 745K rows / 53 MB** on
   the 50-vehicle demo fleet (2 days timed out 2/2); 12 h is a safer default. If you delegate the chunk loop to
@@ -201,8 +201,8 @@ for table in [planet_gps_pings, trips, status_data, exception_events]:   # silve
   Geotab's official API Adapter uses on `GetFeed` pages — see
   [`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md) §Relationship to the adapter). And don't
   judge "caught up" by `max(event_time)` vs *now* alone — an event-cadence table looks stale even
-  when fully caught up (§C2, Q10).
-- **Cost:** one agent call per fact table (keep it inside the ~60 s tool limit by sizing windows, Q9) + a couple fast MotherDuck calls. Dimensions (via `Get`)
+  when fully caught up (§C2, Q12).
+- **Cost:** one agent call per fact table (keep it inside the ~60 s tool limit by sizing windows, Q8) + a couple fast MotherDuck calls. Dimensions (via `Get`)
   are sub-second; refresh weekly, not daily. **Ordering:** load dimensions first, then facts.
 - **Freshness floor:** the source lags tens of seconds to ~2 min, so "caught up" means `max(event_time)` within ~2 min of now,
   not exactly now ([`CHANNELS_AND_FRESHNESS.md`](CHANNELS_AND_FRESHNESS.md)).
@@ -220,7 +220,7 @@ cursor       = current earliest in table  (SELECT min(<event_time>) …)
 while cursor > target_start:
   window_lo = max(cursor - INTERVAL 1 DAY, target_start)
   agent: "<entity> rows where <event_time> >= <window_lo> and <event_time> < <cursor> UTC, columns: …"
-       # repeat <event_time> on BOTH sides and verify the loaded min/max — a dropped upper bound returns the whole tail (Q6)
+       # repeat <event_time> on BOTH sides and verify the loaded min/max — a dropped upper bound returns the whole tail (Q7)
   MotherDuck (rw): INSERT INTO <bronze> SELECT *, provenance ('backfill:<window_lo>' as _batch_id)
                    FROM read_csv_auto(url, all_varchar=true);                   # land raw, append-only
   MotherDuck (rw): INSERT INTO <silver> … FROM <bronze> with the ANTI-JOIN dedup  # windows can overlap
@@ -231,7 +231,7 @@ while cursor > target_start:
 Why windows:
 - **Bounded size** per CSV → predictable load, easy retry on the one failed window.
 - **Resumable** — the log shows which windows are done; restart from the gap.
-- **Respects the agent's date semantics** (Q4, Q6): possibly inclusive or device-local, with injected
+- **Respects the agent's date semantics** (Q10, Q7): possibly inclusive or device-local, with injected
   partition guards. Use explicit UTC bounds and verify the loaded `min/max` against what you asked for.
 - Pick window width from density: ~157K GPS rows ≈ 3.7 days across 26 vehicles, so **1 day ≈ 40K rows
   ≈ 3 MB** here — comfortably one CSV. Larger fleets → narrower windows.
@@ -300,7 +300,7 @@ ORDER BY d.DeviceName, c.day;
 The agent and `Get` return **different populations**, so a table can look internally contiguous yet still be
 missing whole devices. Compare across channels:
 
-- **Device population vs the roster (the active-only trap).** the agent defaults to `IsTracked = TRUE` (Q1), so the
+- **Device population vs the roster (the active-only trap).** the agent defaults to `IsTracked = TRUE` (Q3), so the
   fact table can hold far fewer devices than the fleet. Compare to `dim_device` (from `Get`, the exact
   roster):
   ```sql
@@ -387,12 +387,12 @@ L       = ≥ your longest expected trip                     # urban: a few h ·
 lo      = prev_wm − L                                      # covers re-splits AND late-completing long trips
 1. Agent: re-pull trips that started after <lo> UTC, FULL columns       # open-ended "started after X" is fine
          → land append-only in bronze (_batch_id='reconcile:<lo>')       #   (if a bounded "…and before Y" prompt
-                                                                          #    fails: retry once, then go open-ended — Q9)
+                                                                          #    fails: retry once, then go open-ended — Q8)
 2. Truth set: a fresh source pull of the affected day(s), keyed by TripId (the agent, or Get Trip per device)
 2a. GUARD — validate the truth set BEFORE deleting, or a bad pull wipes valid trips:
       require  count(truth set) > 0  AND  count(truth set) ≈ the silver count for the window
       (and the expected device population). If the pull is empty or implausibly short — an
-      empty-success (Q2), a wrong source table (Q3), a timeout/502 (Q9), or a failed staging load —
+      empty-success (Q2), a wrong source table (Q6), a timeout/502 (Q8), or a failed staging load —
       **ABORT, do not DELETE; re-pull/retry first.** With an empty/partial truth set,
       `TripId NOT IN (truth set)` is true for every row and step 3 deletes the whole window.
 3. DELETE FROM silver.trips                                              # drop the retired orphans
@@ -498,7 +498,7 @@ stats views play the same role). Reading it:
 
 - **`cadence` tells you which staleness matters:** a `continuous` table hours behind means the loop
   hasn't run (or a clipped window, Q11); an `event` table hours behind may just mean nothing
-  happened — judge those by recent-window event counts (§C2, Q10), not `hours_behind_now`.
+  happened — judge those by recent-window event counts (§C2, Q12), not `hours_behind_now`.
 - **`latest_event` newer than `last_loaded_at` explains itself** (the load happened, log says when);
   `latest_event` advancing with **no matching log row is a red flag** — someone loaded without logging.
   The validation run caught exactly that: GPS `latest_event` `2026-07-02 17:20` vs last logged load
