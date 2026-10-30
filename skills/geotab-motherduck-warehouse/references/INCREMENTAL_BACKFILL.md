@@ -395,13 +395,26 @@ lo      = prev_wm − L                                      # covers re-splits 
       empty-success (Q2), a wrong source table (Q6), a timeout/502 (Q8), or a failed staging load —
       **ABORT, do not DELETE; re-pull/retry first.** With an empty/partial truth set,
       `TripId NOT IN (truth set)` is true for every row and step 3 deletes the whole window.
+      A plausible row count is NOT proof of completeness: the agent's `Trip` table can lag the Get API by
+      hours (Q1), and a stale snapshot has about the same count and devices. So also clamp the window:
+      `hi = least(<day_end>, max(trip_start_utc in the truth set))` — never delete silver trips that start
+      after the latest trip the snapshot contains (they may have come from a fresher pull).
+2b. GUARD — confirm candidates with the authoritative source (the Get API) before changing silver:
+      deletion candidates = silver TripIds in [lo, hi) that are not in the truth set;
+      insert candidates   = truth-set TripIds in [lo, hi) that are not in silver.
+      Read the same window with a bounded `Get Trip` (per device or per day, `propertySelector` id/start) and
+      keep only the deletions the Get API no longer returns and only the insertions it does return
+      (a retired trip id returns nothing from `Get Trip`: observed 2026-06-30, `b10FEE52`). A stale snapshot
+      would otherwise delete a current split and re-insert the retired one.
 3. DELETE FROM silver.trips                                              # drop the retired orphans
-     WHERE trip_start_utc >= <lo> AND trip_start_utc < <day_end>
-       AND TripId NOT IN (truth set)                                     # only after guard 2a passes
+     WHERE trip_start_utc >= <lo> AND trip_start_utc < <hi>
+       AND TripId IN (deletion candidates confirmed by 2b)               # only after guards 2a and 2b pass
 4. INSERT … SELECT DISTINCT ON (TripId) …                               # add the current splits + late completions
      FROM bronze <reconcile batch>
-     WHERE NOT EXISTS (… silver.TripId = bronze.TripId)
-5. Verify: for the day, source TripId set  ==  silver TripId set   →  0 orphans, 0 missing
+     WHERE TripId IN (insert candidates confirmed by 2b)
+       AND NOT EXISTS (… silver.TripId = bronze.TripId)
+5. Verify against the Get API, not the snapshot you just used: silver TripId set for [lo, hi)  ==  the bounded
+   `Get Trip` read of the same window   →  0 orphans, 0 missing
 6. log (backfill_kind='reconcile', watermark_from=lo, …)
 ```
 
@@ -410,9 +423,9 @@ orphans, step 4 inserted **51** current splits, and step 5 went from `2138 sourc
 50 orphans / 51 missing` to **`2138 == 2138, 0 orphans, 0 missing`**.
 
 > **This is the one place the warehouse `DELETE`s silver fact rows** — justified because the *source*
-> retired those ids. **Never run step 3 without guard 2a:** a destructive delete keyed on a `NOT IN`
-> source set must first verify that set is non-empty and plausibly complete, or a bad pull wipes the
-> window. Keep everything else append + anti-join. The same pattern applies to any
+> retired those ids. **Never run step 3 without guards 2a and 2b:** a destructive delete keyed on a `NOT IN`
+> source set must first verify that set is non-empty and plausibly complete (2a) and that each id is really
+> gone from the authoritative source (2b), or a bad or stale pull wipes or rewrites the window. Keep everything else append + anti-join. The same pattern applies to any
 > *derived/recomputed* fact; `Trip` is the one we hit. **Pure event tables (`ExceptionEvent`, `FaultData`)
 > are append-only once fired**, so A/B/C suffice for them — don't delete-reconcile those. (`silver.trips`
 > must carry `TripId` for any of this to work — the

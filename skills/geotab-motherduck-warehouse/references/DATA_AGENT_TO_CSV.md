@@ -54,11 +54,14 @@ Engine/sensor (StatusData):
   # Name the TABLE (Q6). Ask for DiagnosticId and join names from dim_diagnostic (Get Diagnostic) in the
   # warehouse.
 
-Safety (ExceptionEvent), template only:
-  List exception events that occurred after <WATERMARK> UTC from the ExceptionEvent table. Return these
-  exact columns: <the columns of your silver exception table>. Use UTC. Raw rows. Include every device; do
-  not filter on IsTracked.
-  # Not run end-to-end on the data agent: read the returned SQL and reconcile before trusting it.
+Safety (Events), template only:
+  From the Events table (exception events), list events whose active period started after <WATERMARK> UTC.
+  Return exactly: DeviceId, EventId, RuleId, ActiveFrom, ActiveTo. Use UTC. Raw rows. Include every device;
+  do not filter on IsTracked.
+  # The agent's table is `Events`; the Get API calls the same data ExceptionEvent. Verified 2026-10-30 with
+  # this exact wording: `FROM Events`, exactly these columns, 980 rows since 2026-10-29 20:00 UTC (an earlier
+  # run of the same data: 2,390 rows from 10-28, 0 duplicates, P32). Add the columns your silver exception
+  # table needs (read the returned SQL; ask for raw columns, Q4).
 ```
 
 Rules (each tied to a quirk):
