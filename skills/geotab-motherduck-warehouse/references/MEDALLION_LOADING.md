@@ -17,7 +17,7 @@ It hinges on **one question: can you reproduce the source on demand?**
 
 - **Data-agent facts → bronze is mandatory.** The source is *not* reproducible: the signed CSV URL
   **expires in ~24 h**, and **the agent's SQL is LLM-generated** — re-pulling the same window can return a
-  differently-shaped/counted result (different source table, `IsTracked` population — see Q3, Q6).
+  differently-shaped/counted result (different source table, `IsTracked` population — see Q1, Q6).
   Bronze is therefore your *only* durable, replayable record of what you actually ingested. **Silver is
   a deterministic projection of bronze** — never loaded straight from the URL.
 - **`Get`-sourced dimensions → skip bronze.** `Get` is exact, real-time, reproducible any time, and

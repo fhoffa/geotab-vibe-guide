@@ -12,22 +12,44 @@ reproduced. Measurements, SQL and prompts live in [`EVIDENCE_LOG.md`](EVIDENCE_L
 **How this catalog was checked (2026-10-30):** every quirk was re-run with repeats and, where possible, a
 control (a pinned prompt, the Get API as ground truth, or a downloaded CSV) on two demo fleets (`demo_fh8`,
 `demo_fh_vegas8`, 50 vehicles each, `my.geotab.com`). **Both are demo fleets: all 50 devices have
-`IsTracked = false`, all in UTC.** Anything that depends on those facts is flagged *demo-sensitive*; none of it
-has been tried on a production fleet. Verdict legend: ✅ reproduced · ◐ reproduced in a narrower form than first
+`IsTracked = false`, all in UTC.** Anything that depends on those facts says so; none of it has been tried on a production fleet. Verdict legend: ✅ reproduced · ◐ reproduced in a narrower form than first
 believed · ➖ not reproduced (kept as a cheap precaution) · ❔ not testable here.
 
 > **Assume non-determinism.** Frequencies are observed tendencies from small samples, not guarantees. The safe
 > stance is the same for every quirk: **read the returned `sql` on every load, check `row_count` and the
 > `freshness` field, land raw rows in bronze, dedup in silver.**
 
-**Ordered by importance — `Q1` matters most.** Rank = how likely the quirk is to put wrong or missing data into the
-warehouse *unnoticed* (impact × likelihood × how hard it is to detect). Parts 1–3 are the severity tiers (🔴 / 🟡 / ⚪).
-Other files cite quirks as `Q#`; IDs are stable once published — add a new quirk at the next free number and note its
-rank in the table below instead of renumbering.
+**Ordered by importance — `Q1` matters most.** Rank weighs three things: how many people will hit it, what it costs
+them (a demo that fails on the first question, or wrong data in a warehouse), and how hard it is to diagnose from the
+response. Q1 and Q2 head the list because together they make the first plain question about a fleet return zero
+with no explanation, which breaks basic demos before anyone reaches the subtler problems. Parts 1–3 are the severity
+tiers (🔴 / 🟡 / ⚪). Other files cite quirks as `Q#`; IDs are stable once published, so add a new quirk at the next
+free number and note its rank here instead of renumbering.
 
 ## Part 1 — Wrong or missing data, with no error (Q1–Q7)
 
-- **Q1 — The agent can silently answer for a different window than you asked (and its `Trip` table lags).** Asked
+- **Q1 — The first plain question about a fleet returns 0, because roster-based asks get `IsTracked = TRUE`.**
+  When the ask is about "the fleet / vehicles / devices" (or lists by device), the agent builds on
+  `LatestVehicleMetadata` and adds `IsTracked = TRUE AND Device_ActiveTo >= CURRENT_DATETIME()`. Every device on
+  both demo databases tested has `IsTracked = false`, so "How many vehicles are in the fleet?" returns **0**, and so do
+  the questions built on it: vehicle count and health (0), top 5 vehicles (no rows), idle time % (null), engine
+  readings for the last hour (empty). **3 of the 4 questions in the vibe guide's benchmark failed this way.** A plain GPS
+  ask also gained `GpsValid = 1`. Any demo, tutorial or hackathon on these databases hits it on its first question.
+  **Action:** every fact prompt says *"include every device; do not filter on IsTracked, GpsValid, speed or
+  ignition."* ("Include every device" alone was not enough: one such prompt still got the filter.) **Seen:** ✅
+  roster-based default asks 6/6 (fleet+trips ×2 on two fleets, fleet count, "latest GPS of first 5 devices", "engine
+  readings last hour", "status data last 10 min"); 0 of the ≥ 15 asks that said "do not filter on IsTracked" got it.
+  **Scope:** both databases are demo fleets; with tracked devices the filter is harmless, and on a production fleet it
+  would drop only untracked assets (not tested). The older demo databases that returned counts earlier no longer
+  exist, so we cannot tell whether the data or the agent changed. *(P19, P28, P38.)*
+- **Q2 — `status: success` can be an empty or zero answer, and the envelope can't tell you why.**
+  `row_count: 0`, `data_uri: ""`, `turn_id: -1` (or a scalar `0`) look **identical** whether a filter (Q1)
+  removed the rows or the window genuinely has no data (control: trips before the data starts). `freshness`
+  doesn't separate them: filter-caused empties showed `fresh`, `unknown` or `stale`, the genuine one showed `stale`.
+  **Action:** treat `row_count = 0` on a window you believe has data as a **failure**; read `sql` for Q1 filters;
+  confirm with a `Get` count; never advance a watermark on an unexplained empty response. **Seen:** ✅ 6 empty/zero
+  answers, all filter-caused; 1 genuine-empty control. *(P19, P20, P29.)*
+- **Q3 — The agent can silently answer for a different window than you asked (and its `Trip` table lags).** Asked
   for trips on **2026-10-30**, it answered for **2026-10-29** (643 trips, latest start 23:24:03) and added
   `freshness: stale` + "Data is still not available for the requested date range despite adjusting…". The Get API
   showed trips starting through 01:07 on 10-30, and ≥ 9 trips starting after 23:24:03 on 10-29 — so the `Trip`
@@ -37,22 +59,6 @@ rank in the table below instead of renumbering.
   timestamps (or the SQL's date bounds) to the window you asked for**, and keep trips behind a `Get`-based
   completeness check; take watermarks from `max(silver)`. **Seen:** ✅ the `Trip` table was fresh at ≈ 23:45 UTC and ≥ 1 h 44 min behind at 01:08; all 4 trip asks run after
   01:00 that reached past 23:24 were `stale`. *(P34.)*
-- **Q2 — `status: success` can be an empty or zero answer, and the envelope can't tell you why.**
-  `row_count: 0`, `data_uri: ""`, `turn_id: -1` (or a scalar `0`) look **identical** whether a filter (Q3)
-  removed the rows or the window genuinely has no data (control: trips before the data starts). `freshness`
-  doesn't separate them: filter-caused empties showed `fresh`, `unknown` or `stale`, the genuine one showed `stale`.
-  **Action:** treat `row_count = 0` on a window you believe has data as a **failure**; read `sql` for Q3 filters;
-  confirm with a `Get` count; never advance a watermark on an unexplained empty response. **Seen:** ✅ 6 empty/zero
-  answers, all filter-caused; 1 genuine-empty control. *(P19, P20, P29.)*
-- **Q3 — Roster-based asks get default population filters.** When the ask is about "the fleet / vehicles /
-  devices" (or lists by device), the agent builds on `LatestVehicleMetadata` and adds
-  `IsTracked = TRUE AND Device_ActiveTo >= CURRENT_DATETIME()`. On these fleets that yields **0 vehicles**.
-  Plain GPS ask: it also added `GpsValid = 1`. **Action:** every fact prompt says *"include every device; do not
-  filter on IsTracked, GpsValid, speed or ignition."* **Seen:** ✅ roster-based default asks 6/6 (fleet+trips ×2 on two fleets, fleet count,
-  "latest GPS of first 5 devices", "engine readings last hour", "status data last 10 min"); 0 of the ≥ 15 asks that
-  said "include every device" got an `IsTracked` filter. *Demo-sensitive:* with `IsTracked = true` devices
-  the default is harmless, and on a production fleet the filter would only drop untracked/retired assets.
-  *(P19, P28.)*
 - **Q4 — Agent-derived columns are the agent's arithmetic.** Asked for a trip's "driving duration in minutes" it
   computes `(TripDuration − IdlingDuration)/60`, **negative** when `IdlingDuration` (seconds) exceeds
   `TripDuration` (seconds; = end − start). **Action:** request raw source columns (`TripDistance_Km`,
@@ -68,7 +74,7 @@ rank in the table below instead of renumbering.
   `Events` — see Q16) and read the `FROM` every load. **Seen:** ◐ 2/2 for the "engine status" phrasing, 0/4 for
   other phrasings. *(P24, P30.)*
 - **Q7 — Predicates and joins vary per run; read them.** Observed guards: `DATE(GpsDateTime) BETWEEN d−1 AND d+1`
-  style pads (widening) and the Q1 shift (narrowing). Observed joins: `LEFT JOIN LatestVehicleMetadata … AND <ts>
+  style pads (widening) and the Q3 shift (narrowing). Observed joins: `LEFT JOIN LatestVehicleMetadata … AND <ts>
   BETWEEN Device_ActiveFrom AND Device_ActiveTo` in **every** join seen (≥ 10) — no fan-out, no inner-join drops.
   A join on `DeviceId` alone would multiply rows, and a narrowing guard drops data; either is visible only in the
   SQL. **Action:** read the SQL; dedup silver on the parsed natural key; in the shape check expect
@@ -98,7 +104,7 @@ rank in the table below instead of renumbering.
   `Get DeviceStatusInfo` or a bounded `Get LogRecord`; confirm an export's upper bound is *now*/your `hi`.
   **Seen:** ➖ 0/7 clipped. *(P26.)*
 - **Q12 — Event tables don't look "fresh" from `max(ts)`.** `Trip`/`FaultData`/`Events` get a row only when an
-  event fires, so `max(ts)` can look old for a benign reason — but see Q1, where it was a real lag.
+  event fires, so `max(ts)` can look old for a benign reason — but see Q3, where it was a real lag.
   **Action:** compare against the Get API or count events in a recent window before deciding which it is.
   GPS/StatusData are continuous (lag 11–23 s measured, 4 samples). *(P26, P34.)*
 - **Q13 — Wrong database or server name.** The Geotab database is the MyGeotab login name (e.g. `demo_fh8`),
@@ -136,7 +142,7 @@ rank in the table below instead of renumbering.
 
 1. Read `sql` → lint it ([`QUALITY_AND_REPAIR.md`](QUALITY_AND_REPAIR.md) §2). It exposes the *semantic*
    issues (Q1, Q3–Q7, Q10, Q11). It does **not** expose data-shape issues, which need their own checks:
-   `row_count` vs CSV `COUNT(*)` (Q2, Q8), min/max of the returned window vs the asked window (Q1), and
+   `row_count` vs CSV `COUNT(*)` (Q2, Q8), min/max of the returned window vs the asked window (Q3), and
    natural-key dedup in silver (Q7).
 2. Bronze append-only, silver derived and deduped, quality battery after every load.
 3. A differing count between two runs of "the same" question usually means a different `FROM`, filter or window,

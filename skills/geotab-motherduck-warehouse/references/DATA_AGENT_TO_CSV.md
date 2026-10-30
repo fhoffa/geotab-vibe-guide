@@ -66,7 +66,7 @@ Safety (Events), template only:
 
 Rules (each tied to a quirk):
 - **Name the table** when the topic is ambiguous — Q6.
-- **Always forbid the default population/validity filters** (`IsTracked`, `GpsValid`) — Q3. Unprompted,
+- **Always forbid the default population/validity filters** (`IsTracked`, `GpsValid`) — Q1. Unprompted,
   `IsTracked = TRUE` zeroed a fleet whose devices are all `IsTracked = false`.
 - **Pin units** ("in kilometers, do not convert units") and **ask for raw rows in UTC** — Q10, Q5.
 - **Request raw source columns, derive in silver** — Q4.
@@ -75,7 +75,7 @@ Rules (each tied to a quirk):
   53 MB passed; 2 days timed out), GPS and trips ≤ 1–2 days; retry once — Q8; see
   [`INCREMENTAL_BACKFILL.md`](INCREMENTAL_BACKFILL.md) §timeouts. Future-dated prompts failed with HTTP 502.
 - **Check the window you got.** On `freshness: stale`, compare the returned min/max timestamps to the window you
-  asked for — the agent can shift it (Q1), notably for `Trip`.
+  asked for — the agent can shift it (Q3), notably for `Trip`.
 - Asking for a "CSV link" is harmless (columns stay exact) but pointless — the URL always comes back.
 
 ## Step 2 — read the response (no parsing)
@@ -90,7 +90,7 @@ row_count 0 / data_uri "" / turn_id -1 → an EMPTY result: investigate, don't t
 
 `freshness.status` is `fresh`, `stale` or `unknown` and may carry a message ("Data is still not available for
 the requested date range despite adjusting…"). Read the message: `stale` means **your window reaches past the data
-the agent has**, and it may have silently answered for an earlier window (Q1: a request for 2026-10-30 trips was
+the agent has**, and it may have silently answered for an earlier window (Q3: a request for 2026-10-30 trips was
 answered for 2026-10-29). It is **not** a verdict on correctness — `stale` also accompanied correct results and a
 genuinely empty window, and `fresh` accompanied filter-caused empties (Q2). Always compare returned min/max to the
 window you asked for.
@@ -131,12 +131,12 @@ use `delegation_context` for output shaping.
 
 | Symptom | Cause | Fix |
 |---------|-------|-----|
-| `status: success`, `row_count: 0`, `data_uri: ""`, `turn_id: -1` | injected filter or wrong source — NOT "no data" | read `sql`; re-ask forbidding the filter (Q3, Q2) |
+| `status: success`, `row_count: 0`, `data_uri: ""`, `turn_id: -1` | injected filter or wrong source — NOT "no data" | read `sql`; re-ask forbidding the filter (Q1, Q2) |
 | 0 vehicles / 0 trips on a demo fleet | `IsTracked = TRUE` + `Device_ActiveTo >= now` | forbid `IsTracked`; don't restrict by ActiveFrom/To |
 | catalog-looking rows (diagnostic names) instead of readings | intent routed to `Diagnostic` | name the table `StatusData`; ask for `DiagnosticId` (Q6) |
 | HTTP 502 `data_agent_query_failed` / "Try rephrasing" | transient agent failure | retry once, then rephrase (Q8) |
 | tool timed out after 60 s | window too big, or a load spike (same prompt passed on retry) | retry once; then halve the window (Q8) |
-| `freshness: "stale"` + message | window reaches past the data (the `Trip` table lagged ≥ 1 h 44 min); the agent may have answered for another window (Q1) | compare returned min/max to the asked window; re-ask a window it covers; check completeness with `Get` |
+| `freshness: "stale"` + message | window reaches past the data (the `Trip` table lagged ≥ 1 h 44 min); the agent may have answered for another window (Q3) | compare returned min/max to the asked window; re-ask a window it covers; check completeness with `Get` |
 | HTTP 502 "Failed to generate a valid query" | future-dated prompt (2/2) | remove future dates; ask "after <past date>" or an open-ended past window (Q8) |
 | miles instead of km / `Local_Date` / `VehicleKPI_Daily` in the SQL | pre-aggregated rollup chosen (Q10, Q5) | ask for raw rows in UTC, pin km |
 | `DATA` instead of `Data` | case drift (Q9) | key by the CSV header, alias in the derive |

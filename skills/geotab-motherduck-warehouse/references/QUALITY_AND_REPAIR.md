@@ -69,10 +69,10 @@ quality gate: most semantic problems are visible in the SQL before you ever look
 | `GROUP BY` / aggregate fns | you got rollups | a "raw rows" request silently aggregated |
 | unit math (`/1609.34`, `*1.609`) | unit surprises | miles computed internally, km returned |
 | column aliases | rename/case drift | `Data`→`DATA` in the CSV header (Q9); default schema `UTC_GpsTimestamp` |
-| `GpsValid = 1`, `IsTracked = TRUE` (data agent) | silently thinned or **emptied** result | a "last 2 days" GPS ask added `GpsValid = 1`; the default fleet count was 0 on a fleet with every `IsTracked=false` (Q3/Q2) |
+| `GpsValid = 1`, `IsTracked = TRUE` (data agent) | silently thinned or **emptied** result | a "last 2 days" GPS ask added `GpsValid = 1`; the default fleet count was 0 on a fleet with every `IsTracked=false` (Q1/Q2) |
 | `FROM Diagnostic` / a catalog table when you asked for readings | wrong source (intent misrouted) | "engine status data readings" → 120 catalog rows, `status: success` (Q6) |
 | derived columns (`a − b`, `/60`, `ROUND`) | agent arithmetic you didn't specify | negative `driving_duration_minutes` (Q4) — ask for raw columns |
-| a date bound **different from the window you asked for** (e.g. `BETWEEN '2026-10-27' AND '2026-10-29'` when you asked for 10-30), or `freshness: stale` | the agent shifted the window; the answer is for another period (Q1) | trips for 10-30 answered as 10-29 (643 trips, latest start 23:24:03) while `Get` showed trips through 01:07 |
+| a date bound **different from the window you asked for** (e.g. `BETWEEN '2026-10-27' AND '2026-10-29'` when you asked for 10-30), or `freshness: stale` | the agent shifted the window; the answer is for another period (Q3) | trips for 10-30 answered as 10-29 (643 trips, latest start 23:24:03) while `Get` showed trips through 01:07 |
 | `row_count = 0` / `data_uri ""` / `turn_id -1` | empty-success | treat as failure on a window known to have data (Q2) |
 
 If the SQL is wrong for your intent, **no amount of downstream cleanup fixes it** — the data is the

@@ -20,7 +20,7 @@ Re-measured through the data agent on **2026-10-29 (`demo_fh8`)**: latest `GpsLo
 query at ≈`23:41:11` (**≈23 s**) and `23:47:19` for a query at ≈`23:47:35` (**≈16 s**).
 `freshness.status` was `fresh` on every telematics call.
 
-**The `Trip` table is the exception (2026-10-30, `demo_fh8`, Q1).** At 01:08 UTC the Get API showed trips starting
+**The `Trip` table is the exception (2026-10-30, `demo_fh8`, Q3).** At 01:08 UTC the Get API showed trips starting
 through 01:07 and ≥ 9 trips starting after 23:24:03 on 10-29, but the agent's latest trip start was 23:24:03.665 —
 **≥ 1 h 44 min behind** — while `GpsLogs` and `StatusData` were **17 s** and **11 s** behind. Asked for trips on
 10-30 the agent silently answered for 10-29 and returned `freshness: stale`. Fresh at ≈ 23:45 the evening before.
@@ -108,7 +108,7 @@ pure-agent warehouse. If you need both completeness and true real-time, layer th
 bulk/settled body**, and a small **`Get LogRecord` read for the last few minutes**. Land both in bronze and
 let the natural-key dedup merge them — the overlap collapses on the natural key.
 
-## The active-only trap (why a warehouse can undercount the fleet) — Q3
+## The active-only trap (why a warehouse can undercount the fleet) — Q1
 
 The original `planet_gps_pings` was built from a pull that defaulted to `IsTracked = TRUE`. Result: silver
 held **~25–26 devices**, but the fleet has **50**. A GPS pull for 2026-06-28 that explicitly said *"do not

@@ -300,7 +300,7 @@ ORDER BY d.DeviceName, c.day;
 The agent and `Get` return **different populations**, so a table can look internally contiguous yet still be
 missing whole devices. Compare across channels:
 
-- **Device population vs the roster (the active-only trap).** the agent defaults to `IsTracked = TRUE` (Q3), so the
+- **Device population vs the roster (the active-only trap).** the agent defaults to `IsTracked = TRUE` (Q1), so the
   fact table can hold far fewer devices than the fleet. Compare to `dim_device` (from `Get`, the exact
   roster):
   ```sql
@@ -396,7 +396,7 @@ lo      = prev_wm − L                                      # covers re-splits 
       **ABORT, do not DELETE; re-pull/retry first.** With an empty/partial truth set,
       `TripId NOT IN (truth set)` is true for every row and step 3 deletes the whole window.
       A plausible row count is NOT proof of completeness: the agent's `Trip` table can lag the Get API by
-      hours (Q1), and a stale snapshot has about the same count and devices. So also clamp the window:
+      hours (Q3), and a stale snapshot has about the same count and devices. So also clamp the window:
       `hi = least(<day_end>, max(trip_start_utc in the truth set))` — never delete silver trips that start
       after the latest trip the snapshot contains (they may have come from a fresher pull).
 2b. GUARD — confirm candidates with the authoritative source (the Get API) before changing silver:

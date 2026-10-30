@@ -75,7 +75,7 @@ don't mutate once fired.)
 
 **Heuristic:** if it has a timestamp and grows forever → **fact via the data agent**. If it's a list you join
 *to* (vehicles, drivers, zones, diagnostics, rules) → **dimension via `Get`**, because `Get` is exact,
-real-time, and permission-scoped, while the agent defaults to `IsTracked=TRUE` and may pre-aggregate (Q3, Q10).
+real-time, and permission-scoped, while the agent defaults to `IsTracked=TRUE` and may pre-aggregate (Q1, Q10).
 
 ## Facts via the data agent
 
@@ -191,7 +191,7 @@ exactly this reason, on top of its frequent incremental updates.) Consequences f
 ### Entities cover different device populations
 
 Observed counts (2026-06-29, `demo_fh4`; point-in-time) on the same fleet/window: GPS **26 devices**,
-trips **26**, exception events **50**, `dim_device` **50**. Facts pulled via the agent reflect only devices with activity (and, by default, `IsTracked=TRUE` — Q3),
+trips **26**, exception events **50**, `dim_device` **50**. Facts pulled via the agent reflect only devices with activity (and, by default, `IsTracked=TRUE` — Q1),
 while the device dimension has the whole fleet. So **a device missing from a fact table isn't
 necessarily a gap** — cross-check against `dim_device` and the entity's own nature before backfilling.
 
