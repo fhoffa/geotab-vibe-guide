@@ -26,7 +26,7 @@ These don't depend on which Geotab tool fetches the data and were not re-tested 
 | Count check | count the CSV yourself | `row_count` returned → must equal CSV `COUNT(*)` (it did: 11,599 / 368,764) | P21, P25 |
 | URL(s) | array; large exports shard (8–10 files) | single `data_uri`; 26 MB / 368,764 rows = 1 file | P25 |
 | Chat state | `chat_id`, continue-chat | stateless; `delegation_context` for follow-ups | P27 |
-| Latency | ~33 s floor per call, "don't parallelize" | no floor evident; **~60 s tool timeout**; 4 parallel calls fine | P25, P27 |
+| Latency | ~33 s floor per call (30–46 s on the vibe guide's four timed questions), "don't parallelize" | **≈ 6–10 s** on those same four questions (one run each, ±3 s); **~60 s tool timeout**; 4 parallel calls fine | P25, P27, P37 |
 | Timestamps | ` UTC` suffix | `UTC_*` `+00:00`; `GpsDateTime` naive ISO | P21, P25 |
 | "CSV/URL" wording | degrades the schema | no degradation | P23 |
 | Joins | `LatestVehicleMetadata` LEFT↔inner flip + fan-out | always LEFT with active-window `BETWEEN` — no fan-out seen | P21, P24 |
@@ -77,7 +77,7 @@ v1.1 had a 20-quirk catalog (`#1…#20`); v2.0 replaces it with `Q1…Q18` in [`
 ## Not verified in v2.0 (be honest in downstream docs)
 
 Dimension write→visible lag measured once only (Q14, n = 1) · ChatGPT connector modes (Q15) · production fleets (both test fleets are demo fleets with every device `IsTracked=false`, all UTC; Q3 and Q10 are demo-sensitive) · exports above 53 MB (sharding may
-reappear) · wall-clock latency (the MCP gives no timing) · other databases/servers (only `demo_fh8`, and for the
+reappear) · wall-clock latency beyond the four small questions in P37 (the MCP gives no timing; ±3 s) · other databases/servers (only `demo_fh8`, and for the
 core `IsTracked` probe `demo_fh_vegas8`, both `my.geotab.com`) · the MotherDuck load of a data-agent CSV (the
 `read_csv_auto(all_varchar=true)` path is unchanged, but the `+00:00` timestamp cast in the derive was not run —
 MotherDuck was not connected in the session that wrote v2.0).

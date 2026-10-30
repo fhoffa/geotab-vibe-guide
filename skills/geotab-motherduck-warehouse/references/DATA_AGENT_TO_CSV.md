@@ -118,8 +118,9 @@ use `delegation_context` for output shaping.
 
 ## Performance & freshness (observed)
 
-- Envelope ~5–10 KB. Wall time per call was not instrumented (the MCP gives no timing); all calls but two
-  returned inside the 60 s tool limit. Budget conservatively until you measure your own fleet.
+- Envelope ~5–10 KB. The MCP gives no timing, so latency was measured by bracketing calls with clock readings and
+  subtracting turn overhead (±3 s, one run each): the four small aggregate questions from the vibe guide's benchmark took
+  **about 6–10 s each** (P37). Large exports take longer; all calls but a handful returned inside the 60 s tool limit.
 - GPS pipeline lag ≈ **16–25 s** (two samples: latest point vs wall clock at query time).
 - Four simultaneous calls all succeeded; stay modest.
 
