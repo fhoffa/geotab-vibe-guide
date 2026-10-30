@@ -39,9 +39,13 @@ free number and note its rank here instead of renumbering.
   ignition."* ("Include every device" alone was not enough: one such prompt still got the filter.) **Seen:** ✅
   roster-based default asks 6/6 (fleet+trips ×2 on two fleets, fleet count, "latest GPS of first 5 devices", "engine
   readings last hour", "status data last 10 min"); 0 of the ≥ 15 asks that said "do not filter on IsTracked" got it.
-  **Scope:** both databases are demo fleets; with tracked devices the filter is harmless, and on a production fleet it
-  would drop only untracked assets (not tested). The older demo databases that returned counts earlier no longer
-  exist, so we cannot tell whether the data or the agent changed. *(P19, P28, P38.)*
+  **Scope — this may be specific to the demo databases.** Both databases tested are demo fleets in which no device is
+  flagged tracked. On a production database whose devices are tracked, the same default filter should keep them and
+  return the right answer immediately; on a production fleet it would drop only untracked assets. That is an
+  expectation, not a result: no production database was tested. The older demo databases that returned counts earlier
+  no longer exist, so we cannot tell whether the data or the agent changed. **Keep the prompt wording anyway:** it
+  costs nothing on a fleet of tracked devices and prevents the zero on any database that has untracked ones.
+  *(P19, P28, P38.)*
 - **Q2 — `status: success` can be an empty or zero answer, and the envelope can't tell you why.**
   `row_count: 0`, `data_uri: ""`, `turn_id: -1` (or a scalar `0`) look **identical** whether a filter (Q1)
   removed the rows or the window genuinely has no data (control: trips before the data starts). `freshness`

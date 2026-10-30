@@ -67,7 +67,8 @@ Safety (Events), template only:
 Rules (each tied to a quirk):
 - **Name the table** when the topic is ambiguous — Q6.
 - **Always forbid the default population/validity filters** (`IsTracked`, `GpsValid`) — Q1. Unprompted,
-  `IsTracked = TRUE` zeroed a fleet whose devices are all `IsTracked = false`.
+  `IsTracked = TRUE` zeroed a fleet whose devices are all `IsTracked = false` (both demo databases tested). A production
+  database with tracked devices may get the right result without the wording; it is harmless there, so keep it.
 - **Pin units** ("in kilometers, do not convert units") and **ask for raw rows in UTC** — Q10, Q5.
 - **Request raw source columns, derive in silver** — Q4.
 - **Specificity beats attached SQL:** name exact columns; treat any SQL you add as a hint, not a contract.
