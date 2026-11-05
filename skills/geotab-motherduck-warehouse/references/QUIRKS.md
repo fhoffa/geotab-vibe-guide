@@ -82,7 +82,7 @@ free number and note its rank here instead of renumbering.
   BETWEEN Device_ActiveFrom AND Device_ActiveTo` in **every** join seen (≥ 10) — no fan-out, no inner-join drops.
   A join on `DeviceId` alone would multiply rows, and a narrowing guard drops data; either is visible only in the
   SQL. **Action:** read the SQL; dedup silver on the parsed natural key; in the shape check expect
-  `csv_rows ≥ distinct keys`. **Seen:** guards ✅ every query; duplicates ➖ **0 in 6 downloaded CSVs (1.29M rows)**;
+  `csv_rows ≥ distinct keys`. **Seen:** guards ✅ every query (the identical "most recent status reading" prompt run 6×: look-back window 3, 7 ×3 and 30 days, 5 answered, 0 of 5 answers clipped; P39); duplicates ➖ **0 in 6 downloaded CSVs (1.29M rows)**;
   fan-out ➖ 0. *(P21, P25, P32.)*
 
 ## Part 2 — Operational: derails or misleads the run, usually visibly (Q8–Q15)
