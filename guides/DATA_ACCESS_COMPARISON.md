@@ -182,8 +182,8 @@ All three agree on 1.2% idle. The ratio is consistent even though absolute hours
 - Compact, structured response with a `row_count` that matched every CSV we downloaded (6 files, 1.29 million rows, no duplicate rows)
 - Good for bulk exports into a warehouse: the [MotherDuck warehouse skill](../skills/geotab-motherduck-warehouse/SKILL.md) is built on it
 
-**Weaknesses (shared with Ace, and worse on demo fleets):**
-- Adds `IsTracked = TRUE` to questions about "the fleet", which returns empty or zero answers on a fleet whose devices are untracked, with no error
+**Weaknesses (shared with Ace):**
+- Adds `IsTracked = TRUE` to questions about "the fleet", which silently leaves out any untracked devices (and returns an empty or zero answer if none qualify), with no error. Say "include every device; do not filter on IsTracked"
 - Can quietly answer for a different date range than you asked for, and its `Trip` table lagged by 1 h 44 min in one test (GPS and engine status were 11–23s behind)
 - Converts distances to miles unless you ask for kilometers
 - About 60s tool limit, so big exports need to be split into windows

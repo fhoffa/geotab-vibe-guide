@@ -113,8 +113,7 @@ let the natural-key dedup merge them — the overlap collapses on the natural ke
 The original `planet_gps_pings` was built from a pull that defaulted to `IsTracked = TRUE`. Result: silver
 held **~25–26 devices**, but the fleet has **50**. A GPS pull for 2026-06-28 that explicitly said *"do not
 restrict to active/tracked devices"* returned **47–49 distinct devices**, vs **25** in the active-filtered
-silver. On 2026-10-29/30 the same default returned **0 vehicles** on two demo fleets whose devices are all
-`IsTracked = false`. **Lesson:** the agent's default population is *tracked/active only*. If you want the
+silver. **Lesson:** the agent's default population is *tracked/active only*. If you want the
 whole fleet, say so explicitly (and verify device count against `dim_device` from `Get`, which is the exact
 roster). This is a coverage bug that no amount of dedup fixes — it's upstream of the load. See the prompting
 rules in [`DATA_AGENT_TO_CSV.md`](DATA_AGENT_TO_CSV.md).

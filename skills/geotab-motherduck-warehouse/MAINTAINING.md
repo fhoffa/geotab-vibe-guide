@@ -54,7 +54,7 @@ a lean mirror is in [`SKILL.md`](SKILL.md); the evidence behind it is in
 
 ## Reference databases (current state — for live validation)
 
-**Geotab side:** `demo_fh8` and `demo_fh_vegas8` on `my.geotab.com` (50 devices each, `IsTracked=false`) are the
+**Geotab side:** `demo_fh8` and `demo_fh_vegas8` on `my.geotab.com` (50 devices each) are the
 databases the data-agent probes P19–P27 ran on. Geotab DB names are MyGeotab login names — **not** the MotherDuck
 `geotab_<source>` names below.
 

@@ -11,8 +11,7 @@ reproduced. Measurements, SQL and prompts live in [`EVIDENCE_LOG.md`](EVIDENCE_L
 
 **How this catalog was checked (2026-10-30):** every quirk was re-run with repeats and, where possible, a
 control (a pinned prompt, the Get API as ground truth, or a downloaded CSV) on two demo fleets (`demo_fh8`,
-`demo_fh_vegas8`, 50 vehicles each, `my.geotab.com`). **Both are demo fleets: all 50 devices have
-`IsTracked = false`, all in UTC.** Anything that depends on those facts says so; none of it has been tried on a production fleet. Verdict legend: ✅ reproduced · ◐ reproduced in a narrower form than first
+`demo_fh_vegas8`, 50 vehicles each, `my.geotab.com`). Both are demo fleets, all in UTC; none of it has been tried on a production fleet. Verdict legend: ✅ reproduced · ◐ reproduced in a narrower form than first
 believed · ➖ not reproduced (kept as a cheap precaution) · ❔ not testable here.
 
 > **Assume non-determinism.** Frequencies are observed tendencies from small samples, not guarantees. The safe
@@ -21,31 +20,24 @@ believed · ➖ not reproduced (kept as a cheap precaution) · ❔ not testable 
 
 **Ordered by importance — `Q1` matters most.** Rank weighs three things: how many people will hit it, what it costs
 them (a demo that fails on the first question, or wrong data in a warehouse), and how hard it is to diagnose from the
-response. Q1 and Q2 head the list because together they make the first plain question about a fleet return zero
-with no explanation, which breaks basic demos before anyone reaches the subtler problems. Parts 1–3 are the severity
+response. Q1 and Q2 head the list because together they can make a plain question about a fleet come back short or
+empty with no explanation, before anyone reaches the subtler problems. Parts 1–3 are the severity
 tiers (🔴 / 🟡 / ⚪). Other files cite quirks as `Q#`; IDs are stable once published, so add a new quirk at the next
 free number and note its rank here instead of renumbering.
 
 ## Part 1 — Wrong or missing data, with no error (Q1–Q7)
 
-- **Q1 — The first plain question about a fleet returns 0, because roster-based asks get `IsTracked = TRUE`.**
+- **Q1 — Roster-based asks get default population filters (`IsTracked = TRUE`, `Device_ActiveTo >= now`, `GpsValid = 1`) that silently drop untracked or inactive devices.**
   When the ask is about "the fleet / vehicles / devices" (or lists by device), the agent builds on
-  `LatestVehicleMetadata` and adds `IsTracked = TRUE AND Device_ActiveTo >= CURRENT_DATETIME()`. Every device on
-  both demo databases tested has `IsTracked = false`, so "How many vehicles are in the fleet?" returns **0**, and so do
-  the questions built on it: vehicle count and health (0), top 5 vehicles (no rows), idle time % (null), engine
-  readings for the last hour (empty). **3 of the 4 questions in the vibe guide's benchmark failed this way.** A plain GPS
-  ask also gained `GpsValid = 1`. Any demo, tutorial or hackathon on these databases hits it on its first question.
+  `LatestVehicleMetadata` and adds `IsTracked = TRUE AND Device_ActiveTo >= CURRENT_DATETIME()`; a plain GPS ask also
+  gained `GpsValid = 1`. The answer then covers only the tracked, active, valid subset, so a count or a warehouse fact
+  table can come out short with no error (and empty when no device qualifies: Q2).
   **Action:** every fact prompt says *"include every device; do not filter on IsTracked, GpsValid, speed or
-  ignition."* ("Include every device" alone was not enough: one such prompt still got the filter.) **Seen:** ✅
-  roster-based default asks 6/6 (fleet+trips ×2 on two fleets, fleet count, "latest GPS of first 5 devices", "engine
-  readings last hour", "status data last 10 min"); 0 of the ≥ 15 asks that said "do not filter on IsTracked" got it.
-  **Scope — this may be specific to the demo databases.** Both databases tested are demo fleets in which no device is
-  flagged tracked. On a production database whose devices are tracked, the same default filter should keep them and
-  return the right answer immediately; on a production fleet it would drop only untracked assets. That is an
-  expectation, not a result: no production database was tested. The older demo databases that returned counts earlier
-  no longer exist, so we cannot tell whether the data or the agent changed. **Keep the prompt wording anyway:** it
-  costs nothing on a fleet of tracked devices and prevents the zero on any database that has untracked ones.
-  *(P19, P28, P38.)*
+  ignition."* ("Include every device" alone was not enough: one such prompt still got the filter.) **Seen:** ✅ the
+  filter appeared on every roster-based default ask in the 2026-10-29/30 runs, and on none of the ≥ 15 asks that said
+  "do not filter on IsTracked". On 2026-11-24 the plain fleet question returned 50 on both test databases while its SQL
+  still carried the filter (P40), so the wording is a precaution that costs nothing on a fleet of tracked devices.
+  *(P19, P28, P38, P40.)*
 - **Q2 — `status: success` can be an empty or zero answer, and the envelope can't tell you why.**
   `row_count: 0`, `data_uri: ""`, `turn_id: -1` (or a scalar `0`) look **identical** whether a filter (Q1)
   removed the rows or the window genuinely has no data (control: trips before the data starts). `freshness`

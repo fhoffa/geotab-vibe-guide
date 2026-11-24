@@ -66,9 +66,9 @@ Safety (Events), template only:
 
 Rules (each tied to a quirk):
 - **Name the table** when the topic is ambiguous — Q6.
-- **Always forbid the default population/validity filters** (`IsTracked`, `GpsValid`) — Q1. Unprompted,
-  `IsTracked = TRUE` zeroed a fleet whose devices are all `IsTracked = false` (both demo databases tested). A production
-  database with tracked devices may get the right result without the wording; it is harmless there, so keep it.
+- **Always forbid the default population/validity filters** (`IsTracked`, `GpsValid`) — Q1. Unprompted, the
+  agent adds `IsTracked = TRUE` to fleet-roster asks and drops untracked devices. Where every device is tracked the
+  wording changes nothing, so always keep it.
 - **Pin units** ("in kilometers, do not convert units") and **ask for raw rows in UTC** — Q10, Q5.
 - **Request raw source columns, derive in silver** — Q4.
 - **Specificity beats attached SQL:** name exact columns; treat any SQL you add as a hint, not a contract.
@@ -107,11 +107,14 @@ Signed URL shape: `https://storage.googleapis.com/ace-cli-sessions-prod-<region>
 | Header vs requested | exact | `Data` → **`DATA`** (Q9) |
 | `row_count` vs CSV rows | equal | equal |
 | Duplicate rows / duplicate `(Device, ts)` | 0 / 0 | 0 |
-| Timestamp text | `GpsDateTime`: naive ISO `2026-10-29T22:00:05.617000` | `UTC_*`: ISO with offset `2026-10-28T00:00:00.151000+00:00` |
+| Timestamp text | `GpsDateTime`: naive ISO `2026-10-29T22:00:05.617000`; on 2026-11-24 the same column came back **with offset** `2026-11-24T22:00:00.454000+00:00` (the agent now selects `UTC_GpsTimestamp AS GpsDateTime`) | `UTC_*`: ISO with offset `2026-10-28T00:00:00.151000+00:00` |
 | Upper bound of "…and now" | max 23:47:19 vs asked 23:47:35 | n/a |
 
 Land everything `all_varchar` in bronze and parse in the derive (`TRY_CAST`); keep the natural-key dedup
-(Q7) as insurance.
+(Q7) as insurance. Both text forms (naive and `+00:00`) cast to the same `TIMESTAMP` in DuckDB whatever the session
+`TimeZone` (checked UTC / Los Angeles / Tokyo, P41), and `read_csv_auto` types an offset column as `TIMESTAMP WITH TIME
+ZONE`, so cast explicitly in the derive. `DiagnosticId` values can contain odd characters: `DiagnosticGenericIncrementalDistanceId)`
+(trailing parenthesis) is a real id in the Get API, so never clean ids before joining `dim_diagnostic`.
 
 ## Delegation (follow-ups)
 
@@ -133,7 +136,7 @@ use `delegation_context` for output shaping.
 | Symptom | Cause | Fix |
 |---------|-------|-----|
 | `status: success`, `row_count: 0`, `data_uri: ""`, `turn_id: -1` | injected filter or wrong source — NOT "no data" | read `sql`; re-ask forbidding the filter (Q1, Q2) |
-| 0 vehicles / 0 trips on a demo fleet | `IsTracked = TRUE` + `Device_ActiveTo >= now` | forbid `IsTracked`; don't restrict by ActiveFrom/To |
+| 0 vehicles / 0 trips, or fewer devices than the fleet has | default `IsTracked = TRUE` + `Device_ActiveTo >= now` | forbid `IsTracked`; don't restrict by ActiveFrom/To |
 | catalog-looking rows (diagnostic names) instead of readings | intent routed to `Diagnostic` | name the table `StatusData`; ask for `DiagnosticId` (Q6) |
 | HTTP 502 `data_agent_query_failed` / "Try rephrasing" | transient agent failure | retry once, then rephrase (Q8) |
 | tool timed out after 60 s | window too big, or a load spike (same prompt passed on retry) | retry once; then halve the window (Q8) |
