@@ -69,6 +69,9 @@ Rules (each tied to a quirk):
 - **Always forbid the default population/validity filters** (`IsTracked`, `GpsValid`) — Q1. Unprompted, the
   agent adds `IsTracked = TRUE` to fleet-roster asks and drops untracked devices. Where every device is tracked the
   wording changes nothing, so always keep it.
+- **Check the timestamp column in the returned `sql`.** For GPS the agent alternated between `UTC_GpsTimestamp` and the
+  device-local `GpsDateTime` under the same "Use UTC" wording. On a fleet with non-UTC devices a local column would
+  shift rows by the offset and break the watermark. If the SQL selects the local column, re-ask naming `UTC_GpsTimestamp`.
 - **Pin units** ("in kilometers, do not convert units") and **ask for raw rows in UTC** — Q10, Q5.
 - **Request raw source columns, derive in silver** — Q4.
 - **Specificity beats attached SQL:** name exact columns; treat any SQL you add as a hint, not a contract.
@@ -107,7 +110,7 @@ Signed URL shape: `https://storage.googleapis.com/ace-cli-sessions-prod-<region>
 | Header vs requested | exact | `Data` → **`DATA`** (Q9) |
 | `row_count` vs CSV rows | equal | equal |
 | Duplicate rows / duplicate `(Device, ts)` | 0 / 0 | 0 |
-| Timestamp text | `GpsDateTime`: naive ISO `2026-10-29T22:00:05.617000`; on 2026-11-24 the same column came back **with offset** `2026-11-24T22:00:00.454000+00:00` (the agent now selects `UTC_GpsTimestamp AS GpsDateTime`) | `UTC_*`: ISO with offset `2026-10-28T00:00:00.151000+00:00` |
+| Timestamp text | `GpsDateTime`: naive ISO `2026-10-29T22:00:05.617000`; on 2026-11-24 the same column came back **with offset** `2026-11-24T22:00:00.454000+00:00` (the agent selected `UTC_GpsTimestamp AS GpsDateTime`). **The same prompt, minutes later, selected the device-local `GpsDateTime` (naive, column kind `local_datetime`)**; identical here only because every demo device is `Etc/UTC` (P42) | `UTC_*`: ISO with offset `2026-10-28T00:00:00.151000+00:00` |
 | Upper bound of "…and now" | max 23:47:19 vs asked 23:47:35 | n/a |
 
 Land everything `all_varchar` in bronze and parse in the derive (`TRY_CAST`); keep the natural-key dedup
