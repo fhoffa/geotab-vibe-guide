@@ -44,19 +44,20 @@ Query pre-aggregated fleet KPIs, safety scores, and fault data via the OData Dat
 **Priority:** HIGH — turns Geotab into a queryable warehouse
 
 Replicate a Geotab database into MotherDuck (DuckDB) and keep it fresh with incremental loads, driven
-entirely through MCP tools (MotherDuck + Geotab Ace + Geotab Get) — no Python.
+entirely through MCP tools (MotherDuck + the Geotab data agent + Geotab Get) — no Python.
 
 - **Location:** `skills/geotab-motherduck-warehouse/SKILL.md`
 - **References:**
-  - `references/ACE_TO_CSV.md` — bulk extraction via Ace, the signed-CSV-URL loop, 11 observed quirks, timing/volume benchmarks, continue-chat
+  - `references/DATA_AGENT_TO_CSV.md` — bulk extraction via the data agent, the signed-CSV-URL loop, per-entity prompts, CSV checks, failure modes
+  - `references/QUIRKS.md` — the 18 numbered data-agent quirks (what to watch for, why, the one action)
   - `references/MEDALLION_LOADING.md` — table creation from zero, bronze/silver/gold DDL, pre-load shape/size checks, conditional transforms, idempotent inserts, natural-key dedup
   - `references/INCREMENTAL_BACKFILL.md` — daily-run runbook, `warehouse_ingest_log` state table, watermarks, gap detection ("missing spots"), windowed historical backfill
   - `references/ENTITY_CATALOG.md` — what to replicate beyond GPS, per-entity channel, natural keys, suggested schemas, the `Get` cursor-pagination quirk
-  - `references/QUALITY_AND_REPAIR.md` — post-load quality tests, predicting problems from Ace's generated SQL, SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap)
+  - `references/QUALITY_AND_REPAIR.md` — post-load quality tests, predicting problems from the agent's generated SQL, SQL-vs-results failure split, and repair strategy (re-ask vs. patch the gap)
 
 **What it teaches:**
-- The "latest timestamp → Ace after timestamp → append CSV URL" 3-call loop, made idempotent
-- Working around Ace MCP quirks (huge spilled responses, always-a-URL, second-precision boundary overlap, inconsistent column honoring, "never ask for the URL", ~33s floor, continue-chat)
+- The "latest timestamp → data agent after timestamp → append CSV URL" 3-call loop, made idempotent
+- Working around data-agent quirks (default `IsTracked`/`GpsValid` filters and empty "success" answers, wrong-table routing, unit conversion, derived columns, the ~60 s tool timeout)
 - Medallion layering, watermarks, dedup, gap detection, and historical backfill in bounded windows
 
 **Use Cases:**
@@ -65,10 +66,10 @@ entirely through MCP tools (MotherDuck + Geotab Ace + Geotab Get) — no Python.
 - "Backfill the last 90 days of GPS and trips"
 - "Find and fill the gaps in my warehouse"
 
-**Lessons Learned (from live testing on `demo_fh4`):** Ace always returns a signed GCS CSV URL (even
-for 3 rows) but the MCP payload is 110–192 KB and must be grepped from a file, never read inline;
-Ace honors a precise lower bound only to the *second*, so every load must dedup; asking Ace for a URL
-in the prompt silently degrades the schema. All SQL (incremental insert, bronze fidelity, gap
+**Lessons Learned (from live testing on `demo_fh4`, `demo_fh8`, `demo_fh_vegas8`):** the data agent returns
+a compact `{sql, data_preview, row_count, data_uri}` object, but its defaults (`IsTracked = TRUE`, `GpsValid = 1`)
+can make a fleet look empty while reporting `success` — forbid them in every prompt and treat `row_count = 0` as
+a failure; read the returned SQL before loading. All SQL (incremental insert, bronze fidelity, gap
 detection, state table) was validated against the live warehouse.
 
 ---

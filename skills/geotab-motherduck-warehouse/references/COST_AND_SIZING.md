@@ -9,7 +9,7 @@ and add ~9% for the EU regions).
 
 | Layer | Who charges | This use case |
 |-------|-------------|---------------|
-| **Geotab Ace + MCP + the Get/Ace API** | Geotab | **Included in the Geotab Go plan** — the bulk Ace pulls and `Get` calls add no incremental Geotab cost. |
+| **Geotab MCP (data agent + Get API)** | Geotab | **Included in the Geotab Go plan** — the bulk data-agent pulls and `Get` calls add no incremental Geotab cost. |
 | **MotherDuck warehouse** (storage + compute) | MotherDuck | The only new spend. Modeled below. |
 
 So the question is purely "what does the MotherDuck side cost," and for most fleets the answer is
@@ -120,10 +120,10 @@ CU-seconds** (incl. logging/verify). Against 36,000 CU-sec/month that is:
 > **~1,200 full update cycles per month on the free tier — roughly every ~35 minutes, around the clock,
 > for $0.** Even tripling the estimate for safety leaves ~400/month (~every 2 hours).
 
-**Compute is not the free-tier constraint — storage (10 GB) and Ace's wall-clock are.** The Ace pull
-itself is ~33 s/call (× number of tables), but that runs on Geotab's side, is included in the Go plan,
-and is **not** metered by MotherDuck — it only bounds how *fast* a cycle finishes (~2–3 min for 4
-tables), not what it costs. So **small fleets effectively run for $0**, and you can refresh as often as
+**Compute is not the free-tier constraint — storage (10 GB) and the agent's wall-clock are.** Each
+agent call must finish inside the ~60 s tool limit (× number of tables), but it runs on Geotab's side, is
+included in the Go plan, and is **not** metered by MotherDuck — it only bounds how *fast* a cycle finishes
+(a few minutes for 4 tables), not what it costs. So **small fleets effectively run for $0**, and you can refresh as often as
 every ~15–30 min without leaving the free tier.
 
 **Caveats:** compute scales with data volume — a large fleet's daily CSV is bigger to parse, and the
